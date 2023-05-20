@@ -1,12 +1,15 @@
 <script lang="ts">
   // GobbledeGook card
-  import GGCard from './lib/Card.svelte'
+  import GGCard from './lib/Card.svelte';
+  import Api from './lib/Api.svelte';
+
 
 </script>
 
 <main>
   <div class="container">
     <GGCard />
+    <Api />
   </div>
 </main>
 
