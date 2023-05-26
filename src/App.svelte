@@ -3,19 +3,29 @@
   import GGCard from './lib/Card.svelte';
   import Api from './lib/Api.svelte';
 
+  // Other custom components
+  import LoginForm from './lib/LoginForm.svelte';
+
 
 </script>
 
 <main>
+  <LoginForm />
   <div class="container">
-    <GGCard />
+    <!-- <GGCard /> -->
     <Api />
   </div>
 </main>
 
 <style>
   main {
+    padding-top: 5rem;
     position: relative;
+    /* background-image: url('/gg.png'); */
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
+    /* filter: blur(1rem); */
   }
   
   .container {
