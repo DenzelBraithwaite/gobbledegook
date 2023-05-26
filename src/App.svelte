@@ -30,7 +30,7 @@
   
   .container {
     padding-top: 1rem;
-    background-color: #4d2f0c;
+    background-color: #633f1e;
     width: 60%;
     max-width: 1000px;
     margin: 0 auto;

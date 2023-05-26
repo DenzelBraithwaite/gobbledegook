@@ -64,4 +64,14 @@
         font-size: 0.75rem;
         text-align: center;
     }
+
+    .btn-submit:hover {
+        cursor: pointer;
+        background-color: #5c3e21;
+    }
+
+    .btn-submit:active {
+        cursor: pointer;
+        background-color: #53371d;
+    }
 </style>
