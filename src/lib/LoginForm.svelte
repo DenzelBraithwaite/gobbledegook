@@ -1,9 +1,13 @@
 <script lang="ts">
+    import Button from '../lib/Button.svelte';
 
+    function formHandler() {
+
+    };
 </script>
 
 <div class="form-container">
-    <form action="http://localhost/projects/gobbledegook_backend/db.php">
+    <form on:submit|preventDefault={formHandler} action="http://localhost/projects/gobbledegook_backend/db.php">
         <h2 class="form-title">Sign into your account</h2>
         <div class="form-control">
             <label for="username">Username</label>
@@ -13,7 +17,7 @@
             <label for="password">Password</label>
             <input type="password" placeholder="password" name="password" id="password">
         </div>
-        <button type="submit" class="btn-submit">Log in</button>
+        <Button customClasses="btn btn__brown">Log in</Button>
     </form>
 </div>
 
@@ -52,26 +56,5 @@
         border: 1px solid #7a7a7a;
         border-radius: 0.125rem;
         padding: 0.5rem 0.25rem;
-    }
-
-    .btn-submit {
-        border: none;
-        width: 100%;
-        background-color: #6d4927;
-        padding: 0.75rem;
-        border-radius: 0.25rem;
-        color: #fff;
-        font-size: 0.75rem;
-        text-align: center;
-    }
-
-    .btn-submit:hover {
-        cursor: pointer;
-        background-color: #5c3e21;
-    }
-
-    .btn-submit:active {
-        cursor: pointer;
-        background-color: #53371d;
     }
 </style>
