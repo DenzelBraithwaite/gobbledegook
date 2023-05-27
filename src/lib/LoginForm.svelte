@@ -1,8 +1,22 @@
 <script lang="ts">
     import Button from '../lib/Button.svelte';
 
-    function formHandler() {
+    let formData = {
+        username: '',
+        password: '',
+    }
 
+    function formHandler() {
+        fetch("http://localhost/projects/gobbledegook_backend/api.php", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => console.log(JSON.stringify(formData)))
+        // .then(data => console.log(data))
+        // .catch(error => console.log(error));
     };
 </script>
 
@@ -11,13 +25,13 @@
         <h2 class="form-title">Sign into your account</h2>
         <div class="form-control">
             <label for="username">Username</label>
-            <input type="text" placeholder="username" name="username" id="username">
+            <input type="text" placeholder="username" name="username" id="username" bind:value={formData['username']}>
         </div>
         <div class="form-control">
             <label for="password">Password</label>
-            <input type="password" placeholder="password" name="password" id="password">
+            <input type="password" placeholder="password" name="password" id="password" bind:value={formData['password']}>
         </div>
-        <Button customClasses="btn btn__brown">Log in</Button>
+        <Button btnSubmit={true} customClasses="btn btn__orange">Log in</Button>
     </form>
 </div>
 
