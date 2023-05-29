@@ -2,33 +2,45 @@
     import Button from '../lib/Button.svelte';
 
     let formData = {
-        username: '',
-        password: '',
+        username: 'testUserFromSvelte',
+        password: 'testPasswordFromSvelte',
     }
 
+    let response;
+
+    let usernameLabel = 'Username';
+    let passwordLabel = 'Password';
+    let testFormData = {};
+
+    const url = 'http://localhost/projects/gobbledegook_backend/api.php';
+
     function formHandler() {
-        fetch("http://localhost/projects/gobbledegook_backend/api.php", {
+        fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(formData)
         })
-        .then(response => console.log(JSON.stringify(formData)))
-        // .then(data => console.log(data))
-        // .catch(error => console.log(error));
+        .then(res => res.json())
+        .then(data => {
+            response = data;
+            console.log(response);
+        })
+        .catch(error => console.log(error ));
     };
+
 </script>
 
 <div class="form-container">
     <form on:submit|preventDefault={formHandler} action="http://localhost/projects/gobbledegook_backend/db.php">
         <h2 class="form-title">Sign into your account</h2>
         <div class="form-control">
-            <label for="username">Username</label>
+            <label for="username">{usernameLabel}</label>
             <input type="text" placeholder="username" name="username" id="username" bind:value={formData['username']}>
         </div>
         <div class="form-control">
-            <label for="password">Password</label>
+            <label for="password">{passwordLabel}</label>
             <input type="password" placeholder="password" name="password" id="password" bind:value={formData['password']}>
         </div>
         <Button btnSubmit={true} customClasses="btn btn__orange">Log in</Button>
