@@ -11,7 +11,10 @@
 
 {#if userLoggedIn}
   <Router>
-    <Route path="/" component={Home}/>
+    <!-- <Route path="/" component={Home}/> 1 line syntax -->
+    <Route path="/">
+      <Home />
+    </Route>
   </Router>
 {:else}
 <Router>

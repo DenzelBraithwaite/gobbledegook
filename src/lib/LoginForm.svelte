@@ -2,8 +2,8 @@
     import Button from '../lib/Button.svelte';
 
     let formData = {
-        username: 'testUserFromSvelte',
-        password: 'testPasswordFromSvelte',
+        username: 'svelteTestUID',
+        password: 'svelteTestPWD',
     }
 
     let response;
