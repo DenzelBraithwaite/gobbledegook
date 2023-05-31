@@ -1,11 +1,20 @@
 <script lang="ts">
-    import LoginForm from '../lib/LoginForm.svelte';
+  // Svelte Hooks
+  import { createEventDispatcher } from 'svelte';
   
+  // Custom components
+  import LoginForm from '../lib/LoginForm.svelte';
+  
+  const createEvent = createEventDispatcher();
+
+  function loginHandler(event) {
+    createEvent('onUserLogin', event.detail);
+  };
 </script>
   
   <main>
     <div class="login-container">
-        <LoginForm />
+        <LoginForm on:userLogin={loginHandler}/>
     </div>
   </main>
   

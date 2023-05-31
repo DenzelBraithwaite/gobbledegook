@@ -1,33 +1,48 @@
 <script lang="ts">
+    // Svelte hooks
+    import { createEventDispatcher } from 'svelte';
+
+    // Custom components
     import Button from '../lib/Button.svelte';
 
+    
+    const createEvent = createEventDispatcher();
     let formData = {
-        username: 'svelteTestUID',
-        password: 'svelteTestPWD',
+        username: 'dbraithwaite01',
+        password: '',
     }
-
-    let response;
-
-    let usernameLabel = 'Username';
-    let passwordLabel = 'Password';
-    let testFormData = {};
-
+    
     const url = 'http://localhost/projects/gobbledegook_backend/api.php';
+    async function formHandler() {
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            })
 
-    function formHandler() {
-        fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(formData)
-        })
-        .then(res => res.json())
-        .then(data => {
-            response = data;
-            console.log(response);
-        })
-        .catch(error => console.log(error ));
+            const data = await response.json();
+            
+            // Sign user in if credentials match
+            if (data.userValid === true) {
+                console.log('ye they can come in...');
+                const user = data.username;
+                const userLoggedIn = true;
+                createEvent('userLogin', {
+                    username: user,
+                    userLogged: true
+                })
+
+                // window.location.href = '/home';
+            } else {
+                console.log("nahh... I don't really know em like that");
+            };
+        } catch (error) {
+            console.log(error);
+        };
+
     };
 
 </script>
@@ -36,11 +51,11 @@
     <form on:submit|preventDefault={formHandler} action="http://localhost/projects/gobbledegook_backend/db.php">
         <h2 class="form-title">Sign into your account</h2>
         <div class="form-control">
-            <label for="username">{usernameLabel}</label>
+            <label for="username">Username</label>
             <input type="text" placeholder="username" name="username" id="username" bind:value={formData['username']}>
         </div>
         <div class="form-control">
-            <label for="password">{passwordLabel}</label>
+            <label for="password">Password</label>
             <input type="password" placeholder="password" name="password" id="password" bind:value={formData['password']}>
         </div>
         <Button btnSubmit={true} customClasses="btn btn__orange">Log in</Button>

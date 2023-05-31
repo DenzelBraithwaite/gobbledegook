@@ -1,7 +1,6 @@
 <script lang="ts">
     // GobbledeGook card
     import GGCard from '../lib/Card.svelte';
-    import Api from '../lib/Api.svelte';
   
     // Other custom components
     import LoginForm from '../lib/LoginForm.svelte';
@@ -12,10 +11,8 @@
   </script>
   
   <main>
-    <LoginForm />
     <div class="container">
-      <!-- <GGCard /> -->
-      <Api />
+      <GGCard />
       <Link to='/'>click me to go home</Link>
     </div>
   </main>
