@@ -179,17 +179,17 @@
 
     .card-section {
         width: 70%;
-        padding: 0.5rem;
+        padding: 1.25rem;
         background-color: #5f3b2288;
 
         display: flex;
         justify-content: center;
         align-items: center;
+        gap: 1.5rem;
     }
 
     .card-section__ally {
         border-radius: 1rem 1rem 0 0;
-        padding: 1rem;
         position: absolute;
         bottom: 0;
         right: 1rem;
@@ -197,7 +197,6 @@
     
     .card-section__enemy {
         border-radius: 0 0 1rem 1rem;
-        padding: 1rem;
         position: absolute;
         top: 0;
         left: 1rem;

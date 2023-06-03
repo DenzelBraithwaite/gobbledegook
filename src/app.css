@@ -16,7 +16,17 @@
   -webkit-text-size-adjust: 100%;
 }
 
-html, body {
+html,
+body,
+div,
+span,
+h1,
+h2,
+h3,
+h4,
+h5,
+a,
+p {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
