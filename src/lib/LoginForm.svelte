@@ -10,7 +10,7 @@
     let formData = {
         username: 'dbraithwaite01',
         password: '',
-    }
+    };
     
     const url = 'http://localhost/projects/gobbledegook_backend/api.php';
     async function formHandler() {
@@ -27,11 +27,8 @@
             
             // Sign user in if credentials match
             if (data.userValid === true) {
-                console.log('ye they can come in...');
-                const user = data.username;
-                const userLoggedIn = true;
                 createEvent('userLogin', {
-                    username: user,
+                    username: data.username,
                     userLogged: true
                 })
 
@@ -58,7 +55,7 @@
             <label for="password">Password</label>
             <input type="password" placeholder="password" name="password" id="password" bind:value={formData['password']}>
         </div>
-        <Button btnSubmit={true} customClasses="btn btn__orange">Log in</Button>
+        <Button btnSubmit={true} customClasses="w-100 btn__orange">Log in</Button>
     </form>
 </div>
 

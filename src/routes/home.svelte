@@ -1,40 +1,22 @@
 <script lang="ts">
-    // GobbledeGook card
-    import GGCard from '../lib/Card.svelte';
-  
-    // Other custom components
-    import LoginForm from '../lib/LoginForm.svelte';
-  
+    // Plugins
     import {Link} from 'svelte-routing';
-    import Home from '../routes/home.svelte';
+        
+    // Other custom components
+    import Game from '../lib/Game.svelte';
+    import LoginForm from '../lib/LoginForm.svelte';
   
   </script>
   
   <main>
-    <div class="container">
-      <GGCard />
-      <Link to='/'>click me to go home</Link>
-    </div>
+      <Game />
   </main>
   
   <style>
     main {
-      padding-top: 5rem;
+      width: 100%;
+      height: 100%;
       position: relative;
-      background-image: url('/gg.png');
-      background-repeat: no-repeat;
-      background-size: cover;
-      background-position: center;
-    }
-    
-    .container {
-      padding-top: 1rem;
-      background-color: #633f1e;
-      width: 60%;
-      max-width: 1000px;
-      margin: 0 auto;
-      min-height: 100vh;
-      filter: blur(0px);
     }
   </style>
   

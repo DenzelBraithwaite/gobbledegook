@@ -4,7 +4,10 @@
   font-weight: 400;
 
   color: #444;
-  background-color: #f8f9fa;
+  background-image: url('/board-bg.webp');
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: top;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -17,5 +20,4 @@ html, body {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  /* overflow-x: hidden; */
 }

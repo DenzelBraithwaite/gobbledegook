@@ -12,8 +12,8 @@
   };
 </script>
   
-  <main>
-    <div class="login-container">
+<main>
+  <div class="login-container">
         <LoginForm on:userLogin={loginHandler}/>
     </div>
   </main>
