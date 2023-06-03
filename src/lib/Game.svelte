@@ -1,4 +1,4 @@
-<script lang="ts">
+<script>
     // Hooks
     import { onMount } from 'svelte';
 
@@ -6,37 +6,7 @@
     import Button from './Button.svelte';
     import GGCard from '../lib/Card.svelte';
 
-    class Game {
-        humanDeck: number;
-        humanHand: number;
-        humanPoints: number;
-        kingsRemaining: number;
-        paladinsRemaining: number;
-        knightsRemaining: number;
-        soldiersRemaining: number;
-        king: Record<string, number>
-        paladin: Record<string, number | number[]>
-        knight: Record<string, number | number[]>
-        soldier: Record<string, number | number[]>
-
-        goblinDeck: number;
-        goblinHand: number;
-        goblinPoints: number;
-        giantsRemaining: number;
-        trollsRemaining: number;
-        shamansRemaining: number;
-        goblinsRemaining: number;
-        giant: Record<string, number | number[]>
-        troll: Record<string, number | number[]>
-        shaman: Record<string, number | number[]>
-        goblin: Record<string, number | number[]>
-    
-        gameInProg: boolean;
-        roundInProg: boolean;
-        p1Cards: Record<string, unknown>;
-        p2Cards: Record<string, unknown>;
-        
-        
+    class Game {    
         constructor() {
             // Humans
             this.humanDeck = 50;
@@ -51,52 +21,61 @@
                 health: 60,
                 damage: 5,
                 points: 100,
+                moved: false,
             };
             this.paladin = {
                 health: 15,
                 damage: [4, 5, 6],
                 points: 10,
+                moved: false,
             };
             this.knight = {
                 health: 8,
                 damage: [2, 3, 4],
                 points: 5,
+                moved: false,
             };
             this.soldier = {
                 health: 2,
                 damage: [1, 2],
                 points: 2,
+                moved: false,
             };
 
-
-
+            
             // Goblins
             this.goblinDeck = 50;
             this.goblinHand = 0;
             this.goblinPoints = 0;
+
             this.giantsRemaining = 3;
             this.trollsRemaining = 7;
             this.shamansRemaining = 15;
             this.goblinsRemaining = 25;
+
             this.giant = {
                 health: 35,
                 damage: [7, 8, 9, 10, 11, 12],
                 points: 30,
+                moved: false,
             };
             this.troll = {
                 health: 25,
                 damage: [5, 6, 7, 8, 9 ,10],
                 points: 15,
+                moved: false,
             };
             this.shaman = {
                 health: 6,
                 damage: [2, 3],
                 points: 4,
+                moved: false,
             };
             this.goblin = {
                 health: 1,
                 damage: [0, 1, 2],
                 points: 1,
+                moved: false,
             };
 
             this.gameInProg = false;
@@ -130,13 +109,21 @@
             this.goblinHand = 5;
         };
 
-
-
-
     };
 
     $: game = new Game();
-    
+
+    // Card props
+    const goblinImg = '/public/goblin-card-img.png';
+    const shamanImg = '/public/shaman-card-img.png';
+    const trollImg = '/public/troll-card-img.png';
+    const giantImg = '/public/giant-card-img.png';
+
+    const goblinDescription = "A lower ranked military unit known as the common goblin. Nothing special about this one, except maybe its breath.";
+    const trollDescription = "A middle rank beast with incredible offense and durability, even its intelligence is average amongst humans.";
+    const shamanDescription = "A goblin who's meddled in magic. They can cast strong spells so beware. They're known to be officers in the goblin army.";
+    const giantDescription = "The greatest force the goblins have at their disposal, 3 giants with a mysterious bond to the goblins.";
+
     function dealCards() {
         game.dealCards();
     }
@@ -147,18 +134,17 @@
     <Button on:click={dealCards} customClasses="w-50 btn__green">Start Game!</Button>
     <div class="game-board">
         <div class="card-section card-section__enemy">
-            <GGCard blurred={true} />
-            <GGCard blurred={true} />
-            <GGCard blurred={true} />
-            <GGCard blurred={true} />
-            <GGCard blurred={true} />
+            <GGCard dmg='0-1' points='0-1' hp='0-1' />
+            <GGCard dmg='0-1' points='0-1' hp='0-1' />
+            <GGCard dmg='0-1' points='0-1' hp='0-1' />
+            <GGCard dmg='0-1' points='0-1' hp='0-1' />
+            <GGCard dmg='0-1' points='0-1' hp='0-1' />
         </div>
         <div class="card-section card-section__ally">
-            <GGCard />
-            <GGCard />
-            <GGCard />
-            <GGCard />
-            <GGCard />
+            <GGCard img={goblinImg} description={goblinDescription} dmg='0-1' points='0-1' hp='0-1' />
+            <GGCard img={shamanImg} description={shamanDescription} dmg='0-1' points='0-1' hp='0-1' />
+            <GGCard img={trollImg} description={trollDescription} dmg='0-1' points='0-1' hp='0-1' />
+            <GGCard img={giantImg} description={giantDescription} dmg='0-1' points='0-1' hp='0-1' />
         </div>
     </div>
 </main>

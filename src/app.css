@@ -16,6 +16,11 @@
   -webkit-text-size-adjust: 100%;
 }
 
+:root::-webkit-scrollbar {
+  background: transparent;
+  width: 0;
+}
+
 html,
 body,
 div,

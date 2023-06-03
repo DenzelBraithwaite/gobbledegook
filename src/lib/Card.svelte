@@ -1,18 +1,24 @@
-<script lang="ts">
-  export let blurred: boolean = false;
+<script>
+  export let faceDown = false;
+  export let blurred = false;
+  export let img = '/public/card-bg.png';
+  export let description = 'Card description here...';
+  export let dmg;
+  export let points;
+  export let hp;
 </script>
 
-{#if blurred}
-<div class="card blur"></div>
+{#if faceDown}
+  <div class="card facedown"></div>
 {:else}
   <div class="card">
-    <img class="card-img" src="/public/goblin-card-img.png" alt="img of card">
+      <img class="card-img" src={img} alt="img of card">
     <div class="card-bottom-section">
-      <p class="description">Description here: Lorem ipsum dolor sit amet consectetur adipisicing elit. A, vero iure quo voluptatum eligendi minus qui et? Dolores, ipsa accusantium eaque recusandae veritatis omnis unde porro nisi explicabo non rem.</p>
+      <p class="description">{description}</p>
       <div class="stats-section">
-        <p class="stat dmg-stat">0-1</p>
-        <p class="stat point-stat">1</p>
-        <p class="stat hp-stat">1</p>
+        <p class="stat dmg-stat">{dmg}</p>
+        <p class="stat point-stat">{points}</p>
+        <p class="stat hp-stat">{hp}</p>
       </div>
     </div>
   </div>
@@ -20,12 +26,14 @@
 
 <style>
   .card {
+    cursor: pointer;
     position: relative;
-    width: 200px;
+    width: 185px;
     height: 250px;
-    background-color: #1b1b1b;
+    background: linear-gradient(to top left, #1b1b1b, #975734);
     border-radius: 0.25rem;
     box-shadow: 0 4px 12px #00000063;
+    transition: all 0.3s ease-out;
 
     display: flex;
     flex-direction: column;
@@ -33,9 +41,17 @@
     justify-content: space-evenly;
   }
 
+  .card:hover {
+    scale: 1.5;
+    z-index: 10;
+    box-shadow: 0 4px 12px #000000a8;
+  }
+
   .card-img {
     height: 55%;
+    width: 180px;
     border-radius: 0.25rem 0.25rem 0 0;
+    background-size: cover;
   }
 
   .card-bottom-section {
@@ -84,23 +100,31 @@
   }
 
   .dmg-stat {
-    background-color: red;
+    background: linear-gradient(to top left, #5a0000, #d31d1d);
   }
 
   .point-stat {
-    background-color: #333333;
+    background: linear-gradient(to top left, #333, #b3b3b3);
   }
 
   .hp-stat {
-    background-color: blue;
+    background: linear-gradient(to top left, #00095a, #2f1dd3);
   }
 
-  /* Utility classes */
-  .blur {
-    /* filter: blur(1.5px); */
+  .facedown {
     background: url('/public/card-bg.png');
     background-repeat: no-repeat;
     background-position: center;
     background-size: cover;
   }
+
+  /* Utility classes */
+  .blur {
+    filter: blur(1.5px);
+  }
+
+  .flip-180 {
+    transform: rotate(0.5turn);
+  }
+
 </style>
