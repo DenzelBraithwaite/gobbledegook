@@ -114,15 +114,23 @@
     $: game = new Game();
 
     // Card props
-    const goblinImg = '/public/goblin-card-img.png';
-    const shamanImg = '/public/shaman-card-img.png';
-    const trollImg = '/public/troll-card-img.png';
-    const giantImg = '/public/giant-card-img.png';
-
+    const goblinImg = '/public/goblin-img.png';
+    const shamanImg = '/public/shaman-img.png';
+    const trollImg = '/public/troll-img.png';
+    const giantImg = '/public/giant-img.png';
     const goblinDescription = "A lower ranked military unit known as the common goblin. Nothing special about this one, except maybe its breath.";
     const trollDescription = "A middle rank beast with incredible offense and durability, even its intelligence is average amongst humans.";
     const shamanDescription = "A goblin who's meddled in magic. They can cast strong spells so beware. They're known to be officers in the goblin army.";
     const giantDescription = "The greatest force the goblins have at their disposal, 3 giants with a mysterious bond to the goblins.";
+
+    const soldierImg = '/public/soldier-img.png';
+    const knightImg = '/public/knight-img.png';
+    const paladinImg = '/public/paladin-img.png';
+    const kingImg = '/public/king-img.png';
+    const soldierDescription = "A lower ranked military soldier, quite common and reliable.";
+    const knightDescription = "A middle rank axe wielding horseman with great mobility and defense.";
+    const paladinDescription = "A soldier who's dedicated his life to following a righteous path. An elite in the human army that instills fear in the eyes of many. Be careful, they're quite the formidable foe.";
+    const kingDescription = "An invaluable asset to the human army, their leader, the king! If he dies, the humans will lose. But be warned, the king is always well guarded and certainly not defenseless on his own.";
 
     function dealCards() {
         game.dealCards();
@@ -131,20 +139,22 @@
 </script>
 
 <main>
-    <Button on:click={dealCards} customClasses="w-50 btn__green">Start Game!</Button>
+    <Button on:click={dealCards} customClasses="w-50 btn__orange">Start Game!</Button>
     <div class="game-board">
+        <GGCard faceDown={true} bottomDeck={false}/>
         <div class="card-section card-section__enemy">
-            <GGCard dmg='0-1' points='0-1' hp='0-1' />
-            <GGCard dmg='0-1' points='0-1' hp='0-1' />
-            <GGCard dmg='0-1' points='0-1' hp='0-1' />
-            <GGCard dmg='0-1' points='0-1' hp='0-1' />
-            <GGCard dmg='0-1' points='0-1' hp='0-1' />
+            <GGCard title="Goblin" img={goblinImg} description={goblinDescription} dmg="0-2" points="1" hp="1" />
+            <GGCard title="Shaman" img={shamanImg} description={shamanDescription} dmg="2-3" points="4" hp="6" />
+            <GGCard title="Troll" img={trollImg} description={trollDescription} dmg="5-10" points="15" hp="25" />
+            <GGCard title="Giant" img={giantImg} description={giantDescription} dmg="7-12" points="30" hp="35" />
         </div>
+        
+        <GGCard faceDown={true} bottomDeck={true}/>
         <div class="card-section card-section__ally">
-            <GGCard img={goblinImg} description={goblinDescription} dmg='0-1' points='0-1' hp='0-1' />
-            <GGCard img={shamanImg} description={shamanDescription} dmg='0-1' points='0-1' hp='0-1' />
-            <GGCard img={trollImg} description={trollDescription} dmg='0-1' points='0-1' hp='0-1' />
-            <GGCard img={giantImg} description={giantDescription} dmg='0-1' points='0-1' hp='0-1' />
+            <GGCard title="Soldier" img={soldierImg} description={soldierDescription} dmg="0-2" points="1" hp="1" />
+            <GGCard title="Knight" img={knightImg} description={knightDescription} dmg="2-3" points="4" hp="6" />
+            <GGCard title="Paladin" img={paladinImg} description={paladinDescription} dmg="5-10" points="15" hp="25" />
+            <GGCard title="King" img={kingImg} description={kingDescription} dmg="7-12" points="30" hp="35" />
         </div>
     </div>
 </main>

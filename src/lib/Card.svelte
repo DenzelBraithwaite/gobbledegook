@@ -1,17 +1,25 @@
 <script>
   export let faceDown = false;
+  export let bottomDeck = true;
   export let blurred = false;
+
+  export let title = 'Title here...'
   export let img = '/public/card-bg.png';
   export let description = 'Card description here...';
-  export let dmg;
-  export let points;
-  export let hp;
+  export let dmg = '';
+  export let points = '';
+  export let hp = '';
 </script>
 
 {#if faceDown}
-  <div class="card facedown"></div>
+  {#if bottomDeck}
+    <div class="card facedown bottom-deck"></div>
+  {:else}
+    <div class="card facedown top-deck"></div>
+  {/if}
 {:else}
   <div class="card">
+    <p class="card-title">{title}</p>
       <img class="card-img" src={img} alt="img of card">
     <div class="card-bottom-section">
       <p class="description">{description}</p>
@@ -45,6 +53,16 @@
     scale: 1.5;
     z-index: 10;
     box-shadow: 0 4px 12px #000000a8;
+  }
+
+  .card-title {
+    color: rgb(165, 218, 183);
+    text-shadow: 0 2px 4px #000;
+    font-size: 1.25rem;
+
+    position: absolute;
+    top: 0.25rem;
+    left: 0.25rem;
   }
 
   .card-img {
@@ -89,7 +107,7 @@
   .stat {
     color: #fff;
     font-weight: bold;
-    font-size: 0.75rem;
+    font-size: 0.65rem;
     height: 1.5rem;
     width: 1.5rem;
     border-radius: 40%;
@@ -108,7 +126,7 @@
   }
 
   .hp-stat {
-    background: linear-gradient(to top left, #00095a, #2f1dd3);
+    background: linear-gradient(to top left, #155a00, #22c23d);
   }
 
   .facedown {
@@ -125,6 +143,18 @@
 
   .flip-180 {
     transform: rotate(0.5turn);
+  }
+
+  .bottom-deck {
+    position: absolute;
+    bottom: 2rem;
+    left: 2rem;
+  }
+
+  .top-deck {
+    position: absolute;
+    top: 2rem;
+    right: 2rem;
   }
 
 </style>
