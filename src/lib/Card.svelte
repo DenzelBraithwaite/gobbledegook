@@ -6,9 +6,9 @@
   export let title = 'Title here...'
   export let img = '/public/card-bg.png';
   export let description = 'Card description here...';
-  export let dmg = '';
-  export let points = '';
-  export let hp = '';
+  export let points = 0;
+  export let race;
+  export let trait = 'none';
 </script>
 
 {#if faceDown}
@@ -23,11 +23,9 @@
       <img class="card-img" src={img} alt="img of card">
     <div class="card-bottom-section">
       <p class="description">{description}</p>
-      <div class="stats-section">
-        <p class="stat dmg-stat">{dmg}</p>
-        <p class="stat point-stat">{points}</p>
-        <p class="stat hp-stat">{hp}</p>
-      </div>
+      <p>Race: {race}</p>
+      <p>Points: {points}</p>
+      <p>Special trait: {trait}</p>
     </div>
   </div>
 {/if}
@@ -56,7 +54,7 @@
   }
 
   .card-title {
-    color: rgb(165, 218, 183);
+    color: #a5dab7;
     text-shadow: 0 2px 4px #000;
     font-size: 1.25rem;
 
@@ -89,12 +87,6 @@
     width: 0;
   }
 
-  .stats-section {
-    display: flex;
-    justify-content: space-around;
-    align-items: flex-end;
-  }
-
   .description {
     width: 90%;
     margin: 0 auto;
@@ -102,31 +94,6 @@
     padding: 0.25rem;
     color: #ffe7d7;
     overflow-y: scroll;
-  }
-  
-  .stat {
-    color: #fff;
-    font-weight: bold;
-    font-size: 0.65rem;
-    height: 1.5rem;
-    width: 1.5rem;
-    border-radius: 40%;
-
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-
-  .dmg-stat {
-    background: linear-gradient(to top left, #5a0000, #d31d1d);
-  }
-
-  .point-stat {
-    background: linear-gradient(to top left, #333, #b3b3b3);
-  }
-
-  .hp-stat {
-    background: linear-gradient(to top left, #155a00, #22c23d);
   }
 
   .facedown {

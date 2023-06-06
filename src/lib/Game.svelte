@@ -5,114 +5,7 @@
     // Custom components
     import Button from './Button.svelte';
     import GGCard from '../lib/Card.svelte';
-
-    class Game {    
-        constructor() {
-            // Humans
-            this.humanDeck = 50;
-            this.humanHand = 0;
-            this.humanPoints = 0;
-            this.kingsRemaining = 1;
-            this.paladinsRemaining = 9;
-            this.knightsRemaining = 15;
-            this.soldiersRemaining = 25;
-            // Consider making a human class or card class for all of these instances
-            this.king = {
-                health: 60,
-                damage: 5,
-                points: 100,
-                moved: false,
-            };
-            this.paladin = {
-                health: 15,
-                damage: [4, 5, 6],
-                points: 10,
-                moved: false,
-            };
-            this.knight = {
-                health: 8,
-                damage: [2, 3, 4],
-                points: 5,
-                moved: false,
-            };
-            this.soldier = {
-                health: 2,
-                damage: [1, 2],
-                points: 2,
-                moved: false,
-            };
-
-            
-            // Goblins
-            this.goblinDeck = 50;
-            this.goblinHand = 0;
-            this.goblinPoints = 0;
-
-            this.giantsRemaining = 3;
-            this.trollsRemaining = 7;
-            this.shamansRemaining = 15;
-            this.goblinsRemaining = 25;
-
-            this.giant = {
-                health: 35,
-                damage: [7, 8, 9, 10, 11, 12],
-                points: 30,
-                moved: false,
-            };
-            this.troll = {
-                health: 25,
-                damage: [5, 6, 7, 8, 9 ,10],
-                points: 15,
-                moved: false,
-            };
-            this.shaman = {
-                health: 6,
-                damage: [2, 3],
-                points: 4,
-                moved: false,
-            };
-            this.goblin = {
-                health: 1,
-                damage: [0, 1, 2],
-                points: 1,
-                moved: false,
-            };
-
-            this.gameInProg = false;
-            this.roundInProg = false;
-            this.p1Cards = {};
-            this.p2Cards = {};
-        };
-        
-        // TODO: Method to start the game
-        startGame() {
-            this.gameInProg = true;
-            console.log(this.gameInProg);
-        };
-
-        // TODO: Method to end the game
-        endGame() {
-            this.gameInProg = false;
-        };
-
-        // TODO: Method to handle a round
-        startRound() {
-
-        };
-
-        // TODO: Method to deal cards
-        dealCards() {
-            this.humanDeck -= 5;
-            this.humanHand = 5;
-            
-            this.goblinDeck -= 5;
-            this.goblinHand = 5;
-        };
-
-    };
-
-    $: game = new Game();
-
+    
     // Card props
     const goblinImg = '/public/goblin-img.png';
     const shamanImg = '/public/shaman-img.png';
@@ -131,30 +24,206 @@
     const knightDescription = "A middle rank axe wielding horseman with great mobility and defense.";
     const paladinDescription = "A soldier who's dedicated his life to following a righteous path. An elite in the human army that instills fear in the eyes of many. Be careful, they're quite the formidable foe.";
     const kingDescription = "An invaluable asset to the human army, their leader, the king! If he dies, the humans will lose. But be warned, the king is always well guarded and certainly not defenseless on his own.";
+    
+    // Game logic
+    let p1Turn = true;
+    let p2Turn = false;
+    let p1Pts = 0;
+    let p2Pts = 0;
+    let p1RoundsWon = 0;
+    let p2RoundsWon = 0;
+    const p1Hand = [];
+    const p2Hand = [];
 
-    function dealCards() {
-        game.dealCards();
+    // The 'backups' are used to reset the game without having to redefine the decks
+    const humansBackup = [
+        'emperor',
+        'commander',
+        'commander',
+        'commander',
+        'captain',
+        'captain',
+        'captain',
+        'captain',
+        'knight',
+        'knight',
+        'knight',
+        'knight',
+        'knight',
+        'soldier',
+        'soldier',
+        'soldier',
+        'soldier',
+        'soldier',
+        'soldier',
+        'soldier',
+        'soldier',
+        'soldier',
+        'soldier',
+    ];
+    const humans = [...humansBackup];
+
+    const goblinsBackup = [
+        'goblin lord',
+        'goblin champion',
+        'goblin champion',
+        'goblin champion',
+        'shaman',
+        'shaman',
+        'shaman',
+        'shaman',
+        'hobgoblin',
+        'hobgoblin',
+        'hobgoblin',
+        'hobgoblin',
+        'hobgoblin',
+        'bokoblin',
+        'bokoblin',
+        'bokoblin',
+        'bokoblin',
+        'bokoblin',
+        'bokoblin',
+        'bokoblin',
+        'bokoblin',
+        'bokoblin',
+        'bokoblin',
+    ];
+    const goblins = [...goblinsBackup];
+
+    const elvesBackup = [
+        'elf king',
+        'dark elf',
+        'dark elf',
+        'dark elf',
+        'high elf',
+        'high elf',
+        'high elf',
+        'high elf',
+        'wood elf',
+        'wood elf',
+        'wood elf',
+        'wood elf',
+        'wood elf',
+        'half elf',
+        'half elf',
+        'half elf',
+        'half elf',
+        'half elf',
+        'half elf',
+        'half elf',
+        'half elf',
+        'half elf',
+        'half elf',
+    ];
+    const elves = [...elvesBackup];
+
+    const dwarvesBackup = [
+        'longbeard leader',
+        'dwarf warrior',
+        'dwarf warrior',
+        'dwarf warrior',
+        'axe thrower',
+        'axe thrower',
+        'axe thrower',
+        'axe thrower',
+        'blacksmith',
+        'blacksmith',
+        'blacksmith',
+        'blacksmith',
+        'blacksmith',
+        'miner',
+        'miner',
+        'miner',
+        'miner',
+        'miner',
+        'miner',
+        'miner',
+        'miner',
+        'miner',
+        'miner',
+    ];
+    const dwarves = [...dwarvesBackup];
+
+    const fullDeck = {
+    humans: [...humans],
+    goblins: [...goblins],
+    elves: [...elves],
+    dwarves: [...dwarves],
+    };
+
+    const deckTypes = Object.keys(fullDeck);
+
+    // Controller logic for game
+    function changeTurns() {
+        console.log(p1Turn);
+        console.log(p2Turn);
+        p1Turn = !p1Turn;
+        p2Turn = !p2Turn;
+        console.log(p1Turn);
+        console.log(p2Turn);
+    }
+
+    // TODO: finish accounting for edge cases, such as empty deck
+    function dealCards(playerHand) {
+        // Clear players hands before drawing cards, keeps reference to array without reassigning.
+        playerHand.length = 0;
+
+        for(let counter = 1; counter <= 5; counter++) {
+            // Grab random deck 
+            let randomNum = Math.floor(Math.random() * deckTypes.length);
+            const currentDeck = deckTypes[randomNum];
+
+            // TODO: What if deck runs out? Deck length 0, remove from deckTypes array ?
+
+
+            // Grab random card from that deck
+            randomNum = Math.floor(Math.random() * fullDeck[currentDeck].length);
+            const cardDrawn = fullDeck[currentDeck][randomNum];
+
+            // TODO: Remove card from deck
+            const removedCard = fullDeck[currentDeck].find(card => card === cardDrawn);
+            const removedCardIndex = fullDeck[currentDeck].indexOf(removedCard);
+            fullDeck[currentDeck].splice(removedCardIndex, 1);
+            console.log(`Card removed==>${removedCard}, total cards left in ${currentDeck} deck: ${fullDeck[currentDeck].length}`);
+
+            console.log(`Test Card Index:${removedCardIndex}`);
+
+            // Add to player's hand
+            playerHand.push(cardDrawn);
+        }
+    }
+
+    function startGame() {
+        console.log('game will begin shortly, now drawing cards...');
+        dealCards(p1Hand);
+        dealCards(p2Hand);
+        // console.log(p1Hand);
+        // console.log(p2Hand);
+    }
+
+    function endGame() {
+
     }
 
 </script>
 
 <main>
-    <Button on:click={dealCards} customClasses="w-50 btn__orange">Start Game!</Button>
+    <Button on:click={startGame} customClasses="w-50 btn__orange">Start Game!</Button>
     <div class="game-board">
         <GGCard faceDown={true} bottomDeck={false}/>
         <div class="card-section card-section__enemy">
-            <GGCard title="Goblin" img={goblinImg} description={goblinDescription} dmg="0-2" points="1" hp="1" />
-            <GGCard title="Shaman" img={shamanImg} description={shamanDescription} dmg="2-3" points="4" hp="6" />
-            <GGCard title="Troll" img={trollImg} description={trollDescription} dmg="5-10" points="15" hp="25" />
-            <GGCard title="Giant" img={giantImg} description={giantDescription} dmg="7-12" points="30" hp="35" />
+            <GGCard title="Goblin" img={goblinImg} description={goblinDescription} race="goblin" points="1" />
+            <GGCard title="Shaman" img={shamanImg} description={shamanDescription} race="goblin" points="4" />
+            <GGCard title="Troll" img={trollImg} description={trollDescription} race="goblin" points="15" />
+            <GGCard title="Giant" img={giantImg} description={giantDescription} race="goblin" points="30" />
         </div>
         
         <GGCard faceDown={true} bottomDeck={true}/>
         <div class="card-section card-section__ally">
-            <GGCard title="Soldier" img={soldierImg} description={soldierDescription} dmg="0-2" points="1" hp="1" />
-            <GGCard title="Knight" img={knightImg} description={knightDescription} dmg="2-3" points="4" hp="6" />
-            <GGCard title="Paladin" img={paladinImg} description={paladinDescription} dmg="5-10" points="15" hp="25" />
-            <GGCard title="King" img={kingImg} description={kingDescription} dmg="7-12" points="30" hp="35" />
+            <GGCard title="Soldier" img={soldierImg} description={soldierDescription} race="human" points="1" />
+            <GGCard title="Knight" img={knightImg} description={knightDescription} race="human" points="4" />
+            <GGCard title="Paladin" img={paladinImg} description={paladinDescription} race="human" points="15" />
+            <GGCard title="King" img={kingImg} description={kingDescription} race="human" points="30" />
         </div>
     </div>
 </main>
