@@ -126,11 +126,11 @@
         'axe thrower',
         'axe thrower',
         'axe thrower',
-        'blacksmith',
-        'blacksmith',
-        'blacksmith',
-        'blacksmith',
-        'blacksmith',
+        'hobbit',
+        'hobbit',
+        'hobbit',
+        'hobbit',
+        'hobbit',
         'miner',
         'miner',
         'miner',
@@ -154,16 +154,30 @@
     const deckTypes = Object.keys(fullDeck);
 
     // Controller logic for game
-    function changeTurns() {
-        console.log(p1Turn);
-        console.log(p2Turn);
-        p1Turn = !p1Turn;
-        p2Turn = !p2Turn;
-        console.log(p1Turn);
-        console.log(p2Turn);
+    function showDecks() {
+        console.log(`Cards remaining per deck:\n
+                    Humans: ${fullDeck['humans'].length}\n
+                    Goblins: ${fullDeck['goblins'].length}\n
+                    Elves: ${fullDeck['elves'].length}\n
+                    Dwarves: ${fullDeck['dwarves'].length}\n`);
     }
 
-    // TODO: finish accounting for edge cases, such as empty deck
+    function showHand(playerHand) {
+        console.log(`Your hand: ${playerHand}`);
+    }
+
+    function discard(playerHand) {
+        const card = prompt("which card would you like to remove?");
+        const index = playerHand.indexOf(card);
+        playerHand.splice(index, 1)
+        showHand(playerHand);
+    };
+
+    function changeTurns() {
+        p1Turn = !p1Turn;
+        p2Turn = !p2Turn;
+    }
+
     function dealCards(playerHand) {
         // Clear players hands before drawing cards, keeps reference to array without reassigning.
         playerHand.length = 0;
@@ -171,34 +185,92 @@
         for(let counter = 1; counter <= 5; counter++) {
             // Grab random deck 
             let randomNum = Math.floor(Math.random() * deckTypes.length);
-            const currentDeck = deckTypes[randomNum];
+            let currentDeck = deckTypes[randomNum];
+
+            // When the last card is drawn, currentDeck becomes undefined. This will catch that
+            if (deckTypes.length === 0 && currentDeck === undefined) {
+                playerHand.length = 0;
+                console.log('oh sorry! there are no more cards, we will skip to see who wins now');
+                return;
+            };
 
             // TODO: What if deck runs out? Deck length 0, remove from deckTypes array ?
-
+            if (fullDeck[currentDeck].length <= 1) {
+                // Remove deck from main deck
+                const index = deckTypes.indexOf(currentDeck);
+                deckTypes.splice(index, 1);
+            }
 
             // Grab random card from that deck
             randomNum = Math.floor(Math.random() * fullDeck[currentDeck].length);
             const cardDrawn = fullDeck[currentDeck][randomNum];
 
             // TODO: Remove card from deck
-            const removedCard = fullDeck[currentDeck].find(card => card === cardDrawn);
-            const removedCardIndex = fullDeck[currentDeck].indexOf(removedCard);
+            // const removedCard = fullDeck[currentDeck].find(card => card === cardDrawn);
+            const removedCardIndex = fullDeck[currentDeck].indexOf(cardDrawn);
             fullDeck[currentDeck].splice(removedCardIndex, 1);
-            console.log(`Card removed==>${removedCard}, total cards left in ${currentDeck} deck: ${fullDeck[currentDeck].length}`);
-
-            console.log(`Test Card Index:${removedCardIndex}`);
 
             // Add to player's hand
             playerHand.push(cardDrawn);
         }
     }
 
+    function drawCard(playerHand) {
+        // Grab random deck 
+        let randomNum = Math.floor(Math.random() * deckTypes.length);
+        let currentDeck = deckTypes[randomNum];
+
+        // When the last card is drawn, currentDeck becomes undefined. This will catch that
+        if (deckTypes.length === 0 && currentDeck === undefined) {
+            playerHand.length = 0;
+            console.log('oh sorry! there are no more cards, we will skip to see who wins now');
+            return;
+        };
+
+        // When a smaller race deck runs out, it will be removed here.
+        if (fullDeck[currentDeck].length <= 1) {
+            // Remove deck from main deck
+            const index = deckTypes.indexOf(currentDeck);
+            deckTypes.splice(index, 1);
+        }
+
+        // Grab random card from that deck
+        randomNum = Math.floor(Math.random() * fullDeck[currentDeck].length);
+        const cardDrawn = fullDeck[currentDeck][randomNum];
+
+        // TODO: Remove card from deck
+        // const removedCard = fullDeck[currentDeck].find(card => card === cardDrawn);
+        const removedCardIndex = fullDeck[currentDeck].indexOf(cardDrawn);
+        fullDeck[currentDeck].splice(removedCardIndex, 1);
+
+        // Add to player's hand
+        playerHand.push(cardDrawn);
+        console.log(`Your hand: ${playerHand}`);
+    }
+
+    function startRound(playerHand) {        
+        showDecks();
+        showHand(playerHand);
+        // This will be a button the player clicks, not a prompt
+        const gobbledegook = prompt("Would you like to declare gobbledegook?");
+        
+        // If player declares gobbledegook, their turn is skipped and the game ends on their next turn
+        if (gobbledegook === 'yes') {
+            console.log("gobble gobble");
+        } else {
+            console.log('drawing card...');
+            drawCard(playerHand);
+            discard(playerHand);
+        }
+
+        // If player draws card, they will temporarily have 6 cards and MUST choose 1 to discard.
+    }
+
     function startGame() {
         console.log('game will begin shortly, now drawing cards...');
         dealCards(p1Hand);
         dealCards(p2Hand);
-        // console.log(p1Hand);
-        // console.log(p2Hand);
+        startRound(p1Hand);
     }
 
     function endGame() {
