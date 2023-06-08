@@ -12,26 +12,33 @@
 
     // img paths
     const cardImgs = {
-        bokoblinImg: '/public/goblin-img.png',
-        hobgoblinImg: '/public/hobgoblin-img.png',
-        shamanImg: '/public/shaman-img.png',
-        trollImg: '/public/troll-img.png',
-        giantImg: '/public/giant-img.png',
-        scoutImg: '/public/scout-img.png',
-        soldierImg: '/public/soldier-img.png',
-        knightImg: '/public/knight-img.png',
-        commanderImg: '/public/commander-img.png',
-        emperorImg: '/public/emperor-img.gif',
-        halfElfImg: '/public/half-elf-img.png',
-        woodElfImg: '/public/wood-elf-img.png',
-        highElfImg: '/public/high-elf-img.png',
-        darkElfImg: '/public/dark-elf-img.png',
-        elfKingImg: '/public/elf-king-img.png',
-        minerImg: '/public/miner-img.png',
-        hobbitImg: '/public/hobbit-img.png',
-        axeThrowerImg: '/public/axe-thrower-img.png',
-        dwarfWarrior: '/public/dwarf-warrior-img.png',
-        longbeardLeaderImg: '/public/longbeard-leader-img.png'
+        bokoblinImg: '/public/goblin.png',
+        hobgoblinImg: '/public/hobgoblin.png',
+        shamanImg: '/public/shaman.png',
+        trollImg: '/public/troll.png',
+        giantImg: '/public/giant.png',
+        goblinLordImg: '/public/goblin-lord.gif',
+
+        villagerImg: '/public/villager.png',
+        scoutImg: '/public/scout.png',
+        soldierImg: '/public/soldier.png',
+        knightImg: '/public/knight.png',
+        commanderImg: '/public/commander.png',
+        emperorImg: '/public/emperor.gif',
+
+        halfElfImg: '/public/half-elf.png',
+        wildElfImg: '/public/wild-elf.png',
+        woodElfImg: '/public/wood-elf.png',
+        highElfImg: '/public/high-elf.png',
+        darkElfImg: '/public/dark-elf.png',
+        elfKingImg: '/public/elf-king.gif',
+
+        minerImg: '/public/miner.png',
+        blacksmithImg: '/public/blacksmith.png',
+        hobbitImg: '/public/hobbit.png',
+        axeThrowerImg: '/public/axe-thrower.png',
+        dwarfWarrior: '/public/dwarf-warrior.png',
+        longbeardLeaderImg: '/public/longbeard-leader.gif'
     };
 
     // Card special traits
@@ -41,17 +48,24 @@
         shamanTrait: 'none',
         trollTrait: 'none',
         giantTrait: 'none',
+        goblinLordTrait: 'none',
+
         scoutTrait: 'none',
+        villagerTrait: 'none',
         soldierTrait: 'none',
         knightTrait: 'none',
         commanderTrait: 'none',
         kingTrait: 'none',
+
         halfElfTrait: 'none',
+        wildElfTrait: 'none',
         woodElfTrait: 'none',
         highElfTrait: 'none',
         darkElfTrait: 'none',
         elfKingTrait: 'none',
+
         minerTrait: 'none',
+        blacksmithTrait: 'none',
         hobbitTrait: 'none',
         axeThrowerTrait: 'none',
         dwarfWarrior: 'none',
@@ -87,22 +101,27 @@
         'scout',
         'scout',
         'scout',
-        'scout',
-        'scout',
-        'scout',
-        'scout',
-        'scout',
+        'villager',
+        'villager',
+        'villager',
+        'villager',
+        'villager'
     ];
 
     const goblins = [
         'goblin lord',
-        'goblin champion',
-        'goblin champion',
-        'goblin champion',
+        'giant',
+        'giant',
+        'giant',
+        'troll',
+        'troll',
+        'troll',
+        'troll',
         'shaman',
         'shaman',
         'shaman',
         'shaman',
+        'shaman',
         'hobgoblin',
         'hobgoblin',
         'hobgoblin',
@@ -112,12 +131,7 @@
         'bokoblin',
         'bokoblin',
         'bokoblin',
-        'bokoblin',
-        'bokoblin',
-        'bokoblin',
-        'bokoblin',
-        'bokoblin',
-        'bokoblin',
+        'bokoblin'
     ];
 
     const elves = [
@@ -134,16 +148,16 @@
         'wood elf',
         'wood elf',
         'wood elf',
+        'wild elf',
+        'wild elf',
+        'wild elf',
+        'wild elf',
+        'wild elf',
         'half elf',
         'half elf',
         'half elf',
         'half elf',
-        'half elf',
-        'half elf',
-        'half elf',
-        'half elf',
-        'half elf',
-        'half elf',
+        'half elf'
     ];
 
     const dwarves = [
@@ -160,16 +174,16 @@
         'hobbit',
         'hobbit',
         'hobbit',
+        'blacksmith',
+        'blacksmith',
+        'blacksmith',
+        'blacksmith',
+        'blacksmith',
         'miner',
         'miner',
         'miner',
         'miner',
-        'miner',
-        'miner',
-        'miner',
-        'miner',
-        'miner',
-        'miner',
+        'miner'
     ];
 
     const fullDeck = {
@@ -327,18 +341,18 @@
         <p class="turn-text">{p1Turn ? "Player 1" : "Player 2"}<span>'s turn</span></p>
         <div class="card-section card-section__enemy blur">
             <p class="p1-name">Player 2</p>
-            <GGCard blur={p2Blur} title="Goblin" img={cardImgs['bokoblinImg']} trait={cardTraits['goblinTrait']} race="goblin" points={1} />
-            <GGCard blur={p2Blur} title="Shaman" img={cardImgs['shamanImg']} trait={cardTraits['shamanTrait']} race="goblin-rare" points={4} />
-            <GGCard blur={p2Blur} title="Troll" img={cardImgs['trollImg']} trait={cardTraits['trollTrait']} race="elf-rare" points={15} />
-            <GGCard blur={p2Blur} title="Giant" img={cardImgs['giantImg']} trait={cardTraits['giantTrait']} race="dwarf-rare" points={30} />
+            <GGCard blur={p2Blur} title="Bokoblin" img={cardImgs['bokoblinImg']} trait={cardTraits['bokoblinTrait']} race="goblin" points={1} />
+            <GGCard blur={p2Blur} title="Goblin Lord" img={cardImgs['goblinLordImg']} trait={cardTraits['goblinLordTrait']} race="goblin-rare" points={4} />
+            <GGCard blur={p2Blur} title="Villager" img={cardImgs['villagerImg']} trait={cardTraits['villagerTrait']} race="human" points={15} />
+            <GGCard blur={p2Blur} title="Emperor" img={cardImgs['emperorImg']} trait={cardTraits['emperorTrait']} race="human-rare" points={30} />
         </div>
         
         <div class="card-section card-section__ally">
             <p class="p2-name">Player 1</p>
-            <GGCard blur={p1Blur} title="Soldier" img={cardImgs['soldierImg']} trait={cardTraits['soldierTrait']} race="human" points={1} />
-            <GGCard blur={p1Blur} title="Knight" img={cardImgs['knightImg']} trait={cardTraits['knightTrait']} race="human" points={4} />
-            <GGCard blur={p1Blur} title="Scout" img={cardImgs['scoutImg']} trait={cardTraits['scoutTrait']} race="human" points={15} />
-            <GGCard blur={p1Blur} title="Emperor" img={cardImgs['emperorImg']} trait={cardTraits['emperorTrait']} race="human-rare" points={30} />
+            <GGCard blur={p1Blur} title="Half Elf" img={cardImgs['halfElfImg']} trait={cardTraits['halfElfTrait']} race="elf" points={1} />
+            <GGCard blur={p1Blur} title="Elf King" img={cardImgs['elfKingImg']} trait={cardTraits['elfKingTrait']} race="elf-rare" points={4} />
+            <GGCard blur={p1Blur} title="Miner" img={cardImgs['minerImg']} trait={cardTraits['minderTrait']} race="dwarf" points={15} />
+            <GGCard blur={p1Blur} title="Longbeard Leader" img={cardImgs['longbearLeaderImg']} trait={cardTraits['longbeardLeaderTrait']} race="dwarf-rare" points={30} />
         </div>
     </div>
 </main>
