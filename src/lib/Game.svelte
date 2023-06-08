@@ -7,23 +7,56 @@
     import GGCard from '../lib/Card.svelte';
     
     // Card props
-    const goblinImg = '/public/goblin-img.png';
-    const shamanImg = '/public/shaman-img.png';
-    const trollImg = '/public/troll-img.png';
-    const giantImg = '/public/giant-img.png';
-    const goblinDescription = "A lower ranked military unit known as the common goblin. Nothing special about this one, except maybe its breath.";
-    const trollDescription = "A middle rank beast with incredible offense and durability, even its intelligence is average amongst humans.";
-    const shamanDescription = "A goblin who's meddled in magic. They can cast strong spells so beware. They're known to be officers in the goblin army.";
-    const giantDescription = "The greatest force the goblins have at their disposal, 3 giants with a mysterious bond to the goblins.";
+    let p1Blur = false;
+    let p2Blur = false;
 
-    const soldierImg = '/public/soldier-img.png';
-    const knightImg = '/public/knight-img.png';
-    const paladinImg = '/public/paladin-img.png';
-    const kingImg = '/public/king-img.png';
-    const soldierDescription = "A lower ranked military soldier, quite common and reliable.";
-    const knightDescription = "A middle rank axe wielding horseman with great mobility and defense.";
-    const paladinDescription = "A soldier who's dedicated his life to following a righteous path. An elite in the human army that instills fear in the eyes of many. Be careful, they're quite the formidable foe.";
-    const kingDescription = "An invaluable asset to the human army, their leader, the king! If he dies, the humans will lose. But be warned, the king is always well guarded and certainly not defenseless on his own.";
+    // img paths
+    const cardImgs = {
+        bokoblinImg: '/public/goblin-img.png',
+        hobgoblinImg: '/public/hobgoblin-img.png',
+        shamanImg: '/public/shaman-img.png',
+        trollImg: '/public/troll-img.png',
+        giantImg: '/public/giant-img.png',
+        scoutImg: '/public/scout-img.png',
+        soldierImg: '/public/soldier-img.png',
+        knightImg: '/public/knight-img.png',
+        commanderImg: '/public/commander-img.png',
+        emperorImg: '/public/emperor-img.gif',
+        halfElfImg: '/public/half-elf-img.png',
+        woodElfImg: '/public/wood-elf-img.png',
+        highElfImg: '/public/high-elf-img.png',
+        darkElfImg: '/public/dark-elf-img.png',
+        elfKingImg: '/public/elf-king-img.png',
+        minerImg: '/public/miner-img.png',
+        hobbitImg: '/public/hobbit-img.png',
+        axeThrowerImg: '/public/axe-thrower-img.png',
+        dwarfWarrior: '/public/dwarf-warrior-img.png',
+        longbeardLeaderImg: '/public/longbeard-leader-img.png'
+    };
+
+    // Card special traits
+    const cardTraits = {
+        bokoblinTrait: 'none',
+        hobgoblinTrait: 'none',
+        shamanTrait: 'none',
+        trollTrait: 'none',
+        giantTrait: 'none',
+        scoutTrait: 'none',
+        soldierTrait: 'none',
+        knightTrait: 'none',
+        commanderTrait: 'none',
+        kingTrait: 'none',
+        halfElfTrait: 'none',
+        woodElfTrait: 'none',
+        highElfTrait: 'none',
+        darkElfTrait: 'none',
+        elfKingTrait: 'none',
+        minerTrait: 'none',
+        hobbitTrait: 'none',
+        axeThrowerTrait: 'none',
+        dwarfWarrior: 'none',
+        longbeardLeaderTrait: 'none'
+    };
     
     // Game logic
     let p1Turn = true;
@@ -35,17 +68,11 @@
     const p1Hand = [];
     const p2Hand = [];
 
-    // The 'backups' are used to reset the game without having to redefine the decks
-    const humansBackup = [
+    const humans = [
         'emperor',
         'commander',
         'commander',
         'commander',
-        'captain',
-        'captain',
-        'captain',
-        'captain',
-        'knight',
         'knight',
         'knight',
         'knight',
@@ -55,15 +82,19 @@
         'soldier',
         'soldier',
         'soldier',
-        'soldier',
-        'soldier',
-        'soldier',
-        'soldier',
-        'soldier',
+        'scout',
+        'scout',
+        'scout',
+        'scout',
+        'scout',
+        'scout',
+        'scout',
+        'scout',
+        'scout',
+        'scout',
     ];
-    const humans = [...humansBackup];
 
-    const goblinsBackup = [
+    const goblins = [
         'goblin lord',
         'goblin champion',
         'goblin champion',
@@ -88,9 +119,8 @@
         'bokoblin',
         'bokoblin',
     ];
-    const goblins = [...goblinsBackup];
 
-    const elvesBackup = [
+    const elves = [
         'elf king',
         'dark elf',
         'dark elf',
@@ -115,9 +145,8 @@
         'half elf',
         'half elf',
     ];
-    const elves = [...elvesBackup];
 
-    const dwarvesBackup = [
+    const dwarves = [
         'longbeard leader',
         'dwarf warrior',
         'dwarf warrior',
@@ -142,7 +171,6 @@
         'miner',
         'miner',
     ];
-    const dwarves = [...dwarvesBackup];
 
     const fullDeck = {
     humans: [...humans],
@@ -154,12 +182,21 @@
     const deckTypes = Object.keys(fullDeck);
 
     // Controller logic for game
-    function showDecks() {
-        console.log(`Cards remaining per deck:\n
-                    Humans: ${fullDeck['humans'].length}\n
-                    Goblins: ${fullDeck['goblins'].length}\n
-                    Elves: ${fullDeck['elves'].length}\n
-                    Dwarves: ${fullDeck['dwarves'].length}\n`);
+    function showDecks(allDecks = false) {
+        const humanCardsLeft = fullDeck['humans'].length || 0;
+        const goblinCardsLeft = fullDeck['goblins'].length || 0;
+        const elfCardsLeft = fullDeck['elves'].length || 0;
+        const dwarfCardsLeft = fullDeck['dwarves'].length || 0;
+        if (allDecks) {
+            console.log(`Cards remaining per deck:\n
+            Humans: ${humanCardsLeft}\n
+            Goblins: ${goblinCardsLeft}\n
+            Elves: ${elfCardsLeft}\n
+            Dwarves: ${dwarfCardsLeft}\n`);
+        } else {
+            const cardsLeft = humanCardsLeft + goblinCardsLeft + elfCardsLeft + dwarfCardsLeft;
+            console.log(`Cards remaining in deck: ${cardsLeft}`);
+        }
     }
 
     function showHand(playerHand) {
@@ -249,7 +286,6 @@
     }
 
     function startRound(playerHand) {        
-        showDecks();
         showHand(playerHand);
         // This will be a button the player clicks, not a prompt
         const gobbledegook = prompt("Would you like to declare gobbledegook?");
@@ -271,31 +307,38 @@
         dealCards(p1Hand);
         dealCards(p2Hand);
         startRound(p1Hand);
+        showDecks();
     }
 
     function endGame() {
-
+        
     }
 
 </script>
 
 <main>
-    <Button on:click={startGame} customClasses="w-50 btn__orange">Start Game!</Button>
+    <Button on:click={startGame} customClasses="btn__green w-25">Start game</Button>
+    <div class="game-buttons">
+        <GGCard on:click={() => {startRound(p1Hand)}} faceDown={true} />
+            <Button on:click={changeTurns} gobbledegook={true} />
+    </div>
+
     <div class="game-board">
-        <GGCard faceDown={true} bottomDeck={false}/>
-        <div class="card-section card-section__enemy">
-            <GGCard title="Goblin" img={goblinImg} description={goblinDescription} race="goblin" points="1" />
-            <GGCard title="Shaman" img={shamanImg} description={shamanDescription} race="goblin" points="4" />
-            <GGCard title="Troll" img={trollImg} description={trollDescription} race="goblin" points="15" />
-            <GGCard title="Giant" img={giantImg} description={giantDescription} race="goblin" points="30" />
+        <p class="turn-text">{p1Turn ? "Player 1" : "Player 2"}<span>'s turn</span></p>
+        <div class="card-section card-section__enemy blur">
+            <p class="p1-name">Player 2</p>
+            <GGCard blur={p2Blur} title="Goblin" img={cardImgs['bokoblinImg']} trait={cardTraits['goblinTrait']} race="goblin" points={1} />
+            <GGCard blur={p2Blur} title="Shaman" img={cardImgs['shamanImg']} trait={cardTraits['shamanTrait']} race="goblin-rare" points={4} />
+            <GGCard blur={p2Blur} title="Troll" img={cardImgs['trollImg']} trait={cardTraits['trollTrait']} race="elf-rare" points={15} />
+            <GGCard blur={p2Blur} title="Giant" img={cardImgs['giantImg']} trait={cardTraits['giantTrait']} race="dwarf-rare" points={30} />
         </div>
         
-        <GGCard faceDown={true} bottomDeck={true}/>
         <div class="card-section card-section__ally">
-            <GGCard title="Soldier" img={soldierImg} description={soldierDescription} race="human" points="1" />
-            <GGCard title="Knight" img={knightImg} description={knightDescription} race="human" points="4" />
-            <GGCard title="Paladin" img={paladinImg} description={paladinDescription} race="human" points="15" />
-            <GGCard title="King" img={kingImg} description={kingDescription} race="human" points="30" />
+            <p class="p2-name">Player 1</p>
+            <GGCard blur={p1Blur} title="Soldier" img={cardImgs['soldierImg']} trait={cardTraits['soldierTrait']} race="human" points={1} />
+            <GGCard blur={p1Blur} title="Knight" img={cardImgs['knightImg']} trait={cardTraits['knightTrait']} race="human" points={4} />
+            <GGCard blur={p1Blur} title="Scout" img={cardImgs['scoutImg']} trait={cardTraits['scoutTrait']} race="human" points={15} />
+            <GGCard blur={p1Blur} title="Emperor" img={cardImgs['emperorImg']} trait={cardTraits['emperorTrait']} race="human-rare" points={30} />
         </div>
     </div>
 </main>
@@ -304,7 +347,7 @@
 <style>
     .game-board {
         position: relative;
-        height: 850px;
+        height: 90dvh;
         width: 90%;
         padding: 0.5rem;
         max-width: 1500px;
@@ -312,12 +355,13 @@
         border-radius: 1rem;
         background-color: #200f009d;
         box-shadow: 0 4px 20px #000000;
+        border: 2px solid #e4c82e1f;
     }
 
     .card-section {
         width: 70%;
-        padding: 1.25rem;
-        background-color: #5f3b2288;
+        padding: 1rem;
+        background-color: #e4c82e1f;
 
         display: flex;
         justify-content: center;
@@ -337,5 +381,45 @@
         position: absolute;
         top: 0;
         left: 1rem;
+    }
+
+    .turn-text {
+        position: absolute;
+        right: 1rem;
+        font-size: 2rem;
+        color: #af4819;
+    }
+
+    .turn-text > span {
+        color: #CAB097;
+    }
+
+    .p1-name {
+        position: absolute;
+        font-size: 1.5rem;
+        color: #af4819;
+        top: 17.5rem;
+        left: 0;
+    }
+
+    .p2-name {
+        position: absolute;
+        font-size: 1.5rem;
+        color: #af4819;
+        bottom: 17.5rem;
+        right: 0;
+    }
+
+    .game-buttons {
+        z-index: 1;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-30%, -30%);
+
+        display: flex;
+        gap: 2rem;
+        justify-content: center;
+        align-items: center;
     }
 </style>

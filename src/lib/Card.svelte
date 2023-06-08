@@ -1,42 +1,46 @@
 <script>
   export let faceDown = false;
-  export let bottomDeck = true;
-  export let blurred = false;
+  export let blur = false;
 
+  // props
   export let title = 'Title here...'
   export let img = '/public/card-bg.png';
-  export let description = 'Card description here...';
   export let points = 0;
-  export let race;
+  export let race = 'none';
   export let trait = 'none';
 </script>
 
 {#if faceDown}
-  {#if bottomDeck}
-    <div class="card facedown bottom-deck"></div>
-  {:else}
-    <div class="card facedown top-deck"></div>
-  {/if}
-{:else}
-  <div class="card">
-    <p class="card-title">{title}</p>
-      <img class="card-img" src={img} alt="img of card">
+  <div on:click class="card facedown bottom-deck"></div>
+{:else if blur}
+  <div class="card bg-{race} blur">
+    <img class="card-img" src={img} alt="img of card">
     <div class="card-bottom-section">
-      <p class="description">{description}</p>
+      <p class="card-title">{title}</p>
       <p>Race: {race}</p>
       <p>Points: {points}</p>
       <p>Special trait: {trait}</p>
     </div>
   </div>
+{:else}
+<div class="card bg-{race}">
+  <img class="card-img" src={img} alt="img of card">
+  <div class="card-bottom-section">
+    <p class="card-title">{title}</p>
+    <p>Race: {race}</p>
+    <p>Points: {points}</p>
+    <p>Special trait: {trait}</p>
+  </div>
+</div>
 {/if}
 
 <style>
   .card {
+    z-index: 1;
     cursor: pointer;
     position: relative;
-    width: 185px;
-    height: 250px;
-    background: linear-gradient(to top left, #1b1b1b, #975734);
+    width: 11rem;
+    height: 15rem;
     border-radius: 0.25rem;
     box-shadow: 0 4px 12px #00000063;
     transition: all 0.3s ease-out;
@@ -49,23 +53,22 @@
 
   .card:hover {
     scale: 1.5;
-    z-index: 10;
+    z-index: 2;
     box-shadow: 0 4px 12px #000000a8;
   }
 
   .card-title {
-    color: #a5dab7;
-    text-shadow: 0 2px 4px #000;
+    text-shadow: 0 2px 8px #00000062;
     font-size: 1.25rem;
-
-    position: absolute;
-    top: 0.25rem;
-    left: 0.25rem;
+    font-weight: bold;
+    text-align: center;
+    background-color: #cf9c8e82;
+    border-radius: 0.5rem;
   }
 
   .card-img {
-    height: 55%;
-    width: 180px;
+    height: 150px;
+    width: 150px;
     border-radius: 0.25rem 0.25rem 0 0;
     background-size: cover;
   }
@@ -103,6 +106,11 @@
     background-size: cover;
   }
 
+  .facedown:hover {
+    scale: 1;
+    transform: translate(0, -0.4rem);
+  }
+
   /* Utility classes */
   .blur {
     filter: blur(1.5px);
@@ -112,16 +120,45 @@
     transform: rotate(0.5turn);
   }
 
-  .bottom-deck {
-    position: absolute;
-    bottom: 2rem;
-    left: 2rem;
+  /* bg color based on race */
+  .bg-human {
+    background: linear-gradient(to top left, #324277, #69c0ad 50%);
+    outline: 4px solid #324277a8;
   }
 
-  .top-deck {
-    position: absolute;
-    top: 2rem;
-    right: 2rem;
+  .bg-human-rare {
+    background: linear-gradient(to top left, #324277, #e0de69, #69c0ad);
+    outline: 4px solid #324277a8;
+  }
+
+  .bg-goblin {
+    background: linear-gradient(to top left, #327738, #78c069 50%);
+    outline: 4px solid #327738a8;
+  }
+
+  .bg-goblin-rare {
+    background: linear-gradient(to top left, #327738, #e0de69, #78c069);
+    outline: 4px solid #327738a8;
+  }
+
+  .bg-elf {
+    background: linear-gradient(to top left, #7e837f, #c7cbce 50%);
+    outline: 4px solid #7e837fa8;
+  }
+
+  .bg-elf-rare {
+    background: linear-gradient(to top left, #7e837f, #e0de69, #c7cbce);
+    outline: 4px solid #7e837fa8;
+  }
+
+  .bg-dwarf {
+    background: linear-gradient(to top left, #774b32, #c07369 50%);
+    outline: 4px solid #774b32a8;
+  }
+
+  .bg-dwarf-rare {
+    background: linear-gradient(to top left, #774b32, #e0de69, #c07369);
+    outline: 4px solid #774b32a8;
   }
 
 </style>
