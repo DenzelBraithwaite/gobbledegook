@@ -1,4 +1,7 @@
 <script>
+  // hooks
+  import { createEventDispatcher } from 'svelte';
+
   export let faceDown = false;
   export let blur = false;
 
@@ -8,12 +11,23 @@
   export let points = 0;
   export let race = 'none';
   export let trait = 'none';
+
+  const createEvent = createEventDispatcher();
+
+  function cardClickHandler(info) {    
+    createEvent('cardClick', {
+      'title': title,
+      'points': points,
+      'race': race,
+      'trait': trait
+    })
+  }
 </script>
 
 {#if faceDown}
-  <div on:click class="card facedown bottom-deck"></div>
+  <div on:click={cardClickHandler} class="card facedown bottom-deck"></div>
 {:else if blur}
-  <div class="card bg-{race} blur">
+  <div on:click={cardClickHandler} class="card bg-{race} blur">
     <img class="card-img" src={img} alt="img of card">
     <div class="card-bottom-section">
       <p class="card-title">{title}</p>
@@ -23,7 +37,7 @@
     </div>
   </div>
 {:else}
-<div class="card bg-{race}">
+<div on:click={cardClickHandler} class="card bg-{race}">
   <img class="card-img" src={img} alt="img of card">
   <div class="card-bottom-section">
     <p class="card-title">{title}</p>
