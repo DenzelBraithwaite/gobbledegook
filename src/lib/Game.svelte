@@ -5,40 +5,36 @@
     // Custom components
     import Button from './Button.svelte';
     import GGCard from '../lib/Card.svelte';
-    
-    // Card props
-    let p1Blur = false;
-    let p2Blur = false;
 
     // img paths
     const cardImgs = {
-        bokoblinImg: '/public/goblin.png',
-        hobgoblinImg: '/public/hobgoblin.png',
-        shamanImg: '/public/shaman.png',
-        trollImg: '/public/troll.png',
-        giantImg: '/public/giant.png',
-        goblinLordImg: '/public/goblin-lord.gif',
+        bokoblin: '/public/goblin.png',
+        hobgoblin: '/public/hobgoblin.png',
+        shaman: '/public/shaman.png',
+        troll: '/public/troll.png',
+        giant: '/public/giant.png',
+        goblinLord: '/public/goblin-lord.gif',
 
-        villagerImg: '/public/villager.png',
-        scoutImg: '/public/scout.png',
-        soldierImg: '/public/soldier.png',
-        knightImg: '/public/knight.png',
-        commanderImg: '/public/commander.png',
-        emperorImg: '/public/emperor.gif',
+        villager: '/public/villager.png',
+        scout: '/public/scout.png',
+        soldier: '/public/soldier.png',
+        knight: '/public/knight.png',
+        commander: '/public/commander.png',
+        emperor: '/public/emperor.gif',
 
-        halfElfImg: '/public/half-elf.png',
-        wildElfImg: '/public/wild-elf.png',
-        woodElfImg: '/public/wood-elf.png',
-        highElfImg: '/public/high-elf.png',
-        darkElfImg: '/public/dark-elf.png',
-        elfKingImg: '/public/elf-king.gif',
+        halfElf: '/public/half-elf.png',
+        wildElf: '/public/wild-elf.png',
+        woodElf: '/public/wood-elf.png',
+        highElf: '/public/high-elf.png',
+        darkElf: '/public/dark-elf.png',
+        elfKing: '/public/elf-king.gif',
 
-        minerImg: '/public/miner.png',
-        blacksmithImg: '/public/blacksmith.png',
-        hobbitImg: '/public/hobbit.png',
-        axeThrowerImg: '/public/axe-thrower.png',
+        miner: '/public/miner.png',
+        blacksmith: '/public/blacksmith.png',
+        hobbit: '/public/hobbit.png',
+        axeThrower: '/public/axe-thrower.png',
         dwarfWarrior: '/public/dwarf-warrior.png',
-        longbeardLeaderImg: '/public/longbeard-leader.gif'
+        longbeardLeader: '/public/longbeard-leader.gif'
     };
 
     // Card special traits
@@ -71,16 +67,6 @@
         dwarfWarrior: 'none',
         longbeardLeaderTrait: 'none'
     };
-    
-    // Game logic
-    let p1Turn = true;
-    let p2Turn = false;
-    let p1Pts = 0;
-    let p2Pts = 0;
-    let p1RoundsWon = 0;
-    let p2RoundsWon = 0;
-    const p1Hand = [];
-    const p2Hand = [];
 
     const humans = [
         'emperor',
@@ -184,7 +170,21 @@
         'miner',
         'miner',
         'miner'
-    ];
+    ];    
+    
+    // Card props
+    let p1Blur = false;
+    let p2Blur = false;
+
+    // Game logic
+    let p1Turn = true;
+    let p2Turn = false;
+    let p1Pts = 0;
+    let p2Pts = 0;
+    let p1RoundsWon = 0;
+    let p2RoundsWon = 0;
+    const p1Hand = [];
+    const p2Hand = [];
 
     const fullDeck = {
     humans: [...humans],
@@ -341,18 +341,34 @@
         <p class="turn-text">{p1Turn ? "Player 1" : "Player 2"}<span>'s turn</span></p>
         <div class="card-section card-section__enemy blur">
             <p class="p1-name">Player 2</p>
-            <GGCard blur={p2Blur} title="Bokoblin" img={cardImgs['bokoblinImg']} trait={cardTraits['bokoblinTrait']} race="goblin" points={1} />
-            <GGCard blur={p2Blur} title="Goblin Lord" img={cardImgs['goblinLordImg']} trait={cardTraits['goblinLordTrait']} race="goblin-rare" points={4} />
-            <GGCard blur={p2Blur} title="Villager" img={cardImgs['villagerImg']} trait={cardTraits['villagerTrait']} race="human" points={15} />
-            <GGCard blur={p2Blur} title="Emperor" img={cardImgs['emperorImg']} trait={cardTraits['emperorTrait']} race="human-rare" points={30} />
+            <GGCard blur={p2Blur} title="Bokoblin" img={cardImgs['bokoblin']} trait={cardTraits['bokoblinTrait']} race="goblin" points={1} />
+            <GGCard blur={p2Blur} title="Hobgoblin" img={cardImgs['hobgoblin']} trait={cardTraits['hobgoblinTrait']} race="goblin" points={1} />
+            <GGCard blur={p2Blur} title="Shaman" img={cardImgs['shaman']} trait={cardTraits['shamanTrait']} race="goblin" points={1} />
+            <GGCard blur={p2Blur} title="Troll" img={cardImgs['troll']} trait={cardTraits['trollTrait']} race="goblin" points={1} />
+            <GGCard blur={p2Blur} title="Giant" img={cardImgs['giant']} trait={cardTraits['giantTrait']} race="goblin" points={1} />
+            <GGCard blur={p2Blur} title="Goblin Lord" img={cardImgs['goblinLord']} trait={cardTraits['goblinLordTrait']} race="goblin-rare" points={4} />
+            <GGCard blur={p2Blur} title="Villager" img={cardImgs['villager']} trait={cardTraits['villagerTrait']} race="human" points={15} />
+            <GGCard blur={p2Blur} title="Scout" img={cardImgs['scout']} trait={cardTraits['scoutTrait']} race="human" points={15} />
+            <GGCard blur={p2Blur} title="Soldier" img={cardImgs['soldier']} trait={cardTraits['soldierTrait']} race="human" points={15} />
+            <GGCard blur={p2Blur} title="Knight" img={cardImgs['knight']} trait={cardTraits['knightTrait']} race="human" points={15} />
+            <GGCard blur={p2Blur} title="Commander" img={cardImgs['commander']} trait={cardTraits['commanderTrait']} race="human" points={15} />
+            <GGCard blur={p2Blur} title="Emperor" img={cardImgs['emperor']} trait={cardTraits['emperorTrait']} race="human-rare" points={30} />
         </div>
         
         <div class="card-section card-section__ally">
             <p class="p2-name">Player 1</p>
-            <GGCard blur={p1Blur} title="Half Elf" img={cardImgs['halfElfImg']} trait={cardTraits['halfElfTrait']} race="elf" points={1} />
-            <GGCard blur={p1Blur} title="Elf King" img={cardImgs['elfKingImg']} trait={cardTraits['elfKingTrait']} race="elf-rare" points={4} />
-            <GGCard blur={p1Blur} title="Miner" img={cardImgs['minerImg']} trait={cardTraits['minderTrait']} race="dwarf" points={15} />
-            <GGCard blur={p1Blur} title="Longbeard Leader" img={cardImgs['longbearLeaderImg']} trait={cardTraits['longbeardLeaderTrait']} race="dwarf-rare" points={30} />
+            <GGCard blur={p1Blur} title="Half Elf" img={cardImgs['halfElf']} trait={cardTraits['halfElfTrait']} race="elf" points={1} />
+            <GGCard blur={p1Blur} title="Wild Elf" img={cardImgs['wildElf']} trait={cardTraits['wildElfTrait']} race="elf" points={1} />
+            <GGCard blur={p1Blur} title="Wood Elf" img={cardImgs['woodElf']} trait={cardTraits['woodElfTrait']} race="elf" points={1} />
+            <GGCard blur={p1Blur} title="High Elf" img={cardImgs['highElf']} trait={cardTraits['highElfTrait']} race="elf" points={1} />
+            <GGCard blur={p1Blur} title="Dark Elf" img={cardImgs['darkElf']} trait={cardTraits['darkElfTrait']} race="elf" points={1} />
+            <GGCard blur={p1Blur} title="Elf King" img={cardImgs['elfKing']} trait={cardTraits['elfKingTrait']} race="elf-rare" points={4} />
+            <GGCard blur={p1Blur} title="Miner" img={cardImgs['miner']} trait={cardTraits['minerTrait']} race="dwarf" points={15} />
+            <GGCard blur={p1Blur} title="Blacksmith" img={cardImgs['blacksmith']} trait={cardTraits['minderTrait']} race="dwarf" points={15} />
+            <GGCard blur={p1Blur} title="Hobbit" img={cardImgs['hobbit']} trait={cardTraits['hobbitTrait']} race="dwarf" points={15} />
+            <GGCard blur={p1Blur} title="Axe Thrower" img={cardImgs['axeThrower']} trait={cardTraits['axeThrowerTrait']} race="dwarf" points={15} />
+            <GGCard blur={p1Blur} title="Dwarf Warrior" img={cardImgs['dwarfWarrior']} trait={cardTraits['dwarfWarriorTrait']} race="dwarf" points={15} />
+            <GGCard blur={p1Blur} title="Longbeard Leader" img={cardImgs['longbeardLeader']} trait={cardTraits['longbeardLeaderTrait']} race="dwarf-rare" points={30} />
         </div>
     </div>
 </main>
@@ -388,6 +404,7 @@
         position: absolute;
         bottom: 0;
         right: 1rem;
+        transform: translate(-20%)
     }
     
     .card-section__enemy {
@@ -395,6 +412,7 @@
         position: absolute;
         top: 0;
         left: 1rem;
+        transform: translate(20%)
     }
 
     .turn-text {
