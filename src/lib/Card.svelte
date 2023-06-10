@@ -14,7 +14,7 @@
 
   const createEvent = createEventDispatcher();
 
-  function cardClickHandler(info) {    
+  function cardClickHandler(event) {    
     createEvent('cardClick', {
       'title': title,
       'points': points,
@@ -25,8 +25,10 @@
 </script>
 
 {#if faceDown}
-  <div on:click={cardClickHandler} class="card facedown bottom-deck"></div>
+  <!-- svelte-ignore a11y-click-events-have-key-events -->
+  <div on:click class="card facedown bottom-deck"></div>
 {:else if blur}
+  <!-- svelte-ignore a11y-click-events-have-key-events -->
   <div on:click={cardClickHandler} class="card bg-{race} blur">
     <img class="card-img" src={img} alt="img of card">
     <div class="card-bottom-section">
@@ -37,6 +39,7 @@
     </div>
   </div>
 {:else}
+<!-- svelte-ignore a11y-click-events-have-key-events -->
 <div on:click={cardClickHandler} class="card bg-{race}">
   <img class="card-img" src={img} alt="img of card">
   <div class="card-bottom-section">
@@ -121,8 +124,12 @@
   }
 
   .facedown:hover {
-    scale: 1;
+    scale: 1.05;
     transform: translate(0, -0.4rem);
+  }
+
+  .facedown:active {
+    scale: 1;
   }
 
   /* Utility classes */

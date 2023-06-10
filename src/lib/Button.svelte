@@ -5,7 +5,7 @@
     export let bgColor = '';
 
     // For game
-    export let gobbledegook = false;
+    export let round = false;
 
     // For forms
     export let btnSubmit = false;
@@ -21,8 +21,8 @@
     <Link to="{path}">
         <button on:click class="{customClasses} {bgColor}"><slot /></button>
     </Link>
-{:else if gobbledegook}
-    <button on:click class="gobbledegook">Gobbledegook!</button>
+{:else if round}
+    <button on:click class="round {customClasses}"><slot /></button>
 {:else}
     <button on:click class="{customClasses} {bgColor}"><slot /></button>
 {/if}
@@ -38,26 +38,15 @@
         margin: 0.5rem 0;
     }
 
-    .gobbledegook {
-        background-color: #CAB097;
-        color: #c04d31;
+    .round {
         font-weight: bold;
-        font-size: 1rem;
+        font-size: 1.25rem;
         height: 10rem;
         width: 10rem;
         border-radius: 50%;
         text-align: center;
-        border: 0.25rem solid #c04d31;
-        transition: all 0.25s ease-out;
+        transition: all 0.15s ease-out;
         font-family: Roboto;
-    }
-
-    .gobbledegook:hover {
-        scale: 1.1;
-        font-weight: 900;
-        background-color: #c04d31;
-        color: #CAB097;
-        border-color: #CAB097;
     }
 
     /* utility classes */
@@ -79,33 +68,7 @@
         margin-right: auto;
     }
 
-    /* background colors */
-    .btn__brown {
-        background-color: #6d4927;
-        color: #fff;
-    }
-
-    .btn__brown:hover {
-        background-color: #5c3e21;
-    }
-
-    .btn__brown:active {
-        background-color: #53371d;
-    }
-
-    .btn__orange {
-        background-color: #af4819;
-        color: #fff;
-    }
-
-    .btn__orange:hover {
-        background-color: #a54417;
-    }
-
-    .btn__orange:active {
-        background-color: #973e14;
-    }
-    
+    /* background colors */    
     .btn__green {
         background-color: #31a744;
         color: #fff;
@@ -117,5 +80,50 @@
 
     .btn__green:active {
         background-color: #278b38;
+    }
+
+    .btn__green_disabled {
+        background-color: #7bc287c9;
+        color: #fff;
+    }
+
+    .btn__grey:hover {
+        background-color: #7bc287c9;
+    }
+
+    .btn__grey:active {
+        background-color: #7bc287c9;
+    }
+        
+    .btn__orange {
+        background-color: #c04d31;
+        color: #CAB097;
+        box-shadow: 0 8px 0 #692b1c;
+        border: 2px solid #692b1c;
+    }
+
+    .btn__orange:hover {
+        background-color: #993e27;
+    }
+
+    .btn__orange:active {
+        transform: translate(0, 8px);
+        box-shadow: 0 0 0 #692b1c;
+    }
+            
+    .btn__brown {
+        background-color: #814d2f;
+        color: #CAB097;
+        box-shadow: 0 8px 0 #5c3824;
+        border: 2px solid #613922;
+    }
+
+    .btn__brown:hover {
+        background-color: #6b4128;
+    }
+
+    .btn__brown:active {
+        transform: translate(0, 8px);
+        box-shadow: 0 0 0 #613922;
     }
 </style>

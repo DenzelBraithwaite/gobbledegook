@@ -95,7 +95,7 @@
     ];
 
     const goblins = [
-        'goblin lord',
+        'goblinLord',
         'giant',
         'giant',
         'giant',
@@ -121,40 +121,40 @@
     ];
 
     const elves = [
-        'elf king',
-        'dark elf',
-        'dark elf',
-        'dark elf',
-        'high elf',
-        'high elf',
-        'high elf',
-        'high elf',
-        'wood elf',
-        'wood elf',
-        'wood elf',
-        'wood elf',
-        'wood elf',
-        'wild elf',
-        'wild elf',
-        'wild elf',
-        'wild elf',
-        'wild elf',
-        'half elf',
-        'half elf',
-        'half elf',
-        'half elf',
-        'half elf'
+        'elfKing',
+        'darkElf',
+        'darkElf',
+        'darkElf',
+        'highElf',
+        'highElf',
+        'highElf',
+        'highElf',
+        'woodElf',
+        'woodElf',
+        'woodElf',
+        'woodElf',
+        'woodElf',
+        'wildElf',
+        'wildElf',
+        'wildElf',
+        'wildElf',
+        'wildElf',
+        'halfElf',
+        'halfElf',
+        'halfElf',
+        'halfElf',
+        'halfElf'
     ];
 
     const dwarves = [
-        'longbeard leader',
-        'dwarf warrior',
-        'dwarf warrior',
-        'dwarf warrior',
-        'axe thrower',
-        'axe thrower',
-        'axe thrower',
-        'axe thrower',
+        'longbeardLeader',
+        'dwarfWarrior',
+        'dwarfWarrior',
+        'dwarfWarrior',
+        'axeThrower',
+        'axeThrower',
+        'axeThrower',
+        'axeThrower',
         'hobbit',
         'hobbit',
         'hobbit',
@@ -177,14 +177,16 @@
     let p2Blur = false;
 
     // Game logic
-    let p1Turn = true;
-    let p2Turn = false;
+    $: p1Turn = false;
+    $: p2Turn = false;
     let p1Pts = 0;
     let p2Pts = 0;
     let p1RoundsWon = 0;
     let p2RoundsWon = 0;
-    let p1Hand = [];
-    let p2Hand = [];
+    $: p1Hand = [];
+    $: p2Hand = [];
+    let gobbledegookDeclared = false;
+    let startBtnDisabled = false;
 
     const fullDeck = {
     humans: [...humans],
@@ -193,10 +195,24 @@
     dwarves: [...dwarves],
     };
 
+    // array for each deck, humans, goblins, elves and dwarves
     const deckTypes = Object.keys(fullDeck);
 
+    // Ensures player 1 isn't always first to start
+    function decideFirstPlayer() {
+        const num = Math.ceil(Math.random() * 2);
+        if (num === 1) {
+            p1Turn = true
+            p2Turn = false;
+        } else {
+            p1Turn = false
+            p2Turn = true;
+        }
+    }
+
+
     // Controller logic for game
-    function showDecks(allDecks = false) {
+    function showDeck(allDecks = false) {
         const humanCardsLeft = fullDeck['humans'].length || 0;
         const goblinCardsLeft = fullDeck['goblins'].length || 0;
         const elfCardsLeft = fullDeck['elves'].length || 0;
@@ -217,14 +233,8 @@
         console.log(`Your hand: ${playerHand}`);
     }
 
-    function discard(playerHand) {
-        const card = prompt("which card would you like to remove?");
-        const index = playerHand.indexOf(card);
-        playerHand.splice(index, 1)
-        showHand(playerHand);
-    };
-
     function changeTurns() {
+        console.log('Turns changed!');
         p1Turn = !p1Turn;
         p2Turn = !p2Turn;
     }
@@ -242,8 +252,6 @@
             randomNum = Math.floor(Math.random() * fullDeck[currentDeck].length);
             const cardDrawn = fullDeck[currentDeck][randomNum];
 
-            // TODO: Remove card from deck
-            // const removedCard = fullDeck[currentDeck].find(card => card === cardDrawn);
             const removedCardIndex = fullDeck[currentDeck].indexOf(cardDrawn);
             fullDeck[currentDeck].splice(removedCardIndex, 1);
 
@@ -265,7 +273,6 @@
 
         // When the last card is drawn, currentDeck becomes undefined. This will catch that
         if (deckTypes.length === 0 && currentDeck === undefined) {
-            playerHand.length = 0;
             console.log('oh sorry! there are no more cards, we will skip to see who wins now');
             return;
         };
@@ -281,75 +288,92 @@
         randomNum = Math.floor(Math.random() * fullDeck[currentDeck].length);
         const cardDrawn = fullDeck[currentDeck][randomNum];
 
-        // TODO: Remove card from deck
         // const removedCard = fullDeck[currentDeck].find(card => card === cardDrawn);
         const removedCardIndex = fullDeck[currentDeck].indexOf(cardDrawn);
         fullDeck[currentDeck].splice(removedCardIndex, 1);
 
         // Add to player's hand
         playerHand.push(cardDrawn);
-        console.log(`Your hand: ${playerHand}`);
-    }
 
-    function startRound(playerHand) {        
-        showHand(playerHand);
-        // This will be a button the player clicks, not a prompt
-        const gobbledegook = prompt("Would you like to declare gobbledegook?");
-        
-        // If player declares gobbledegook, their turn is skipped and the game ends on their next turn
-        if (gobbledegook === 'yes') {
-            console.log("gobble gobble");
+        // Need to reassign for svelte to be reactive
+        if (playerHand === p1Hand) {
+            p1Hand = [...playerHand];
         } else {
-            console.log('drawing card...');
-            drawCard(playerHand);
-            discard(playerHand);
+            p2Hand = [...playerHand];
         }
-
-        // If player draws card, they will temporarily have 6 cards and MUST choose 1 to discard.
     }
 
-    function startGame() {
-        console.log('game will begin shortly, now drawing cards...');
-        dealCards(p1Hand);
-        dealCards(p2Hand);
-        // startRound(p1Hand);
-        // showDecks();
-        console.log(p1Hand);
+    function discard(card) {
+        console.log(`Card: ${card}`);
+        if (p1Turn) {
+            const index = p1Hand.indexOf(card);
+            console.log(`Hand: ${p1Hand}, index:${index}`)
+            p1Hand.splice(index, 1)
+            p1Hand = [...p1Hand];
+            // showHand(p1Hand);
+        } else {
+            const index = p2Hand.indexOf(card);
+            console.log(`Card: ${card}, index:${index}`)
+            p2Hand.splice(index, 1)
+            p2Hand = [...p2Hand];
+            // showHand(p2Hand);
+        }
+    };
+    
+    // Handles player click on card
+    function selectCard(event, playerHand) {
+        // Gather info about the card, what card was just clicked? Title is most important
+        let title = event.detail.title;
+
+        if (playerHand.length > 5) {
+            console.log(title);
+            discard(title);
+        }
     }
 
     function endGame() {
-        
+        console.log('game is over, lets see who lost!');
+        showDeck();
+        endGame();
     }
 
     function assignCard() {
 
     }
 
-    // Handles player click on card
-    function selectCard(event) {
-        // Gather info about the card, what card was just clicked? Title is most important
-        const title = event.detail.title;
-        return title.replace(/\s/g, '');
+    // End the game
+    function gobbledegook(activePlayer) {
+        if (gobbledegookDeclared) {
+            console.log('game is over!');
+            endGame()
+        }
+        console.log('Gobbledegook declared!!');
+        gobbledegookDeclared = true;
+    }
+  
+    function startGame() {
+        dealCards(p1Hand);
+        dealCards(p2Hand);
+        decideFirstPlayer();
+        startBtnDisabled = true;
     }
 
 </script>
 
 <main>
-    <Button on:click={startGame} customClasses="btn__green w-25">Start game</Button>
-    <div class="game-buttons">
-        <GGCard on:click={() => {startRound(p1Hand)}} faceDown={true} />
-        <Button on:click={changeTurns} gobbledegook={true} />
-    </div>
-
+    {#if !startBtnDisabled}
+        <Button on:click={startGame} customClasses="btn__green w-25">Start game</Button>
+    {:else}
+        <Button customClasses="btn__green_disabled w-25">Game in progress...</Button>
+    {/if}
     <div class="game-board">
-        <p class="turn-text">{p1Turn ? "Player 1" : "Player 2"}<span>'s turn</span></p>
-                
+        {#if startBtnDisabled}
+            <p class="turn-text">{p1Turn ? "Player 1" : "Player 2"}<span>'s turn</span></p>
+        {/if}
         <div class="card-section card-section__ally">
             <p class="p2-name">Player 1</p>
-            {#each p1Hand as card}
-                <li>{card}</li>
-                <GGCard on:cardClick={selectCard} blur={p1Blur} title={card} img={cardImgs[card.replace(/\s/g, '')]} trait={cardTraits[`${card}Trait`]} race="elf" points={1} />
-
+            {#each p1Hand as cardTitle}
+                <GGCard on:cardClick={(event) => selectCard(event, p1Hand)} blur={p1Blur} title={cardTitle} img={cardImgs[cardTitle.replace(/\s/g, '')]} trait={cardTraits[`${cardTitle}Trait`]} race="elf" points={1} />
             {/each}
             <!-- <GGCard on:cardClick={selectCard} blur={p1Blur} title="Half Elf" img={cardImgs['halfElf']} trait={cardTraits['halfElfTrait']} race="elf" points={1} /> -->
             <!-- <GGCard on:cardClick={selectCard} blur={p1Blur} title="Wild Elf" img={cardImgs['wildElf']} trait={cardTraits['wildElfTrait']} race="elf" points={1} /> -->
@@ -364,20 +388,28 @@
             <!-- <GGCard on:cardClick={selectCard} blur={p1Blur} title="Dwarf Warrior" img={cardImgs['dwarfWarrior']} trait={cardTraits['dwarfWarriorTrait']} race="dwarf" points={15} /> -->
             <!-- <GGCard on:cardClick={selectCard} blur={p1Blur} title="Longbeard Leader" img={cardImgs['longbeardLeader']} trait={cardTraits['longbeardLeaderTrait']} race="dwarf-rare" points={30} /> -->
         </div>
+        <div class="game-buttons">
+            <Button on:click={changeTurns} round={true} customClasses="btn__brown">Change Turns</Button>
+            <GGCard on:click={() => {p1Turn ? drawCard(p1Hand) : drawCard(p2Hand)}} faceDown={true} />
+            <Button on:click={gobbledegook} round={true} customClasses="btn__orange">Gobbledegook!</Button>
+        </div>
         <div class="card-section card-section__enemy blur">
             <p class="p1-name">Player 2</p>
+            {#each p2Hand as cardTitle}
+                <GGCard on:cardClick={(event) => selectCard(event, p2Hand)} blur={p2Blur} title={cardTitle} img={cardImgs[cardTitle.replace(/\s/g, '')]} trait={cardTraits[`${cardTitle}Trait`]} race="elf" points={1} />
+            {/each}
             <!-- <GGCard on:cardClick={selectCard} blur={p2Blur} title="Bokoblin" img={cardImgs['bokoblin']} trait={cardTraits['bokoblinTrait']} race="goblin" points={1} /> -->
-            <GGCard on:cardClick={selectCard} blur={p2Blur} title="Hobgoblin" img={cardImgs['hobgoblin']} trait={cardTraits['hobgoblinTrait']} race="goblin" points={1} />
+            <!-- <GGCard on:cardClick={selectCard} blur={p2Blur} title="Hobgoblin" img={cardImgs['hobgoblin']} trait={cardTraits['hobgoblinTrait']} race="goblin" points={1} /> -->
             <!-- <GGCard on:cardClick={selectCard} blur={p2Blur} title="Shaman" img={cardImgs['shaman']} trait={cardTraits['shamanTrait']} race="goblin" points={1} /> -->
-            <GGCard on:cardClick={selectCard} blur={p2Blur} title="Troll" img={cardImgs['troll']} trait={cardTraits['trollTrait']} race="goblin" points={1} />
+            <!-- <GGCard on:cardClick={selectCard} blur={p2Blur} title="Troll" img={cardImgs['troll']} trait={cardTraits['trollTrait']} race="goblin" points={1} /> -->
             <!-- <GGCard on:cardClick={selectCard} blur={p2Blur} title="Giant" img={cardImgs['giant']} trait={cardTraits['giantTrait']} race="goblin" points={1} /> -->
-            <GGCard on:cardClick={selectCard} blur={p2Blur} title="Goblin Lord" img={cardImgs['goblinLord']} trait={cardTraits['goblinLordTrait']} race="goblin-rare" points={4} />
+            <!-- <GGCard on:cardClick={selectCard} blur={p2Blur} title="Goblin Lord" img={cardImgs['goblinLord']} trait={cardTraits['goblinLordTrait']} race="goblin-rare" points={4} /> -->
             <!-- <GGCard on:cardClick={selectCard} blur={p2Blur} title="Villager" img={cardImgs['villager']} trait={cardTraits['villagerTrait']} race="human" points={15} /> -->
-            <GGCard on:cardClick={selectCard} blur={p2Blur} title="Scout" img={cardImgs['scout']} trait={cardTraits['scoutTrait']} race="human" points={15} />
+            <!-- <GGCard on:cardClick={selectCard} blur={p2Blur} title="Scout" img={cardImgs['scout']} trait={cardTraits['scoutTrait']} race="human" points={15} /> -->
             <!-- <GGCard on:cardClick={selectCard} blur={p2Blur} title="Soldier" img={cardImgs['soldier']} trait={cardTraits['soldierTrait']} race="human" points={15} /> -->
             <!-- <GGCard on:cardClick={selectCard} blur={p2Blur} title="Knight" img={cardImgs['knight']} trait={cardTraits['knightTrait']} race="human" points={15} /> -->
             <!-- <GGCard on:cardClick={selectCard} blur={p2Blur} title="Commander" img={cardImgs['commander']} trait={cardTraits['commanderTrait']} race="human" points={15} /> -->
-            <GGCard on:cardClick={selectCard} blur={p2Blur} title="Emperor" img={cardImgs['emperor']} trait={cardTraits['emperorTrait']} race="human-rare" points={30} />
+            <!-- <GGCard on:cardClick={selectCard} blur={p2Blur} title="Emperor" img={cardImgs['emperor']} trait={cardTraits['emperorTrait']} race="human-rare" points={30} /> -->
         </div>
     </div>
 </main>
@@ -390,17 +422,22 @@
         width: 90%;
         padding: 0.5rem;
         max-width: 1500px;
-        margin: 1rem auto;
+        margin: 2rem auto;
         border-radius: 1rem;
         background-color: #200f009d;
         box-shadow: 0 4px 20px #000000;
         border: 2px solid #e4c82e1f;
+
+        display: flex;
+        justify-content: center;
+        align-items: center;
     }
 
     .card-section {
         width: 70%;
         padding: 1rem;
         background-color: #e4c82e1f;
+        min-height: 270px;
 
         display: flex;
         justify-content: center;
@@ -425,9 +462,11 @@
     }
 
     .turn-text {
+        z-index: 1;
         position: absolute;
+        top: 1rem;
         right: 1rem;
-        font-size: 2rem;
+        font-size: 1.75rem;
         color: #af4819;
     }
 
@@ -453,10 +492,6 @@
 
     .game-buttons {
         z-index: 1;
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-30%, -30%);
 
         display: flex;
         gap: 2rem;
