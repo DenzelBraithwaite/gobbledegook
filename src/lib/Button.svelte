@@ -36,6 +36,7 @@
         border-radius: 0.25rem;
         cursor: pointer;
         margin: 0.5rem 0;
+        transition: all 0.15s ease-out;
     }
 
     .round {
@@ -45,7 +46,6 @@
         width: 10rem;
         border-radius: 50%;
         text-align: center;
-        transition: all 0.15s ease-out;
         font-family: Roboto;
     }
 
@@ -68,23 +68,37 @@
         margin-right: auto;
     }
 
-    /* background colors */    
+    /* background colors */                
     .btn__green {
         background-color: #31a744;
         color: #fff;
+        box-shadow: 0 8px 0 #1a5f25;
+        border: 2px solid #1a5f25;
     }
 
     .btn__green:hover {
-        background-color: #2d9b3f;
+        background-color: #278637;
     }
 
     .btn__green:active {
-        background-color: #278b38;
+        transform: translate(0, 8px);
+        box-shadow: 0 0 0 #1a5f25;
     }
-
+    
     .btn__green_disabled {
         background-color: #7bc287c9;
         color: #fff;
+        box-shadow: 0 8px 0 #345239;
+        border: 2px solid #345239;
+    }
+
+    .btn__green_disabled:hover {
+        background-color: #497752;
+    }
+
+    .btn__green_disabled:active {
+        transform: translate(0, 1px);
+        box-shadow: 0 7px 0 #345239;
     }
 
     .btn__grey:hover {

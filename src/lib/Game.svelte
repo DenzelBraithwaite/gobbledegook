@@ -267,6 +267,7 @@
     }
 
     function drawCard(playerHand) {
+        if (playerHand.length > 5) return;
         // Grab random deck 
         let randomNum = Math.floor(Math.random() * deckTypes.length);
         let currentDeck = deckTypes[randomNum];
@@ -310,14 +311,13 @@
             console.log(`Hand: ${p1Hand}, index:${index}`)
             p1Hand.splice(index, 1)
             p1Hand = [...p1Hand];
-            // showHand(p1Hand);
         } else {
             const index = p2Hand.indexOf(card);
             console.log(`Card: ${card}, index:${index}`)
             p2Hand.splice(index, 1)
             p2Hand = [...p2Hand];
-            // showHand(p2Hand);
         }
+        changeTurns();
     };
     
     // Handles player click on card
@@ -332,30 +332,28 @@
     }
 
     function endGame() {
+        startBtnDisabled = false;
         console.log('game is over, lets see who lost!');
         showDeck();
-        endGame();
-    }
-
-    function assignCard() {
-
     }
 
     // End the game
-    function gobbledegook(activePlayer) {
+    function gobbledegook() {
         if (gobbledegookDeclared) {
-            console.log('game is over!');
-            endGame()
+            endGame();
+        } else {
+            console.log('Gobbledegook declared!!');
+            changeTurns();
+            gobbledegookDeclared = true;
         }
-        console.log('Gobbledegook declared!!');
-        gobbledegookDeclared = true;
     }
   
     function startGame() {
+        startBtnDisabled = true;
+        gobbledegookDeclared = false;
         dealCards(p1Hand);
         dealCards(p2Hand);
         decideFirstPlayer();
-        startBtnDisabled = true;
     }
 
 </script>
@@ -373,6 +371,7 @@
         <div class="card-section card-section__ally">
             <p class="p2-name">Player 1</p>
             {#each p1Hand as cardTitle}
+                <!-- {current } -->
                 <GGCard on:cardClick={(event) => selectCard(event, p1Hand)} blur={p1Blur} title={cardTitle} img={cardImgs[cardTitle.replace(/\s/g, '')]} trait={cardTraits[`${cardTitle}Trait`]} race="elf" points={1} />
             {/each}
             <!-- <GGCard on:cardClick={selectCard} blur={p1Blur} title="Half Elf" img={cardImgs['halfElf']} trait={cardTraits['halfElfTrait']} race="elf" points={1} /> -->
@@ -389,7 +388,7 @@
             <!-- <GGCard on:cardClick={selectCard} blur={p1Blur} title="Longbeard Leader" img={cardImgs['longbeardLeader']} trait={cardTraits['longbeardLeaderTrait']} race="dwarf-rare" points={30} /> -->
         </div>
         <div class="game-buttons">
-            <Button on:click={changeTurns} round={true} customClasses="btn__brown">Change Turns</Button>
+            <!-- <Button on:click={changeTurns} round={true} customClasses="btn__brown">Change Turns</Button> -->
             <GGCard on:click={() => {p1Turn ? drawCard(p1Hand) : drawCard(p2Hand)}} faceDown={true} />
             <Button on:click={gobbledegook} round={true} customClasses="btn__orange">Gobbledegook!</Button>
         </div>
