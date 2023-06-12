@@ -186,7 +186,9 @@
     $: p1Hand = [];
     $: p2Hand = [];
     let gobbledegookDeclared = false;
+    let gobbledegookDisabled = false;
     let startBtnDisabled = false;
+    let gameOver = true;
 
     const fullDeck = {
     humans: [...humans],
@@ -267,6 +269,9 @@
     }
 
     function drawCard(playerHand) {
+        if (gameOver) return;
+
+        gobbledegookDisabled = true;
         if (playerHand.length > 5) return;
         // Grab random deck 
         let randomNum = Math.floor(Math.random() * deckTypes.length);
@@ -317,7 +322,12 @@
             p2Hand.splice(index, 1)
             p2Hand = [...p2Hand];
         }
-        changeTurns();
+        if (gobbledegookDeclared) {
+            endGame();
+        } else {
+            changeTurns();
+            gobbledegookDisabled = false;
+        }
     };
     
     // Handles player click on card
@@ -332,13 +342,17 @@
     }
 
     function endGame() {
+        gameOver = true;
         startBtnDisabled = false;
+        gobbledegookDisabled = true;
         console.log('game is over, lets see who lost!');
         showDeck();
     }
 
     // End the game
     function gobbledegook() {
+        if (gameOver) return;
+
         if (gobbledegookDeclared) {
             endGame();
         } else {
@@ -349,8 +363,10 @@
     }
   
     function startGame() {
+        gameOver = false;
         startBtnDisabled = true;
         gobbledegookDeclared = false;
+        gobbledegookDisabled = false;
         dealCards(p1Hand);
         dealCards(p2Hand);
         decideFirstPlayer();
@@ -369,7 +385,7 @@
             <p class="turn-text">{p1Turn ? "Player 1" : "Player 2"}<span>'s turn</span></p>
         {/if}
         <div class="card-section card-section__ally">
-            <p class="p2-name">Player 1</p>
+            <p class="p1-name {p1Turn ? "turn-active" : ""}">Player 1</p>
             {#each p1Hand as cardTitle}
                 <!-- {current } -->
                 <GGCard on:cardClick={(event) => selectCard(event, p1Hand)} blur={p1Blur} title={cardTitle} img={cardImgs[cardTitle.replace(/\s/g, '')]} trait={cardTraits[`${cardTitle}Trait`]} race="elf" points={1} />
@@ -390,10 +406,14 @@
         <div class="game-buttons">
             <!-- <Button on:click={changeTurns} round={true} customClasses="btn__brown">Change Turns</Button> -->
             <GGCard on:click={() => {p1Turn ? drawCard(p1Hand) : drawCard(p2Hand)}} faceDown={true} />
-            <Button on:click={gobbledegook} round={true} customClasses="btn__orange">Gobbledegook!</Button>
+                {#if gobbledegookDisabled}
+                <Button round={true} customClasses="btn__orange_disabled">Gobbledegook!</Button>
+                {:else}
+                <Button on:click={gobbledegook} round={true} customClasses="btn__orange">Gobbledegook!</Button>
+                {/if}
         </div>
         <div class="card-section card-section__enemy blur">
-            <p class="p1-name">Player 2</p>
+            <p class="p2-name {p2Turn ? "turn-active" : ""}">Player 2</p>
             {#each p2Hand as cardTitle}
                 <GGCard on:cardClick={(event) => selectCard(event, p2Hand)} blur={p2Blur} title={cardTitle} img={cardImgs[cardTitle.replace(/\s/g, '')]} trait={cardTraits[`${cardTitle}Trait`]} race="elf" points={1} />
             {/each}
@@ -477,16 +497,21 @@
         position: absolute;
         font-size: 1.5rem;
         color: #af4819;
-        top: 17.5rem;
-        left: 0;
+        bottom: 17.5rem;
+        right: 0;
     }
 
     .p2-name {
         position: absolute;
         font-size: 1.5rem;
         color: #af4819;
-        bottom: 17.5rem;
-        right: 0;
+        top: 17.5rem;
+        left: 0;
+    }
+
+    .turn-active {
+        color: #6fff93;
+        font-size: 1.75rem;
     }
 
     .game-buttons {

@@ -124,6 +124,22 @@
         transform: translate(0, 8px);
         box-shadow: 0 0 0 #692b1c;
     }
+        
+    .btn__orange_disabled {
+        background-color: #dd816b;
+        color: #cacaca9d;
+        box-shadow: 0 8px 0 #724337;
+        border: 2px solid #724337;
+    }
+
+    .btn__orange_disabled:hover {
+        background-color: #c5735f;
+    }
+
+    .btn__orange_disabled:active {
+        transform: translate(0, 1px);
+        box-shadow: 0 7px 0 #724337;
+    }
             
     .btn__brown {
         background-color: #814d2f;
