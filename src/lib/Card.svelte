@@ -29,7 +29,7 @@
   <div on:click class="card facedown bottom-deck"></div>
 {:else if blur}
   <!-- svelte-ignore a11y-click-events-have-key-events -->
-  <div on:click={cardClickHandler} class="card bg-{race} blur">
+  <div on:click={cardClickHandler} class="card bg-{race} {blur ? 'blur' : ''}">
     <img class="card-img" src={img} alt="img of card">
     <div class="card-bottom-section">
       <p class="card-title">{title}</p>
@@ -40,7 +40,7 @@
   </div>
 {:else}
 <!-- svelte-ignore a11y-click-events-have-key-events -->
-<div on:click={cardClickHandler} class="card bg-{race}">
+<div on:click={cardClickHandler} class="card bg-{race} {blur ? 'blur' : ''}">
   <img class="card-img" src={img} alt="img of card">
   <div class="card-bottom-section">
     <p class="card-title">{title}</p>
@@ -134,7 +134,8 @@
 
   /* Utility classes */
   .blur {
-    filter: blur(1.5px);
+    opacity: 10%;
+    filter: blur(50px);
   }
 
   .flip-180 {

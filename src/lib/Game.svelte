@@ -172,10 +172,6 @@
         'miner'
     ];    
     
-    // Card props
-    let p1Blur = false;
-    let p2Blur = false;
-
     // Game logic
     $: p1Turn = false;
     $: p2Turn = false;
@@ -212,6 +208,13 @@
         }
     }
 
+    // Selects correct card race to apply correct styling, depending on card title
+    function chooseRace(title) {
+        if (humans.includes(title)) return 'human';
+        if (goblins.includes(title)) return 'goblin';
+        if (elves.includes(title)) return 'elf';
+        if (dwarves.includes(title)) return 'dwarf';
+    }
 
     // Controller logic for game
     function showDeck(allDecks = false) {
@@ -342,6 +345,8 @@
     }
 
     function endGame() {
+        p1Turn = true;
+        p2Turn = true;
         gameOver = true;
         startBtnDisabled = false;
         gobbledegookDisabled = true;
@@ -384,11 +389,10 @@
         {#if startBtnDisabled}
             <p class="turn-text">{p1Turn ? "Player 1" : "Player 2"}<span>'s turn</span></p>
         {/if}
-        <div class="card-section card-section__ally">
+        <div class="card-section card-section__ally {p1Turn ? "section-active" : ""}">
             <p class="p1-name {p1Turn ? "turn-active" : ""}">Player 1</p>
             {#each p1Hand as cardTitle}
-                <!-- {current } -->
-                <GGCard on:cardClick={(event) => selectCard(event, p1Hand)} blur={p1Blur} title={cardTitle} img={cardImgs[cardTitle.replace(/\s/g, '')]} trait={cardTraits[`${cardTitle}Trait`]} race="elf" points={1} />
+                <GGCard on:cardClick={(event) => selectCard(event, p1Hand)} blur={p1Turn ? false : true} title={cardTitle} img={cardImgs[cardTitle.replace(/\s/g, '')]} trait={cardTraits[`${cardTitle}Trait`]} race={chooseRace(cardTitle)} points={1} />
             {/each}
             <!-- <GGCard on:cardClick={selectCard} blur={p1Blur} title="Half Elf" img={cardImgs['halfElf']} trait={cardTraits['halfElfTrait']} race="elf" points={1} /> -->
             <!-- <GGCard on:cardClick={selectCard} blur={p1Blur} title="Wild Elf" img={cardImgs['wildElf']} trait={cardTraits['wildElfTrait']} race="elf" points={1} /> -->
@@ -412,10 +416,10 @@
                 <Button on:click={gobbledegook} round={true} customClasses="btn__orange">Gobbledegook!</Button>
                 {/if}
         </div>
-        <div class="card-section card-section__enemy blur">
+        <div class="card-section card-section__enemy {p2Turn ? "section-active" : ""}">
             <p class="p2-name {p2Turn ? "turn-active" : ""}">Player 2</p>
             {#each p2Hand as cardTitle}
-                <GGCard on:cardClick={(event) => selectCard(event, p2Hand)} blur={p2Blur} title={cardTitle} img={cardImgs[cardTitle.replace(/\s/g, '')]} trait={cardTraits[`${cardTitle}Trait`]} race="elf" points={1} />
+                <GGCard on:cardClick={(event) => selectCard(event, p2Hand)} blur={p2Turn ? false : true} title={cardTitle} img={cardImgs[cardTitle.replace(/\s/g, '')]} trait={cardTraits[`${cardTitle}Trait`]} race={chooseRace(cardTitle)} points={1} />
             {/each}
             <!-- <GGCard on:cardClick={selectCard} blur={p2Blur} title="Bokoblin" img={cardImgs['bokoblin']} trait={cardTraits['bokoblinTrait']} race="goblin" points={1} /> -->
             <!-- <GGCard on:cardClick={selectCard} blur={p2Blur} title="Hobgoblin" img={cardImgs['hobgoblin']} trait={cardTraits['hobgoblinTrait']} race="goblin" points={1} /> -->
@@ -478,6 +482,10 @@
         top: 0;
         left: 1rem;
         transform: translate(20%)
+    }
+
+    .section-active {
+        background-color: #97f8af42;
     }
 
     .turn-text {
