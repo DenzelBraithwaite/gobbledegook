@@ -8,33 +8,59 @@
 
     // img paths
     const cardImgs = {
-        bokoblin: '/public/goblin.png',
-        hobgoblin: '/public/hobgoblin.png',
-        shaman: '/public/shaman.png',
-        troll: '/public/troll.png',
-        giant: '/public/giant.png',
-        goblinLord: '/public/goblin-lord.gif',
+        villager: '/public/humans/villager.png',
+        scout: '/public/humans/scout.png',
+        soldier: '/public/humans/soldier.png',
+        knight: '/public/humans/knight.png',
+        assassin: '/public/humans/assassin.png',
+        commander: '/public/humans/commander.png',
+        emperor: '/public/humans/emperor.gif',
+        
+        bokoblin: '/public/goblins/goblin.png',
+        hobgoblin: '/public/goblins/hobgoblin.png',
+        thief: '/public/goblins/thief.png',
+        shaman: '/public/goblins/shaman.png',
+        troll: '/public/goblins/troll.png',
+        giant: '/public/goblins/giant.png',
+        goblinLord: '/public/goblins/goblin-lord.gif',
 
-        villager: '/public/villager.png',
-        scout: '/public/scout.png',
-        soldier: '/public/soldier.png',
-        knight: '/public/knight.png',
-        commander: '/public/commander.png',
-        emperor: '/public/emperor.gif',
+        bard: '/public/elves/bard.png',
+        nadallen: '/public/elves/nadallen.png',
+        nelladan: '/public/elves/nelladan.png',
+        wildElf: '/public/elves/wild-elf.png',
+        woodElf: '/public/elves/wood-elf.png',
+        forestDweller: '/public/elves/forest-dweller.png',
+        darkElf: '/public/elves/dark-elf.png',
+        champion: '/public/elves/champion.png',
+        elfKing: '/public/elves/elf-king.gif',
 
-        halfElf: '/public/half-elf.png',
-        wildElf: '/public/wild-elf.png',
-        woodElf: '/public/wood-elf.png',
-        highElf: '/public/high-elf.png',
-        darkElf: '/public/dark-elf.png',
-        elfKing: '/public/elf-king.gif',
+        hobbit: '/public/dwarves/hobbit.png',
+        bartender: '/public/dwarves/bartender.png',
+        traveller: '/public/dwarves/traveller.png',
+        blacksmith: '/public/dwarves/blacksmith.png',
+        miner: '/public/dwarves/miner.png',
+        hunter: '/public/dwarves/hunter.png',
+        warrior: '/public/dwarves/warrior.png',
+        alchemist: '/public/dwarves/alchemist.png',
+        dwarfCommander: '/public/dwarves/dwarf-commander.png',
+        longbeardLeader: '/public/dwarves/longbeard-leader.gif',
 
-        miner: '/public/miner.png',
-        blacksmith: '/public/blacksmith.png',
-        hobbit: '/public/hobbit.png',
-        axeThrower: '/public/axe-thrower.png',
-        dwarfWarrior: '/public/dwarf-warrior.png',
-        longbeardLeader: '/public/longbeard-leader.gif'
+        virus: '/public/bots/virus.png',
+        incubator: '/public/bots/incubator.png',
+        faeBot: '/public/bots/fae-bot.png',
+        infernoBot: '/public/bots/inferno-bot.png',
+        sawBot3000: '/public/bots/saw-bot-3000.png',
+        ai: '/public/bots/ai.png',
+        crusher5A1A57: '/public/bots/crusher-5A1A-57.gif',
+
+        dog: '/public/animals/dog.png',
+        fox: '/public/animals/fox.png',
+        wolf: '/public/animals/wolf.png',
+        panther: '/public/animals/panther.png',
+        lion: '/public/animals/lion.png',
+        bear: '/public/animals/bear.png',
+        rhino: '/public/animals/rhino.png',
+        dreamDestroyer: '/public/animals/dream-destroyer.gif',
     };
 
     // Card special traits
@@ -73,6 +99,11 @@
         'commander',
         'commander',
         'commander',
+        'commander',
+        'assassin',
+        'assassin',
+        'assassin',
+        'assassin',
         'knight',
         'knight',
         'knight',
@@ -81,13 +112,10 @@
         'soldier',
         'soldier',
         'soldier',
-        'soldier',
         'scout',
         'scout',
         'scout',
         'scout',
-        'scout',
-        'villager',
         'villager',
         'villager',
         'villager',
@@ -98,22 +126,21 @@
         'goblinLord',
         'giant',
         'giant',
-        'giant',
         'troll',
         'troll',
         'troll',
-        'troll',
         'shaman',
         'shaman',
         'shaman',
         'shaman',
-        'shaman',
+        'thief',
+        'thief',
+        'thief',
+        'thief',
         'hobgoblin',
         'hobgoblin',
         'hobgoblin',
         'hobgoblin',
-        'hobgoblin',
-        'bokoblin',
         'bokoblin',
         'bokoblin',
         'bokoblin',
@@ -122,55 +149,101 @@
 
     const elves = [
         'elfKing',
+        'elfChampion',
+        'elfChampion',
         'darkElf',
         'darkElf',
         'darkElf',
-        'highElf',
-        'highElf',
-        'highElf',
-        'highElf',
-        'woodElf',
-        'woodElf',
+        'forestDweller',
+        'forestDweller',
+        'forestDweller',
         'woodElf',
         'woodElf',
         'woodElf',
         'wildElf',
         'wildElf',
         'wildElf',
-        'wildElf',
-        'wildElf',
-        'halfElf',
-        'halfElf',
-        'halfElf',
-        'halfElf',
-        'halfElf'
+        'Nelladan',
+        'Nelladan',
+        'Nadallen',
+        'Nadallen',
+        'bard',
+        'bard',
+        'bard'
     ];
 
     const dwarves = [
         'longbeardLeader',
-        'dwarfWarrior',
-        'dwarfWarrior',
-        'dwarfWarrior',
-        'axeThrower',
-        'axeThrower',
-        'axeThrower',
-        'axeThrower',
-        'hobbit',
-        'hobbit',
-        'hobbit',
-        'hobbit',
-        'hobbit',
-        'blacksmith',
-        'blacksmith',
-        'blacksmith',
-        'blacksmith',
-        'blacksmith',
+        'commander',
+        'commander',
+        'alchemist',
+        'alchemist',
+        'Warrior',
+        'Warrior',
+        'hunter',
+        'hunter',
+        'hunter',
         'miner',
         'miner',
         'miner',
-        'miner',
-        'miner'
-    ];    
+        'blacksmith',
+        'blacksmith',
+        'traveller',
+        'traveller',
+        'bartender',
+        'bartender',
+        'hobbit',
+        'hobbit'
+    ];
+    
+    const bots = [
+        'crusher-5A1A-57',
+        'ai',
+        'ai',
+        'sawBot-3000',
+        'sawBot-3000',
+        'sawBot-3000',
+        'infernoBot',
+        'infernoBot',
+        'infernoBot',
+        'infernoBot',
+        'roboRouter',
+        'roboRouter',
+        'roboRouter',
+        'roboRouter',
+        'incubator',
+        'incubator',
+        'incubator',
+        'incubator',
+        'virus',
+        'virus',
+        'virus',
+        'virus'
+    ]; 
+    
+    const animals = [
+        'dreamDestroyer',
+        'rhino',
+        'rhino',
+        'bear',
+        'bear',
+        'bear',
+        'lion',
+        'lion',
+        'lion',
+        'panther',
+        'panther',
+        'panther',
+        'wolf',
+        'wolf',
+        'wolf',
+        'fox',
+        'fox',
+        'fox',
+        'dog',
+        'dog',
+        'dog'
+    ]; 
     
     // Game logic
     $: p1Turn = false;
@@ -191,6 +264,8 @@
     goblins: [...goblins],
     elves: [...elves],
     dwarves: [...dwarves],
+    bots: [...bots],
+    animals: [...animals],
     };
 
     // array for each deck, humans, goblins, elves and dwarves
@@ -214,6 +289,8 @@
         if (goblins.includes(title)) return 'goblin';
         if (elves.includes(title)) return 'elf';
         if (dwarves.includes(title)) return 'dwarf';
+        if (bots.includes(title)) return 'bot';
+        if (animals.includes(title)) return 'animal';
     }
 
     // Controller logic for game
@@ -222,14 +299,18 @@
         const goblinCardsLeft = fullDeck['goblins'].length || 0;
         const elfCardsLeft = fullDeck['elves'].length || 0;
         const dwarfCardsLeft = fullDeck['dwarves'].length || 0;
+        const botCardsLeft = fullDeck['bots'].length || 0;
+        const animalCardsLeft = fullDeck['animals'].length || 0;
         if (allDecks) {
             console.log(`Cards remaining per deck:\n
             Humans: ${humanCardsLeft}\n
             Goblins: ${goblinCardsLeft}\n
             Elves: ${elfCardsLeft}\n
-            Dwarves: ${dwarfCardsLeft}\n`);
+            Dwarves: ${dwarfCardsLeft}\n)
+            Bots: ${botCardsLeft}\n)
+            Animals: ${animalCardsLeft}\n`);
         } else {
-            const cardsLeft = humanCardsLeft + goblinCardsLeft + elfCardsLeft + dwarfCardsLeft;
+            const cardsLeft = humanCardsLeft + goblinCardsLeft + elfCardsLeft + dwarfCardsLeft + botCardsLeft + animalCardsLeft;
             console.log(`Cards remaining in deck: ${cardsLeft}`);
         }
     }
@@ -377,6 +458,123 @@
         decideFirstPlayer();
     }
 
+    function assignPoints(card) {
+        switch(card) {
+            case 'villager':
+                return 100
+                break;
+            case 'scout':
+                return 100
+                break;
+            case 'soldier':
+                return 100
+                break;
+            case 'knight':
+                return 10
+                break;
+            case 'commander':
+                return 100
+                break;
+            case 'emperor':
+                return 100
+                break;
+
+            case 'bokoblin':
+                return 100
+                break;
+            case 'hobgoblin':
+                return 10
+                break;
+            case 'shaman':
+                return 100
+                break;
+            case 'troll':
+                return 100
+                break;
+            case 'giant':
+                return 100
+                break;
+            case 'goblinLord':
+                return 10
+                break;
+
+            case 'halfElf':
+                return 100
+                break;
+            case 'wildElf':
+                return 100
+                break;
+            case 'woodElf':
+                return 100
+                break;
+            case 'highElf':
+                return 10
+                break;
+            case 'darkElf':
+                return 100
+                break;
+            case 'elfKing':
+                return 100
+                break;
+
+            case 'hobbit':
+                return 100
+                break;
+            case 'blacksmith':
+                return 10
+                break;
+            case 'miner':
+                return 100
+                break;
+            case 'axeThrower':
+                return 100
+                break;
+            case 'dwarfWarrior':
+                return 100
+                break;
+            case 'longbeard Leader':
+                return 10
+                break;
+
+            case 'soldier':
+                return 100
+                break;
+            case 'soldier':
+                return 100
+                break;
+            case 'villager':
+                return 100
+                break;
+            case 'villager':
+                return 10
+                break;
+            case 'soldier':
+                return 100
+                break;
+            case 'soldier':
+                return 100
+                break;
+            case 'villager':
+                return 100
+                break;
+            case 'villager':
+                return 10
+                break;
+            case 'soldier':
+                return 100
+                break;
+            case 'soldier':
+                return 100
+                break;
+            case 'villager':
+                return 100
+                break;
+            case 'villager':
+                return 10
+                break;
+        }
+    }
+
 </script>
 
 <main>
@@ -392,7 +590,14 @@
         <div class="card-section card-section__ally {p1Turn ? "section-active" : ""}">
             <p class="p1-name {p1Turn ? "turn-active" : ""}">Player 1</p>
             {#each p1Hand as cardTitle}
-                <GGCard on:cardClick={(event) => selectCard(event, p1Hand)} blur={p1Turn ? false : true} title={cardTitle} img={cardImgs[cardTitle.replace(/\s/g, '')]} trait={cardTraits[`${cardTitle}Trait`]} race={chooseRace(cardTitle)} points={1} />
+                <GGCard
+                    on:cardClick={(event) => selectCard(event, p1Hand)}
+                    blur={p1Turn ? false : true}
+                    title={cardTitle}
+                    img={cardImgs[cardTitle.replace(/\s/g, '')]}
+                    trait={cardTraits[`${cardTitle}Trait`]}
+                    race={chooseRace(cardTitle)}
+                    points={assignPoints(cardTitle)} />
             {/each}
             <!-- <GGCard on:cardClick={selectCard} blur={p1Blur} title="Half Elf" img={cardImgs['halfElf']} trait={cardTraits['halfElfTrait']} race="elf" points={1} /> -->
             <!-- <GGCard on:cardClick={selectCard} blur={p1Blur} title="Wild Elf" img={cardImgs['wildElf']} trait={cardTraits['wildElfTrait']} race="elf" points={1} /> -->
@@ -441,7 +646,7 @@
 <style>
     .game-board {
         position: relative;
-        height: 90dvh;
+        height: 85dvh;
         width: 90%;
         padding: 0.5rem;
         max-width: 1500px;
