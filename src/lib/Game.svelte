@@ -306,8 +306,8 @@
             Humans: ${humanCardsLeft}\n
             Goblins: ${goblinCardsLeft}\n
             Elves: ${elfCardsLeft}\n
-            Dwarves: ${dwarfCardsLeft}\n)
-            Bots: ${botCardsLeft}\n)
+            Dwarves: ${dwarfCardsLeft}\n
+            Bots: ${botCardsLeft}\n
             Animals: ${animalCardsLeft}\n`);
         } else {
             const cardsLeft = humanCardsLeft + goblinCardsLeft + elfCardsLeft + dwarfCardsLeft + botCardsLeft + animalCardsLeft;
@@ -428,7 +428,7 @@
         startBtnDisabled = false;
         gobbledegookDisabled = true;
         console.log('game is over, lets see who lost!');
-        showDeck();
+        showDeck(true);
     }
 
     // End the game
