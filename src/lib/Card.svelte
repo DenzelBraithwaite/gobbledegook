@@ -149,7 +149,7 @@
   }
 
   .bg-human-rare {
-    background: linear-gradient(to top left, #324277, #e0de69, #69c0ad);
+    background: linear-gradient(to top left, #324277 5%, #e0de69, #69c0ad 90%);
     outline: 4px solid #324277a8;
   }
 
@@ -159,18 +159,18 @@
   }
 
   .bg-goblin-rare {
-    background: linear-gradient(to top left, #327738, #e0de69, #78c069);
+    background: linear-gradient(to top left, #327738 5%, #e0de69, #78c069 90%);
     outline: 4px solid #327738a8;
   }
 
   .bg-elf {
-    background: linear-gradient(to top left, #7e837f, #c7cbce 50%);
-    outline: 4px solid #7e837fa8;
+    background: linear-gradient(to top left, #726b7a, #ddceee 50%);
+    outline: 4px solid #726b7a;
   }
 
   .bg-elf-rare {
-    background: linear-gradient(to top left, #7e837f, #e0de69, #c7cbce);
-    outline: 4px solid #7e837fa8;
+    background: linear-gradient(to top left, #726b7a 5%, #e0de69, #ddceee 90%);
+    outline: 4px solid #726b7a;
   }
 
   .bg-dwarf {
@@ -179,7 +179,27 @@
   }
 
   .bg-dwarf-rare {
-    background: linear-gradient(to top left, #774b32, #e0de69, #c07369);
+    background: linear-gradient(to top left, #774b32 5%, #e0de69, #c07369 90%);
+    outline: 4px solid #774b32a8;
+  }
+  
+  .bg-bot {
+    background: linear-gradient(to top left, #424242, #7e7e7e 50%);
+    outline: 4px solid #424242;
+  }
+
+  .bg-bot-rare {
+    background: linear-gradient(to top left, #424242 5%, #e0de69, #7e7e7e 90%);
+    outline: 4px solid #424242;
+  }
+  
+  .bg-animal {
+    background: linear-gradient(to top left, #55431e, #855a2a 50%);
+    outline: 4px solid #55431e;
+  }
+
+  .bg-animal-rare {
+    background: linear-gradient(to top left, #614d22 5%, #e0de69b6, #855a2a 90%);
     outline: 4px solid #774b32a8;
   }
 

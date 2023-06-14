@@ -31,7 +31,7 @@
         woodElf: '/public/elves/wood-elf.png',
         forestDweller: '/public/elves/forest-dweller.png',
         darkElf: '/public/elves/dark-elf.png',
-        champion: '/public/elves/champion.png',
+        elfChampion: '/public/elves/champion.png',
         elfKing: '/public/elves/elf-king.gif',
 
         hobbit: '/public/dwarves/hobbit.png',
@@ -40,7 +40,7 @@
         blacksmith: '/public/dwarves/blacksmith.png',
         miner: '/public/dwarves/miner.png',
         hunter: '/public/dwarves/hunter.png',
-        warrior: '/public/dwarves/warrior.png',
+        dwarfWarrior: '/public/dwarves/warrior.png',
         alchemist: '/public/dwarves/alchemist.png',
         dwarfCommander: '/public/dwarves/dwarf-commander.png',
         longbeardLeader: '/public/dwarves/longbeard-leader.gif',
@@ -163,10 +163,10 @@
         'wildElf',
         'wildElf',
         'wildElf',
-        'Nelladan',
-        'Nelladan',
-        'Nadallen',
-        'Nadallen',
+        'nelladan',
+        'nelladan',
+        'nadallen',
+        'nadallen',
         'bard',
         'bard',
         'bard'
@@ -178,8 +178,8 @@
         'commander',
         'alchemist',
         'alchemist',
-        'Warrior',
-        'Warrior',
+        'dwarfWarrior',
+        'dwarfWarrior',
         'hunter',
         'hunter',
         'hunter',
@@ -197,20 +197,20 @@
     ];
     
     const bots = [
-        'crusher-5A1A-57',
+        'crusher5A1A57',
         'ai',
         'ai',
-        'sawBot-3000',
-        'sawBot-3000',
-        'sawBot-3000',
+        'sawBot3000',
+        'sawBot3000',
+        'sawBot3000',
         'infernoBot',
         'infernoBot',
         'infernoBot',
         'infernoBot',
-        'roboRouter',
-        'roboRouter',
-        'roboRouter',
-        'roboRouter',
+        'faeBot',
+        'faeBot',
+        'faeBot',
+        'faeBot',
         'incubator',
         'incubator',
         'incubator',
@@ -315,12 +315,7 @@
         }
     }
 
-    function showHand(playerHand) {
-        console.log(`Your hand: ${playerHand}`);
-    }
-
     function changeTurns() {
-        console.log('Turns changed!');
         p1Turn = !p1Turn;
         p2Turn = !p2Turn;
     }
@@ -363,7 +358,8 @@
 
         // When the last card is drawn, currentDeck becomes undefined. This will catch that
         if (deckTypes.length === 0 && currentDeck === undefined) {
-            console.log('oh sorry! there are no more cards, we will skip to see who wins now');
+            console.log("No more cards!");
+            endGame();
             return;
         };
 
@@ -599,18 +595,12 @@
                     race={chooseRace(cardTitle)}
                     points={assignPoints(cardTitle)} />
             {/each}
-            <!-- <GGCard on:cardClick={selectCard} blur={p1Blur} title="Half Elf" img={cardImgs['halfElf']} trait={cardTraits['halfElfTrait']} race="elf" points={1} /> -->
-            <!-- <GGCard on:cardClick={selectCard} blur={p1Blur} title="Wild Elf" img={cardImgs['wildElf']} trait={cardTraits['wildElfTrait']} race="elf" points={1} /> -->
-            <!-- <GGCard on:cardClick={selectCard} blur={p1Blur} title="Wood Elf" img={cardImgs['woodElf']} trait={cardTraits['woodElfTrait']} race="elf" points={1} /> -->
-            <!-- <GGCard on:cardClick={selectCard} blur={p1Blur} title="High Elf" img={cardImgs['highElf']} trait={cardTraits['highElfTrait']} race="elf" points={1} /> -->
-            <!-- <GGCard on:cardClick={selectCard} blur={p1Blur} title="Dark Elf" img={cardImgs['darkElf']} trait={cardTraits['darkElfTrait']} race="elf" points={1} /> -->
-            <!-- <GGCard on:cardClick={selectCard} blur={p1Blur} title="Elf King" img={cardImgs['elfKing']} trait={cardTraits['elfKingTrait']} race="elf-rare" points={4} /> -->
-            <!-- <GGCard on:cardClick={selectCard} blur={p1Blur} title="Miner" img={cardImgs['miner']} trait={cardTraits['minerTrait']} race="dwarf" points={15} /> -->
-            <!-- <GGCard on:cardClick={selectCard} blur={p1Blur} title="Blacksmith" img={cardImgs['blacksmith']} trait={cardTraits['minderTrait']} race="dwarf" points={15} /> -->
-            <!-- <GGCard on:cardClick={selectCard} blur={p1Blur} title="Hobbit" img={cardImgs['hobbit']} trait={cardTraits['hobbitTrait']} race="dwarf" points={15} /> -->
-            <!-- <GGCard on:cardClick={selectCard} blur={p1Blur} title="Axe Thrower" img={cardImgs['axeThrower']} trait={cardTraits['axeThrowerTrait']} race="dwarf" points={15} /> -->
-            <!-- <GGCard on:cardClick={selectCard} blur={p1Blur} title="Dwarf Warrior" img={cardImgs['dwarfWarrior']} trait={cardTraits['dwarfWarriorTrait']} race="dwarf" points={15} /> -->
-            <!-- <GGCard on:cardClick={selectCard} blur={p1Blur} title="Longbeard Leader" img={cardImgs['longbeardLeader']} trait={cardTraits['longbeardLeaderTrait']} race="dwarf-rare" points={30} /> -->
+            <!-- <GGCard on:cardClick={selectCard} blur={false} title="Elf King" img={cardImgs['elfKing']} trait={cardTraits['elfKingTrait']} race="elf-rare" points={4} /> -->
+            <!-- <GGCard on:cardClick={selectCard} blur={false} title="crusher5A1A57" img={cardImgs['crusher5A1A57']} trait={cardTraits['longbeardLeaderTrait']} race="bot-rare" points={30} /> -->
+            <!-- <GGCard on:cardClick={selectCard} blur={false} title="dreamDestroyer" img={cardImgs['dreamDestroyer']} trait={cardTraits['longbeardLeaderTrait']} race="animal-rare" points={30} /> -->
+            <!-- <GGCard on:cardClick={selectCard} blur={false} title="emperor" img={cardImgs['emperor']} trait={cardTraits['longbeardLeaderTrait']} race="human-rare" points={30} /> -->
+            <!-- <GGCard on:cardClick={selectCard} blur={false} title="longbeardLeader" img={cardImgs['longbeardLeader']} trait={cardTraits['longbeardLeaderTrait']} race="dwarf-rare" points={30} /> -->
+            <!-- <GGCard on:cardClick={selectCard} blur={false} title="goblinLord" img={cardImgs['goblinLord']} trait={cardTraits['longbeardLeaderTrait']} race="goblin-rare" points={30} /> -->
         </div>
         <div class="game-buttons">
             <!-- <Button on:click={changeTurns} round={true} customClasses="btn__brown">Change Turns</Button> -->
@@ -626,18 +616,6 @@
             {#each p2Hand as cardTitle}
                 <GGCard on:cardClick={(event) => selectCard(event, p2Hand)} blur={p2Turn ? false : true} title={cardTitle} img={cardImgs[cardTitle.replace(/\s/g, '')]} trait={cardTraits[`${cardTitle}Trait`]} race={chooseRace(cardTitle)} points={1} />
             {/each}
-            <!-- <GGCard on:cardClick={selectCard} blur={p2Blur} title="Bokoblin" img={cardImgs['bokoblin']} trait={cardTraits['bokoblinTrait']} race="goblin" points={1} /> -->
-            <!-- <GGCard on:cardClick={selectCard} blur={p2Blur} title="Hobgoblin" img={cardImgs['hobgoblin']} trait={cardTraits['hobgoblinTrait']} race="goblin" points={1} /> -->
-            <!-- <GGCard on:cardClick={selectCard} blur={p2Blur} title="Shaman" img={cardImgs['shaman']} trait={cardTraits['shamanTrait']} race="goblin" points={1} /> -->
-            <!-- <GGCard on:cardClick={selectCard} blur={p2Blur} title="Troll" img={cardImgs['troll']} trait={cardTraits['trollTrait']} race="goblin" points={1} /> -->
-            <!-- <GGCard on:cardClick={selectCard} blur={p2Blur} title="Giant" img={cardImgs['giant']} trait={cardTraits['giantTrait']} race="goblin" points={1} /> -->
-            <!-- <GGCard on:cardClick={selectCard} blur={p2Blur} title="Goblin Lord" img={cardImgs['goblinLord']} trait={cardTraits['goblinLordTrait']} race="goblin-rare" points={4} /> -->
-            <!-- <GGCard on:cardClick={selectCard} blur={p2Blur} title="Villager" img={cardImgs['villager']} trait={cardTraits['villagerTrait']} race="human" points={15} /> -->
-            <!-- <GGCard on:cardClick={selectCard} blur={p2Blur} title="Scout" img={cardImgs['scout']} trait={cardTraits['scoutTrait']} race="human" points={15} /> -->
-            <!-- <GGCard on:cardClick={selectCard} blur={p2Blur} title="Soldier" img={cardImgs['soldier']} trait={cardTraits['soldierTrait']} race="human" points={15} /> -->
-            <!-- <GGCard on:cardClick={selectCard} blur={p2Blur} title="Knight" img={cardImgs['knight']} trait={cardTraits['knightTrait']} race="human" points={15} /> -->
-            <!-- <GGCard on:cardClick={selectCard} blur={p2Blur} title="Commander" img={cardImgs['commander']} trait={cardTraits['commanderTrait']} race="human" points={15} /> -->
-            <!-- <GGCard on:cardClick={selectCard} blur={p2Blur} title="Emperor" img={cardImgs['emperor']} trait={cardTraits['emperorTrait']} race="human-rare" points={30} /> -->
         </div>
     </div>
 </main>
