@@ -6,7 +6,7 @@
     import Button from './Button.svelte';
     import GGCard from '../lib/Card.svelte';
 
-    // img paths
+    // img paths TODO: move this into card details
     const cardImgs = {
         villager: '/public/humans/villager.png',
         scout: '/public/humans/scout.png',
@@ -63,7 +63,7 @@
         dreamDestroyer: '/public/animals/dream-destroyer.gif',
     };
 
-    // Card special traits
+    // Card special traits TODO: move this into card details
     const cardTraits = {
         bokoblinTrait: 'none',
         hobgoblinTrait: 'none',
@@ -94,7 +94,8 @@
         longbeardLeaderTrait: 'none'
     };
 
-    const humans = [
+    // Decks that are used during the game
+    const humanDeck = [
         'emperor',
         'commander',
         'commander',
@@ -118,10 +119,11 @@
         'villager',
         'villager',
         'villager',
+        'villager',
         'villager'
     ];
 
-    const goblins = [
+    const goblinDeck = [
         'goblinLord',
         'giant',
         'giant',
@@ -140,13 +142,16 @@
         'hobgoblin',
         'hobgoblin',
         'hobgoblin',
+        'hobgoblin',
+        'bokoblin',
+        'bokoblin',
         'bokoblin',
         'bokoblin',
         'bokoblin',
         'bokoblin'
     ];
 
-    const elves = [
+    const elfDeck = [
         'elfKing',
         'elfChampion',
         'elfChampion',
@@ -156,22 +161,27 @@
         'forestDweller',
         'forestDweller',
         'forestDweller',
-        'woodElf',
-        'woodElf',
-        'woodElf',
-        'wildElf',
-        'wildElf',
-        'wildElf',
-        'nelladan',
-        'nelladan',
         'nadallen',
         'nadallen',
+        'nelladan',
+        'nelladan',
+        'nelladan',
+        'nelladan',
+        'woodElf',
+        'woodElf',
+        'woodElf',
+        'woodElf',
+        'wildElf',
+        'wildElf',
+        'wildElf',
+        'wildElf',
+        'bard',
         'bard',
         'bard',
         'bard'
     ];
 
-    const dwarves = [
+    const dwarfDeck = [
         'longbeardLeader',
         'commander',
         'commander',
@@ -195,54 +205,81 @@
         'hobbit'
     ];
     
-    const bots = [
+    const botDeck = [
         'crusher5A1A57',
         'ai',
         'ai',
+        'faeBot',
+        'faeBot',
+        'faeBot',
         'sawBot3000',
         'sawBot3000',
         'sawBot3000',
+        'sawBot3000',
         'infernoBot',
         'infernoBot',
         'infernoBot',
         'infernoBot',
-        'faeBot',
-        'faeBot',
-        'faeBot',
-        'faeBot',
         'incubator',
         'incubator',
         'incubator',
         'incubator',
+        'incubator',
+        'virus',
+        'virus',
+        'virus',
         'virus',
         'virus',
         'virus',
         'virus'
     ]; 
     
-    const animals = [
+    const animalDeck = [
         'dreamDestroyer',
         'rhino',
         'rhino',
+        'rhino',
         'bear',
         'bear',
         'bear',
         'lion',
         'lion',
         'lion',
+        'lion',
+        'panther',
         'panther',
         'panther',
         'panther',
         'wolf',
         'wolf',
         'wolf',
+        'wolf',
         'fox',
         'fox',
         'fox',
+        'fox',
+        'dog',
         'dog',
         'dog',
         'dog'
-    ]; 
+    ];
+
+    // Stores all info about every card
+    const cardDetails = {
+        humans: {
+            emperor: {
+                title: 'emperor',
+                points: 10,
+                amount: 1,
+                rank: 'legendary',
+            },
+        },
+        goblins: {},
+        elves: {},
+        dwarves: {},
+        bots: {},
+        animals: {}
+    };
     
     // Game logic
     $: p1Turn = false;
@@ -258,13 +295,14 @@
     let startBtnDisabled = false;
     let gameOver = true;
 
+    // Deck players draw from, includes all race decks
     const fullDeck = {
-    humans: [...humans],
-    goblins: [...goblins],
-    elves: [...elves],
-    dwarves: [...dwarves],
-    bots: [...bots],
-    animals: [...animals],
+    humans: [...humanDeck],
+    goblins: [...goblinDeck],
+    elves: [...elfDeck],
+    dwarves: [...dwarfDeck],
+    bots: [...botDeck],
+    animals: [...animalDeck],
     };
 
     // array for each deck, humans, goblins, elves and dwarves
@@ -284,12 +322,12 @@
 
     // Selects correct card race to apply correct styling, depending on card title
     function chooseRace(title) {
-        if (humans.includes(title)) return 'human';
-        if (goblins.includes(title)) return 'goblin';
-        if (elves.includes(title)) return 'elf';
-        if (dwarves.includes(title)) return 'dwarf';
-        if (bots.includes(title)) return 'bot';
-        if (animals.includes(title)) return 'animal';
+        if (humanDeck.includes(title)) return 'human';
+        if (goblinDeck.includes(title)) return 'goblin';
+        if (elfDeck.includes(title)) return 'elf';
+        if (dwarfDeck.includes(title)) return 'dwarf';
+        if (botDeck.includes(title)) return 'bot';
+        if (animalDeck.includes(title)) return 'animal';
     }
 
     // Controller logic for game
@@ -305,8 +343,8 @@
             Humans: ${humanCardsLeft}\n
             Goblins: ${goblinCardsLeft}\n
             Elves: ${elfCardsLeft}\n
-            Dwarves: ${dwarfCardsLeft}\n
-            Bots: ${botCardsLeft}\n
+            Dwarves: ${dwarfCardsLeft}\n)
+            Bots: ${botCardsLeft}\n)
             Animals: ${animalCardsLeft}\n`);
         } else {
             const cardsLeft = humanCardsLeft + goblinCardsLeft + elfCardsLeft + dwarfCardsLeft + botCardsLeft + animalCardsLeft;
@@ -427,6 +465,7 @@
         startBtnDisabled = false;
         gobbledegookDisabled = true;
         console.log('game is over, lets see who lost!');
+        showDeck();
         showDeck(true);
     }
 
@@ -448,128 +487,16 @@
         startBtnDisabled = true;
         gobbledegookDeclared = false;
         gobbledegookDisabled = false;
+        fullDeck['humans'] = [...humanDeck];
+        fullDeck['goblins'] = [...goblinDeck];
+        fullDeck['elves'] = [...elfDeck];
+        fullDeck['dwarves'] = [...dwarfDeck];
+        fullDeck['bots'] = [...botDeck];
+        fullDeck['animals'] = [...animalDeck];
         dealCards(p1Hand);
         dealCards(p2Hand);
         decideFirstPlayer();
     }
-
-    function assignPoints(card) {
-        switch(card) {
-            case 'villager':
-                return 100
-                break;
-            case 'scout':
-                return 100
-                break;
-            case 'soldier':
-                return 100
-                break;
-            case 'knight':
-                return 10
-                break;
-            case 'commander':
-                return 100
-                break;
-            case 'emperor':
-                return 100
-                break;
-
-            case 'bokoblin':
-                return 100
-                break;
-            case 'hobgoblin':
-                return 10
-                break;
-            case 'shaman':
-                return 100
-                break;
-            case 'troll':
-                return 100
-                break;
-            case 'giant':
-                return 100
-                break;
-            case 'goblinLord':
-                return 10
-                break;
-
-            case 'halfElf':
-                return 100
-                break;
-            case 'wildElf':
-                return 100
-                break;
-            case 'woodElf':
-                return 100
-                break;
-            case 'highElf':
-                return 10
-                break;
-            case 'darkElf':
-                return 100
-                break;
-            case 'elfKing':
-                return 100
-                break;
-
-            case 'hobbit':
-                return 100
-                break;
-            case 'blacksmith':
-                return 10
-                break;
-            case 'miner':
-                return 100
-                break;
-            case 'axeThrower':
-                return 100
-                break;
-            case 'dwarfWarrior':
-                return 100
-                break;
-            case 'longbeard Leader':
-                return 10
-                break;
-
-            case 'soldier':
-                return 100
-                break;
-            case 'soldier':
-                return 100
-                break;
-            case 'villager':
-                return 100
-                break;
-            case 'villager':
-                return 10
-                break;
-            case 'soldier':
-                return 100
-                break;
-            case 'soldier':
-                return 100
-                break;
-            case 'villager':
-                return 100
-                break;
-            case 'villager':
-                return 10
-                break;
-            case 'soldier':
-                return 100
-                break;
-            case 'soldier':
-                return 100
-                break;
-            case 'villager':
-                return 100
-                break;
-            case 'villager':
-                return 10
-                break;
-        }
-    }
-
 </script>
 
 <main>
