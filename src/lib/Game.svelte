@@ -6,94 +6,6 @@
     import Button from './Button.svelte';
     import GGCard from '../lib/Card.svelte';
 
-    // img paths TODO: move this into card details
-    const cardImgs = {
-        villager: '/public/humans/villager.png',
-        scout: '/public/humans/scout.png',
-        soldier: '/public/humans/soldier.png',
-        knight: '/public/humans/knight.png',
-        assassin: '/public/humans/assassin.png',
-        commander: '/public/humans/commander.png',
-        emperor: '/public/humans/emperor.gif',
-        
-        bokoblin: '/public/goblins/goblin.png',
-        hobgoblin: '/public/goblins/hobgoblin.png',
-        thief: '/public/goblins/thief.png',
-        shaman: '/public/goblins/shaman.png',
-        troll: '/public/goblins/troll.png',
-        giant: '/public/goblins/giant.png',
-        goblinLord: '/public/goblins/goblin-lord.gif',
-
-        bard: '/public/elves/bard.png',
-        nadallen: '/public/elves/nadallen.png',
-        nelladan: '/public/elves/nelladan.png',
-        wildElf: '/public/elves/wild-elf.png',
-        woodElf: '/public/elves/wood-elf.png',
-        forestDweller: '/public/elves/forest-dweller.png',
-        darkElf: '/public/elves/dark-elf.png',
-        elfChampion: '/public/elves/champion.png',
-        elfKing: '/public/elves/elf-king.gif',
-
-        hobbit: '/public/dwarves/hobbit.png',
-        bartender: '/public/dwarves/bartender.png',
-        traveller: '/public/dwarves/traveller.png',
-        blacksmith: '/public/dwarves/blacksmith.png',
-        miner: '/public/dwarves/miner.png',
-        hunter: '/public/dwarves/hunter.png',
-        dwarfWarrior: '/public/dwarves/warrior.png',
-        alchemist: '/public/dwarves/alchemist.png',
-        dwarfCommander: '/public/dwarves/dwarf-commander.png',
-        longbeardLeader: '/public/dwarves/longbeard-leader.gif',
-
-        virus: '/public/bots/virus.png',
-        incubator: '/public/bots/incubator.png',
-        faeBot: '/public/bots/fae-bot.png',
-        infernoBot: '/public/bots/inferno-bot.png',
-        sawBot3000: '/public/bots/saw-bot-3000.png',
-        ai: '/public/bots/ai.png',
-        crusher5A1A57: '/public/bots/crusher-5A1A-57.gif',
-
-        dog: '/public/animals/dog.png',
-        fox: '/public/animals/fox.png',
-        wolf: '/public/animals/wolf.png',
-        panther: '/public/animals/panther.png',
-        lion: '/public/animals/lion.png',
-        bear: '/public/animals/bear.png',
-        rhino: '/public/animals/rhino.png',
-        dreamDestroyer: '/public/animals/dream-destroyer.gif',
-    };
-
-    // Card special traits TODO: move this into card details
-    const cardTraits = {
-        bokoblinTrait: 'none',
-        hobgoblinTrait: 'none',
-        shamanTrait: 'none',
-        trollTrait: 'none',
-        giantTrait: 'none',
-        goblinLordTrait: 'none',
-
-        scoutTrait: 'none',
-        villagerTrait: 'none',
-        soldierTrait: 'none',
-        knightTrait: 'none',
-        commanderTrait: 'none',
-        kingTrait: 'none',
-
-        halfElfTrait: 'none',
-        wildElfTrait: 'none',
-        woodElfTrait: 'none',
-        highElfTrait: 'none',
-        darkElfTrait: 'none',
-        elfKingTrait: 'none',
-
-        minerTrait: 'none',
-        blacksmithTrait: 'none',
-        hobbitTrait: 'none',
-        axeThrowerTrait: 'none',
-        dwarfWarrior: 'none',
-        longbeardLeaderTrait: 'none'
-    };
-
     // Decks that are used during the game
     const humanDeck = [
         'emperor',
@@ -142,7 +54,6 @@
         'hobgoblin',
         'hobgoblin',
         'hobgoblin',
-        'hobgoblin',
         'bokoblin',
         'bokoblin',
         'bokoblin',
@@ -183,8 +94,8 @@
 
     const dwarfDeck = [
         'longbeardLeader',
-        'commander',
-        'commander',
+        'dwarfCommander',
+        'dwarfCommander',
         'alchemist',
         'alchemist',
         'dwarfWarrior',
@@ -206,7 +117,7 @@
     ];
     
     const botDeck = [
-        'crusher5A1A57',
+        'crusher541A57',
         'ai',
         'ai',
         'faeBot',
@@ -234,7 +145,7 @@
         'virus'
     ]; 
     
-    const animalDeck = [
+    const beastDeck = [
         'dreamDestroyer',
         'rhino',
         'rhino',
@@ -266,19 +177,545 @@
 
     // Stores all info about every card
     const cardDetails = {
-        humans: {
-            emperor: {
-                title: 'emperor',
-                points: 10,
-                amount: 1,
-                rank: 'legendary',
-            },
+        // Humans
+        emperor: {
+            title: 'emperor',
+            displayTitle: 'Emperor',
+            points: 10,
+            amount: 1,
+            rank: 'legendary',
+            trait: '',
+            description: '',
+            race: 'human',
+            image: '/public/humans/emperor.gif'
         },
-        goblins: {},
-        elves: {},
-        dwarves: {},
-        bots: {},
-        animals: {}
+        commander: {
+            title: 'commander',
+            displayTitle: 'Commander',
+            points: 8,
+            amount: 2,
+            rank: 'epic',
+            trait: '',
+            description: '',
+            race: 'human',
+            image: 'public/humans/commander.png'
+        },
+        assassin: {
+            title: 'assassin',
+            displayTitle: 'Assassin',
+            points: 5,
+            amount: 3,
+            rank: 'amazing',
+            trait: '',
+            description: '',
+            race: 'human',
+            image: 'public/humans/assassin.png'
+        },
+        knight: {
+            title: 'knight',
+            displayTitle: 'Knight',
+            points: 3,
+            amount: 4,
+            rank: 'good',
+            trait: '',
+            description: '',
+            race: 'human',
+            image: 'public/humans/knight.png'
+        },
+        soldier: {
+            title: 'soldier',
+            displayTitle: 'Soldier',
+            points: 2,
+            amount: 4,
+            rank: 'good',
+            trait: '',
+            description: '',
+            race: 'human',
+            image: 'public/humans/soldier.png'
+        },
+        scout: {
+            title: 'scout',
+            displayTitle: 'Scout',
+            points: 1,
+            amount: 5,
+            rank: 'basic',
+            trait: '',
+            description: '',
+            race: 'human',
+            image: 'public/humans/scout.png'
+        },
+        villager: {
+            title: 'villager',
+            displayTitle: 'Villager',
+            points: 1,
+            amount: 6,
+            rank: 'basic',
+            trait: '',
+            description: '',
+            race: 'human',
+            image: 'public/humans/villager.png'
+        },
+
+        // Goblins
+        goblinLord: {
+            title: 'goblinLord',
+            displayTitle: 'Goblin Lord',
+            points: 10,
+            amount: 1,
+            rank: 'legendary',
+            trait: '',
+            description: '',
+            race: 'goblin',
+            image: '/public/goblins/goblin-lord.gif'
+        },
+        giant: {
+            title: 'giant',
+            displayTitle: 'Giant',
+            points: 8,
+            amount: 2,
+            rank: 'epic',
+            trait: '',
+            description: '',
+            race: 'goblin',
+            image: '/public/goblins/giant.png'
+        },
+        troll: {
+            title: 'troll',
+            displayTitle: 'Troll',
+            points: 5,
+            amount: 3,
+            rank: 'amazing',
+            trait: '',
+            description: '',
+            race: 'goblin',
+            image: '/public/goblins/troll.png'
+        },
+        shaman: {
+            title: 'shaman',
+            displayTitle: 'Shaman',
+            points: 3,
+            amount: 4,
+            rank: 'great',
+            trait: '',
+            description: '',
+            race: 'goblin',
+            image: '/public/goblins/shaman.png'
+        },
+        thief: {
+            title: 'thief',
+            displayTitle: 'Thief',
+            points: 2,
+            amount: 4,
+            rank: 'good',
+            trait: '',
+            description: '',
+            race: 'goblin',
+            image: '/public/goblins/thief.png'
+        },
+        hobgoblin: {
+            title: 'hobgoblin',
+            displayTitle: 'Hobgoblin',
+            points: 1,
+            amount: 4,
+            rank: 'good',
+            trait: '',
+            description: '',
+            race: 'goblin',
+            image: '/public/goblins/hobgoblin.png'
+        },
+        bokoblin: {
+            title: 'bokoblin',
+            displayTitle: 'Bokoblin',
+            points: 1,
+            amount: 6,
+            rank: 'basic',
+            trait: '',
+            description: '',
+            race: 'goblin',
+            image: '/public/goblins/bokoblin.png'
+        },
+
+        // Elves
+        elfKing: {
+            title: 'elfKing',
+            displayTitle: 'Elf King',
+            points: 10,
+            amount: 1,
+            rank: 'legendary',
+            trait: '',
+            description: '',
+            race: 'elf',
+            image: '/public/elves/elf-king.gif'
+        },
+        elfChampion: {
+            title: 'elfChampion',
+            displayTitle: 'Elf Champion',
+            points: 8,
+            amount: 2,
+            rank: 'epic',
+            trait: '',
+            description: '',
+            race: 'elf',
+            image: '/public/elves/champion.png'
+        },
+        darkElf: {
+            title: 'darkElf',
+            displayTitle: 'Dark Elf',
+            points: 5,
+            amount: 3,
+            rank: 'amazing',
+            trait: '',
+            description: '',
+            race: 'elf',
+            image: '/public/elves/dark-elf.png'
+        },
+        forestDweller: {
+            title: 'forestDweller',
+            displayTitle: 'Forest Dweller',
+            points: 5,
+            amount: 3,
+            rank: 'amazing',
+            trait: '',
+            description: '',
+            race: 'elf',
+            image: '/public/elves/forest-dweller.png'
+        },
+        nadallen: {
+            title: 'nadallen',
+            displayTitle: 'Nadallen',
+            points: 3,
+            amount: 2,
+            rank: 'great',
+            trait: '',
+            description: '',
+            race: 'elf',
+            image: '/public/elves/nadallen.png'
+        },
+        nelladan: {
+            title: 'nelladan',
+            displayTitle: 'Nelladan',
+            points: 2,
+            amount: 4,
+            rank: 'good',
+            trait: '',
+            description: '',
+            race: 'elf',
+            image: '/public/elves/nelladan.png'
+        },
+        woodElf: {
+            title: 'woodElf',
+            displayTitle: 'Wood Elf',
+            points: 2,
+            amount: 4,
+            rank: 'good',
+            trait: '',
+            description: '',
+            race: 'elf',
+            image: '/public/elves/wood-elf.png'
+        },
+        wildElf: {
+            title: 'wildElf',
+            displayTitle: 'Wild Elf',
+            points: 2,
+            amount: 4,
+            rank: 'good',
+            trait: '',
+            description: '',
+            race: 'elf',
+            image: '/public/elves/wild-elf.png'
+        },
+        bard: {
+            title: 'bard',
+            displayTitle: 'Bard',
+            points: 1,
+            amount: 4,
+            rank: 'basic',
+            trait: '',
+            description: '',
+            race: 'elf',
+            image: '/public/elves/bard.png'
+        },
+
+        // Dwarves
+        longbeardLeader: {
+            title: 'longbeardLeader',
+            displayTitle: 'Longbeard Leader',
+            points: 10,
+            amount: 1,
+            rank: 'legendary',
+            trait: '',
+            description: '',
+            race: 'dwarf',
+            image: '/public/dwarves/longbeard-leader.gif'
+        },
+        dwarfCommander:  {
+            title: 'dwarfCommander',
+            displayTitle: 'Dwarf Commander',
+            points: 8,
+            amount: 2,
+            rank: 'epic',
+            trait: '',
+            description: '',
+            race: 'dwarf',
+            image: '/public/dwarves/dwarf-commander.png'
+        },
+        alchemist: {
+            title: 'alchemist',
+            displayTitle: 'Alchemist',
+            points: 5,
+            amount: 2,
+            rank: 'amazing',
+            trait: '',
+            description: '',
+            race: 'dwarf',
+            image: '/public/dwarves/alchemist.png'
+        },
+        dwarfWarrior: {
+            title: 'dwarfWarrior',
+            displayTitle: 'Dwarf Warrior',
+            points: 5,
+            amount: 3,
+            rank: 'amazing',
+            trait: '',
+            description: '',
+            race: 'dwarf',
+            image: '/public/dwarves/warrior.png'
+        },
+        hunter: {
+            title: 'hunter',
+            displayTitle: 'Hunter',
+            points: 3,
+            amount: 3,
+            rank: 'great',
+            trait: '',
+            description: '',
+            race: 'dwarf',
+            image: '/public/dwarves/hunter.png'
+        },
+        miner: {
+            title: 'miner',
+            displayTitle: 'Miner',
+            points: 2,
+            amount: 3,
+            rank: 'good',
+            trait: '',
+            description: '',
+            race: 'dwarf',
+            image: '/public/dwarves/miner.png'
+        },
+        blacksmith: {
+            title: 'blacksmith',
+            displayTitle: 'Blacksmith',
+            points: 2,
+            amount: 3,
+            rank: 'good',
+            trait: '',
+            description: '',
+            race: 'dwarf',
+            image: '/public/dwarves/blacksmith.png'
+        },
+        traveller: {
+            title: 'traveller',
+            displayTitle: 'Traveller',
+            points: 2,
+            amount: 4,
+            rank: 'good',
+            trait: '',
+            description: '',
+            race: 'dwarf',
+            image: '/public/dwarves/traveller.png'
+        },
+        bartender: {
+            title: 'bartender',
+            displayTitle: 'Bartender',
+            points: 1,
+            amount: 4,
+            rank: 'basic',
+            trait: '',
+            description: '',
+            race: 'dwarf',
+            image: '/public/dwarves/bartender.png'
+        },
+        hobbit: {
+            title: 'hobbit',
+            displayTitle: 'Hobbit',
+            points: 1,
+            amount: 4,
+            rank: 'basic',
+            trait: '',
+            description: '',
+            race: 'dwarf',
+            image: '/public/dwarves/hobbit.png'
+        },
+
+        // Bots
+        crusher541A57: {
+            title: 'crusher541A57',
+            displayTitle: 'Crusher 541-A-57',
+            points: 10,
+            amount: 1,
+            rank: 'legendary',
+            trait: '',
+            description: '',
+            race: 'bot',
+            image: '/public/bots/crusher-5A1A-57.gif'
+        },
+        ai: {
+            title: 'ai',
+            displayTitle: 'A.I.',
+            points: 8,
+            amount: 2,
+            rank: 'epic',
+            trait: '',
+            description: '',
+            race: 'bot',
+            image: '/public/bots/ai.png'
+        },
+        faeBot: {
+            title: 'faeBot',
+            displayTitle: 'Fae Bot',
+            points: 5,
+            amount: 3,
+            rank: 'amazing',
+            trait: '',
+            description: '',
+            race: 'bot',
+            image: '/public/bots/fae-bot.png'
+        },
+        sawBot3000: {
+            title: 'sawBot3000',
+            displayTitle: 'Sawbot-3000',
+            points: 3,
+            amount: 4,
+            rank: 'great',
+            trait: '',
+            description: '',
+            race: 'bot',
+            image: '/public/bots/saw-bot-3000.png'
+        },
+        infernoBot: {
+            title: 'infernoBot',
+            displayTitle: 'Inferno Bot',
+            points: 3,
+            amount: 4,
+            rank: 'great',
+            trait: '',
+            description: '',
+            race: 'bot',
+            image: '/public/bots/inferno-bot.png'
+        },
+        incubator: {
+            title: 'incubator',
+            displayTitle: 'Incubator',
+            points: 2,
+            amount: 5,
+            rank: 'good',
+            trait: '',
+            description: '',
+            race: 'bot',
+            image: '/public/bots/incubator.png'
+        },
+        virus: {
+            title: 'virus',
+            displayTitle: 'Virus',
+            points: 1,
+            amount: 7,
+            rank: 'basic',
+            trait: '',
+            description: '',
+            race: 'bot',
+            image: '/public/bots/virus.png'
+        },
+
+        // Beasts
+        dreamDestroyer: { 
+            title: 'dreamDestroyer',
+            displayTitle: 'Dream Destroyer',
+            points: 10,
+            amount: 1,
+            rank: 'legendary',
+            trait: '',
+            description: '',
+            race: 'beast',
+            image: '/public/beasts/dream-destroyer.gif'
+        },
+        rhino: {
+            title: 'rhino',
+            displayTitle: 'Rhinestone',
+            points: 5,
+            amount: 3,
+            rank: 'amazing',
+            trait: '',
+            description: '',
+            race: 'beast',
+            image: '/public/beasts/rhino.png'
+        },
+        bear: {
+            title: 'bear',
+            displayTitle: 'Theodore Thunderpaws',
+            points: 5,
+            amount: 3,
+            rank: 'amazing',
+            trait: '',
+            description: '',
+            race: 'beast',
+            image: '/public/beasts/bear.png'
+        },
+        lion: {
+            title: 'lion',
+            displayTitle: 'Savannah Goldenmane',
+            points: 3,
+            amount: 4,
+            rank: 'great',
+            trait: '',
+            description: '',
+            race: 'beast',
+            image: '/public/beasts/lion.png'
+        },
+        panther: {
+            title: 'panther',
+            displayTitle: 'Panthera Nocturna',
+            points: 3,
+            amount: 4,
+            rank: 'great',
+            trait: '',
+            description: '',
+            race: 'beast',
+            image: '/public/beasts/panther.png'
+        },
+        wolf: {
+            title: 'wolf',
+            displayTitle: 'Alpha Wolfbane',
+            points: 3,
+            amount: 4,
+            rank: 'great',
+            trait: '',
+            description: '',
+            race: 'beast',
+            image: '/public/beasts/wolf.png'
+        },
+        fox: {
+            title: 'fox',
+            displayTitle: 'Finn Foxglove',
+            points: 2,
+            amount: 4,
+            rank: 'good',
+            trait: '',
+            description: '',
+            race: 'beast',
+            image: '/public/beasts/fox.png'
+        },
+        dog: {
+            title: 'dog',
+            displayTitle: 'Pawl Barkington',
+            points: 2,
+            amount: 4,
+            rank: 'good',
+            trait: '',
+            description: '',
+            race: 'beast',
+            image: '/public/beasts/dog.png'
+        }
     };
     
     // Game logic
@@ -302,7 +739,7 @@
     elves: [...elfDeck],
     dwarves: [...dwarfDeck],
     bots: [...botDeck],
-    animals: [...animalDeck],
+    beasts: [...beastDeck],
     };
 
     // array for each deck, humans, goblins, elves and dwarves
@@ -320,16 +757,6 @@
         }
     }
 
-    // Selects correct card race to apply correct styling, depending on card title
-    function chooseRace(title) {
-        if (humanDeck.includes(title)) return 'human';
-        if (goblinDeck.includes(title)) return 'goblin';
-        if (elfDeck.includes(title)) return 'elf';
-        if (dwarfDeck.includes(title)) return 'dwarf';
-        if (botDeck.includes(title)) return 'bot';
-        if (animalDeck.includes(title)) return 'animal';
-    }
-
     // Controller logic for game
     function showDeck(allDecks = false) {
         const humanCardsLeft = fullDeck['humans'].length || 0;
@@ -337,7 +764,7 @@
         const elfCardsLeft = fullDeck['elves'].length || 0;
         const dwarfCardsLeft = fullDeck['dwarves'].length || 0;
         const botCardsLeft = fullDeck['bots'].length || 0;
-        const animalCardsLeft = fullDeck['animals'].length || 0;
+        const beastCardsLeft = fullDeck['beasts'].length || 0;
         if (allDecks) {
             console.log(`Cards remaining per deck:\n
             Humans: ${humanCardsLeft}\n
@@ -345,9 +772,9 @@
             Elves: ${elfCardsLeft}\n
             Dwarves: ${dwarfCardsLeft}\n)
             Bots: ${botCardsLeft}\n)
-            Animals: ${animalCardsLeft}\n`);
+            Beasts: ${beastCardsLeft}\n`);
         } else {
-            const cardsLeft = humanCardsLeft + goblinCardsLeft + elfCardsLeft + dwarfCardsLeft + botCardsLeft + animalCardsLeft;
+            const cardsLeft = humanCardsLeft + goblinCardsLeft + elfCardsLeft + dwarfCardsLeft + botCardsLeft + beastCardsLeft;
             console.log(`Cards remaining in deck: ${cardsLeft}`);
         }
     }
@@ -427,15 +854,12 @@
     }
 
     function discard(card) {
-        console.log(`Card: ${card}`);
         if (p1Turn) {
             const index = p1Hand.indexOf(card);
-            console.log(`Hand: ${p1Hand}, index:${index}`)
             p1Hand.splice(index, 1)
             p1Hand = [...p1Hand];
         } else {
             const index = p2Hand.indexOf(card);
-            console.log(`Card: ${card}, index:${index}`)
             p2Hand.splice(index, 1)
             p2Hand = [...p2Hand];
         }
@@ -453,7 +877,6 @@
         let title = event.detail.title;
 
         if (playerHand.length > 5) {
-            console.log(title);
             discard(title);
         }
     }
@@ -464,7 +887,10 @@
         gameOver = true;
         startBtnDisabled = false;
         gobbledegookDisabled = true;
-        console.log('game is over, lets see who lost!');
+        console.log('Gobbledegook, Gobbledegook!!! The game is now over, time to tally the points!');
+        p1Pts = calculatePoints(p1Hand);
+        p2Pts = calculatePoints(p2Hand);
+        determineWinner();
         showDeck();
         showDeck(true);
     }
@@ -483,6 +909,8 @@
     }
   
     function startGame() {
+        p1Pts = 0;
+        p2Pts = 0;
         gameOver = false;
         startBtnDisabled = true;
         gobbledegookDeclared = false;
@@ -492,16 +920,38 @@
         fullDeck['elves'] = [...elfDeck];
         fullDeck['dwarves'] = [...dwarfDeck];
         fullDeck['bots'] = [...botDeck];
-        fullDeck['animals'] = [...animalDeck];
+        fullDeck['beasts'] = [...beastDeck];
         dealCards(p1Hand);
         dealCards(p2Hand);
-        decideFirstPlayer();
+    }
+
+    function calculatePoints(pHand) {
+        let totalPoints = 0;
+        pHand.forEach((card) => {
+            const points = cardDetails[card].points;
+            totalPoints += points;
+        });
+        return totalPoints;
+    }
+
+    function determineWinner() {
+        if(p1Pts > p2Pts) {
+            console.log(`Player 1 is the winner with ${p1Pts} points!!!🎉🙌🎆🥂`);
+            console.log(`Player 2 loses with ${p2Pts} points...`)
+        } else if(p2Pts > p1Pts) {
+            console.log(`Player 2 is the winner with ${p2Pts} points!!!🎊🥳🍾`);
+            console.log(`Player 1 loses with ${p1Pts} points...`)
+        } else {
+            console.log("It's a.... draw ?😢💔")
+            console.log(`Player 1 had ${p1Pts} points and player 2 had ${p2Pts} points.😎`);
+        }
     }
 </script>
 
 <main>
     {#if !startBtnDisabled}
         <Button on:click={startGame} customClasses="btn__green w-25">Start game</Button>
+        <Button on:click={decideFirstPlayer} customClasses="btn__orange w-25">Decide who starts</Button>
     {:else}
         <Button customClasses="btn__green_disabled w-25">Game in progress...</Button>
     {/if}
@@ -515,18 +965,13 @@
                 <GGCard
                     on:cardClick={(event) => selectCard(event, p1Hand)}
                     blur={p1Turn ? false : true}
-                    title={cardTitle}
-                    img={cardImgs[cardTitle.replace(/\s/g, '')]}
-                    trait={cardTraits[`${cardTitle}Trait`]}
-                    race={chooseRace(cardTitle)}
-                    points={assignPoints(cardTitle)} />
+                    displayTitle={cardDetails[cardTitle].displayTitle}
+                    title={cardDetails[cardTitle].title}
+                    img={cardDetails[cardTitle].image}
+                    trait={cardDetails[cardTitle].trait}
+                    race={cardDetails[cardTitle].race}
+                    points={cardDetails[cardTitle].points} />
             {/each}
-            <!-- <GGCard on:cardClick={selectCard} blur={false} title="Elf King" img={cardImgs['elfKing']} trait={cardTraits['elfKingTrait']} race="elf-rare" points={4} /> -->
-            <!-- <GGCard on:cardClick={selectCard} blur={false} title="crusher5A1A57" img={cardImgs['crusher5A1A57']} trait={cardTraits['longbeardLeaderTrait']} race="bot-rare" points={30} /> -->
-            <!-- <GGCard on:cardClick={selectCard} blur={false} title="dreamDestroyer" img={cardImgs['dreamDestroyer']} trait={cardTraits['longbeardLeaderTrait']} race="animal-rare" points={30} /> -->
-            <!-- <GGCard on:cardClick={selectCard} blur={false} title="emperor" img={cardImgs['emperor']} trait={cardTraits['longbeardLeaderTrait']} race="human-rare" points={30} /> -->
-            <!-- <GGCard on:cardClick={selectCard} blur={false} title="longbeardLeader" img={cardImgs['longbeardLeader']} trait={cardTraits['longbeardLeaderTrait']} race="dwarf-rare" points={30} /> -->
-            <!-- <GGCard on:cardClick={selectCard} blur={false} title="goblinLord" img={cardImgs['goblinLord']} trait={cardTraits['longbeardLeaderTrait']} race="goblin-rare" points={30} /> -->
         </div>
         <div class="game-buttons">
             <!-- <Button on:click={changeTurns} round={true} customClasses="btn__brown">Change Turns</Button> -->
@@ -540,7 +985,15 @@
         <div class="card-section card-section__enemy {p2Turn ? "section-active" : ""}">
             <p class="p2-name {p2Turn ? "turn-active" : ""}">Player 2</p>
             {#each p2Hand as cardTitle}
-                <GGCard on:cardClick={(event) => selectCard(event, p2Hand)} blur={p2Turn ? false : true} title={cardTitle} img={cardImgs[cardTitle.replace(/\s/g, '')]} trait={cardTraits[`${cardTitle}Trait`]} race={chooseRace(cardTitle)} points={1} />
+            <GGCard
+            on:cardClick={(event) => selectCard(event, p2Hand)}
+            blur={p2Turn ? false : true}
+            displayTitle={cardDetails[cardTitle].displayTitle}
+            title={cardDetails[cardTitle].title}
+            img={cardDetails[cardTitle].image}
+            trait={cardDetails[cardTitle].trait}
+            race={cardDetails[cardTitle].race}
+            points={cardDetails[cardTitle].points} />
             {/each}
         </div>
     </div>

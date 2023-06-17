@@ -6,7 +6,8 @@
   export let blur = false;
 
   // props
-  export let title = 'Title here...'
+  export let displayTitle = 'Title here...';
+  export let title = '';
   export let img = '/public/card-bg.png';
   export let points = 0;
   export let race = 'none';
@@ -32,7 +33,7 @@
   <div on:click={cardClickHandler} class="card bg-{race} {blur ? 'blur' : ''}">
     <img class="card-img" src={img} alt="img of card">
     <div class="card-bottom-section">
-      <p class="card-title">{title}</p>
+      <p class="card-title">{displayTitle}</p>
       <p>Race: {race}</p>
       <p>Points: {points}</p>
       <p>Special trait: {trait}</p>
@@ -43,7 +44,7 @@
 <div on:click={cardClickHandler} class="card bg-{race} {blur ? 'blur' : ''}">
   <img class="card-img" src={img} alt="img of card">
   <div class="card-bottom-section">
-    <p class="card-title">{title}</p>
+    <p class="card-title">{displayTitle}</p>
     <p>Race: {race}</p>
     <p>Points: {points}</p>
     <p>Special trait: {trait}</p>
@@ -193,12 +194,12 @@
     outline: 4px solid #424242;
   }
   
-  .bg-animal {
+  .bg-beast {
     background: linear-gradient(to top left, #55431e, #855a2a 50%);
     outline: 4px solid #55431e;
   }
 
-  .bg-animal-rare {
+  .bg-beast-rare {
     background: linear-gradient(to top left, #614d22 5%, #e0de69b6, #855a2a 90%);
     outline: 4px solid #774b32a8;
   }
