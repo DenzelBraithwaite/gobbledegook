@@ -184,7 +184,7 @@
             points: 10,
             amount: 1,
             rank: 'legendary',
-            trait: '',
+            trait: 'No discrimination, your hand will mix with all races.',
             description: '',
             race: 'human',
             image: '/public/humans/emperor.gif'
@@ -719,18 +719,31 @@
     };
     
     // Game logic
-    $: p1Turn = false;
-    $: p2Turn = false;
-    let p1Pts = 0;
-    let p2Pts = 0;
-    let p1RoundsWon = 0;
-    let p2RoundsWon = 0;
-    $: p1Hand = [];
-    $: p2Hand = [];
+
+    // test without labeleled statement
+    $: player1 = {
+        points: 0,
+        wins: 0,
+        losses: 0,
+        draws: 0,
+        turn: false,
+        hand: []
+    };
+    $: player2 = {
+        points: 0,
+        wins: 0,
+        losses: 0,
+        draws: 0,
+        turn: false,
+        hand: []
+    };
     let gobbledegookDeclared = false;
     let gobbledegookDisabled = false;
     let startBtnDisabled = false;
     let gameOver = true;
+    let winMessage = '';
+    
+
 
     // Deck players draw from, includes all race decks
     const fullDeck = {
@@ -749,11 +762,11 @@
     function decideFirstPlayer() {
         const num = Math.ceil(Math.random() * 2);
         if (num === 1) {
-            p1Turn = true
-            p2Turn = false;
+            player1.turn = true
+            player2.turn = false;
         } else {
-            p1Turn = false
-            p2Turn = true;
+            player1.turn = false
+            player2.turn = true;
         }
     }
 
@@ -780,8 +793,8 @@
     }
 
     function changeTurns() {
-        p1Turn = !p1Turn;
-        p2Turn = !p2Turn;
+        player1.turn = !player1.turn;
+        player2.turn = !player2.turn;
     }
 
     function dealCards(playerHand) {
@@ -804,10 +817,10 @@
             playerHand.push(cardDrawn);
         }
         // Need to reassign for svelte to be reactive
-        if (playerHand === p1Hand) {
-            p1Hand = [...playerHand];
+        if (playerHand === player1.hand) {
+            player1.hand = [...playerHand];
         } else {
-            p2Hand = [...playerHand];
+            player2.hand = [...playerHand];
         }
     }
 
@@ -846,22 +859,22 @@
         playerHand.push(cardDrawn);
 
         // Need to reassign for svelte to be reactive
-        if (playerHand === p1Hand) {
-            p1Hand = [...playerHand];
+        if (playerHand === player1.hand) {
+            player1.hand = [...playerHand];
         } else {
-            p2Hand = [...playerHand];
+            player2.hand = [...playerHand];
         }
     }
 
     function discard(card) {
-        if (p1Turn) {
-            const index = p1Hand.indexOf(card);
-            p1Hand.splice(index, 1)
-            p1Hand = [...p1Hand];
+        if (player1.turn) {
+            const index = player1.hand.indexOf(card);
+            player1.hand.splice(index, 1)
+            player1.hand = [...player1.hand];
         } else {
-            const index = p2Hand.indexOf(card);
-            p2Hand.splice(index, 1)
-            p2Hand = [...p2Hand];
+            const index = player2.hand.indexOf(card);
+            player2.hand.splice(index, 1)
+            player2.hand = [...player2.hand];
         }
         if (gobbledegookDeclared) {
             endGame();
@@ -882,17 +895,35 @@
     }
 
     function endGame() {
-        p1Turn = true;
-        p2Turn = true;
+        player1.turn = true;
+        player2.turn = true;
         gameOver = true;
         startBtnDisabled = false;
         gobbledegookDisabled = true;
         console.log('Gobbledegook, Gobbledegook!!! The game is now over, time to tally the points!');
-        p1Pts = calculatePoints(p1Hand);
-        p2Pts = calculatePoints(p2Hand);
+        player1.points = calculatePoints(player1);
+        player2.points = calculatePoints(player2);
         determineWinner();
         showDeck();
         showDeck(true);
+    }
+      
+    function startGame() {
+        player1.points = 0;
+        player2.points = 0;
+        gameOver = false;
+        startBtnDisabled = true;
+        gobbledegookDeclared = false;
+        gobbledegookDisabled = false;
+        winMessage = '';
+        fullDeck['humans'] = [...humanDeck];
+        fullDeck['goblins'] = [...goblinDeck];
+        fullDeck['elves'] = [...elfDeck];
+        fullDeck['dwarves'] = [...dwarfDeck];
+        fullDeck['bots'] = [...botDeck];
+        fullDeck['beasts'] = [...beastDeck];
+        dealCards(player1.hand);
+        dealCards(player2.hand);
     }
 
     // End the game
@@ -907,48 +938,98 @@
             gobbledegookDeclared = true;
         }
     }
-  
-    function startGame() {
-        p1Pts = 0;
-        p2Pts = 0;
-        gameOver = false;
-        startBtnDisabled = true;
-        gobbledegookDeclared = false;
-        gobbledegookDisabled = false;
-        fullDeck['humans'] = [...humanDeck];
-        fullDeck['goblins'] = [...goblinDeck];
-        fullDeck['elves'] = [...elfDeck];
-        fullDeck['dwarves'] = [...dwarfDeck];
-        fullDeck['bots'] = [...botDeck];
-        fullDeck['beasts'] = [...beastDeck];
-        dealCards(p1Hand);
-        dealCards(p2Hand);
+
+    function calculatePoints(player) {
+        let basePoints = 0;
+        let specialPoints = 0;
+        let humanPoints = 0;
+        let goblinPoints = 0;
+        let elfPoints = 0;
+        let dwarfPoints = 0;
+        let botPoints = 0;
+        let beastPoints = 0;
+        
+        if (player.hand.includes('emperor')) {
+            return calculate__emperor(player);
+        }
+        if (player.hand.includes('goblinLord')) specialPoints += 100;
+        if (player.hand.includes('elfKing')) specialPoints += 100;
+        if (player.hand.includes('longbeardLeader')) specialPoints += 100;
+        if (player.hand.includes('crusher541A57')) specialPoints += 100;
+        if (player.hand.includes('dreamDestroyer')) specialPoints += 100;
+        // calculates points based on race, picks highest points
+        player.hand.forEach((card) => {
+            const race = cardDetails[card].race;
+
+            switch(race) {
+                case 'human':
+                    humanPoints += cardDetails[card].points;
+                    break;
+
+                case 'goblin':
+                    goblinPoints += cardDetails[card].points;
+                    break;
+
+                case 'elf':
+                    elfPoints += cardDetails[card].points;
+                    break;
+
+                case 'dwarf':
+                    dwarfPoints += cardDetails[card].points;
+                    break;
+
+                case 'bot':
+                    botPoints += cardDetails[card].points;
+                    break;
+
+                case 'beast':
+                    beastPoints += cardDetails[card].points;
+                    break;
+
+                default:
+                    console.log("Didn't match a race???");
+            }
+
+            basePoints = Math.max(humanPoints, goblinPoints, elfPoints, dwarfPoints, botPoints, beastPoints);
+        });
+        return basePoints + specialPoints;
     }
 
-    function calculatePoints(pHand) {
-        let totalPoints = 0;
-        pHand.forEach((card) => {
-            const points = cardDetails[card].points;
-            totalPoints += points;
+    function calculateSpecialPoints(card) {
+        // TODO: check if card is special, if not, do nothing
+        // TODO: Check which special card it is (currently leaders only)
+        // Apply special rule to points of that race
+        if (cardDetails[card].trait) {
+
+        } else {
+            return;
+        }
+    }
+
+    function calculate__emperor(player) {
+        let points = 0;
+        player.hand.forEach(card => {
+            points += cardDetails[card].points;
         });
-        return totalPoints;
+        return points;
     }
 
     function determineWinner() {
-        if(p1Pts > p2Pts) {
-            console.log(`Player 1 is the winner with ${p1Pts} points!!!🎉🙌🎆🥂`);
-            console.log(`Player 2 loses with ${p2Pts} points...`)
-        } else if(p2Pts > p1Pts) {
-            console.log(`Player 2 is the winner with ${p2Pts} points!!!🎊🥳🍾`);
-            console.log(`Player 1 loses with ${p1Pts} points...`)
+        if(player1.points > player2.points) {
+            winMessage = `Player 1 is the winner with ${player1.points} points! Player 2 loses with ${player2.points} points...`;
+            console.log(`Player 1 is the winner with ${player1.points} points!!!🎉🙌🎆🥂, player 2 loses with ${player2.points} points...`);
+        } else if(player2.points > player1.points) {
+            winMessage = `Player 2 is the winner with ${player2.points} points!!!🎊🥳🍾, player 1 loses with ${player1.points} points...`;
+            console.log(`Player 2 is the winner with ${player2.points} points!!!🎊🥳🍾, player 1 loses with ${player1.points} points...`);
         } else {
-            console.log("It's a.... draw ?😢💔")
-            console.log(`Player 1 had ${p1Pts} points and player 2 had ${p2Pts} points.😎`);
+            winMessage = `Player 2 is the winner with ${player2.points} points!!!🎊🥳🍾, player 1 loses with ${player1.points} points...`;
+            console.log(`It's a.... draw ? Player 1 had ${player1.points} points and player 2 had ${player2.points} points.😢💔`);
         }
     }
 </script>
 
 <main>
+    <p>{winMessage}</p>
     {#if !startBtnDisabled}
         <Button on:click={startGame} customClasses="btn__green w-25">Start game</Button>
         <Button on:click={decideFirstPlayer} customClasses="btn__orange w-25">Decide who starts</Button>
@@ -957,14 +1038,14 @@
     {/if}
     <div class="game-board">
         {#if startBtnDisabled}
-            <p class="turn-text">{p1Turn ? "Player 1" : "Player 2"}<span>'s turn</span></p>
+            <p class="turn-text">{player1.turn ? "Player 1" : "Player 2"}<span>'s turn</span></p>
         {/if}
-        <div class="card-section card-section__ally {p1Turn ? "section-active" : ""}">
-            <p class="p1-name {p1Turn ? "turn-active" : ""}">Player 1</p>
-            {#each p1Hand as cardTitle}
+        <div class="card-section card-section__ally {player1.turn ? "section-active" : ""}">
+            <p class="p1-name {player1.turn ? "turn-active" : ""}">Player 1</p>
+            {#each player1.hand as cardTitle}
                 <GGCard
-                    on:cardClick={(event) => selectCard(event, p1Hand)}
-                    blur={p1Turn ? false : true}
+                    on:cardClick={(event) => selectCard(event, player1.hand)}
+                    blur={player1.turn ? false : true}
                     displayTitle={cardDetails[cardTitle].displayTitle}
                     title={cardDetails[cardTitle].title}
                     img={cardDetails[cardTitle].image}
@@ -975,19 +1056,19 @@
         </div>
         <div class="game-buttons">
             <!-- <Button on:click={changeTurns} round={true} customClasses="btn__brown">Change Turns</Button> -->
-            <GGCard on:click={() => {p1Turn ? drawCard(p1Hand) : drawCard(p2Hand)}} faceDown={true} />
+            <GGCard on:click={() => {player1.turn ? drawCard(player1.hand) : drawCard(player2.hand)}} faceDown={true} />
                 {#if gobbledegookDisabled}
                 <Button round={true} customClasses="btn__orange_disabled">Gobbledegook!</Button>
                 {:else}
                 <Button on:click={gobbledegook} round={true} customClasses="btn__orange">Gobbledegook!</Button>
                 {/if}
         </div>
-        <div class="card-section card-section__enemy {p2Turn ? "section-active" : ""}">
-            <p class="p2-name {p2Turn ? "turn-active" : ""}">Player 2</p>
-            {#each p2Hand as cardTitle}
+        <div class="card-section card-section__enemy {player2.turn ? "section-active" : ""}">
+            <p class="p2-name {player2.turn ? "turn-active" : ""}">Player 2</p>
+            {#each player2.hand as cardTitle}
             <GGCard
-            on:cardClick={(event) => selectCard(event, p2Hand)}
-            blur={p2Turn ? false : true}
+            on:cardClick={(event) => selectCard(event, player2.hand)}
+            blur={player2.turn ? false : true}
             displayTitle={cardDetails[cardTitle].displayTitle}
             title={cardDetails[cardTitle].title}
             img={cardDetails[cardTitle].image}

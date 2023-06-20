@@ -2,10 +2,9 @@
   // hooks
   import { createEventDispatcher } from 'svelte';
 
+  // props
   export let faceDown = false;
   export let blur = false;
-
-  // props
   export let displayTitle = 'Title here...';
   export let title = '';
   export let img = '/public/card-bg.png';
