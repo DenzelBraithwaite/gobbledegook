@@ -263,7 +263,7 @@
             points: 10,
             amount: 1,
             rank: 'legendary',
-            trait: '',
+            trait: 'Instant win with full goblin hand + goblin lord. Exception: enemy has Elf hand with Elf king, then draw.',
             description: '',
             race: 'goblin',
             image: '/public/goblins/goblin-lord.gif'
@@ -722,6 +722,7 @@
 
     // test without labeleled statement
     $: player1 = {
+        title: 'Player 1',
         points: 0,
         wins: 0,
         losses: 0,
@@ -730,6 +731,7 @@
         hand: []
     };
     $: player2 = {
+        title: 'Player 2',
         points: 0,
         wins: 0,
         losses: 0,
@@ -747,12 +749,12 @@
 
     // Deck players draw from, includes all race decks
     const fullDeck = {
-    humans: [...humanDeck],
+    // humans: [...humanDeck],
     goblins: [...goblinDeck],
     elves: [...elfDeck],
-    dwarves: [...dwarfDeck],
-    bots: [...botDeck],
-    beasts: [...beastDeck],
+    // dwarves: [...dwarfDeck],
+    // bots: [...botDeck],
+    // beasts: [...beastDeck],
     };
 
     // array for each deck, humans, goblins, elves and dwarves
@@ -792,11 +794,13 @@
         }
     }
 
+    // Changes active player turn
     function changeTurns() {
         player1.turn = !player1.turn;
         player2.turn = !player2.turn;
     }
 
+    // Deals 5 cards to each player at the start of the round
     function dealCards(playerHand) {
         // Clear players hands before drawing cards, keeps reference to array without reassigning.
         playerHand.length = 0;
@@ -824,10 +828,13 @@
         }
     }
 
+    // Draws and removes 1 random card from the deck
     function drawCard(playerHand) {
         if (gameOver) return;
 
+        // Player can't declare gobbledegook if they drew that turn
         gobbledegookDisabled = true;
+
         if (playerHand.length > 5) return;
         // Grab random deck 
         let randomNum = Math.floor(Math.random() * deckTypes.length);
@@ -866,6 +873,7 @@
         }
     }
 
+    // Removes card from hand if player hand has over 6 cards
     function discard(card) {
         if (player1.turn) {
             const index = player1.hand.indexOf(card);
@@ -894,6 +902,7 @@
         }
     }
 
+    // Ends current round
     function endGame() {
         player1.turn = true;
         player2.turn = true;
@@ -901,13 +910,14 @@
         startBtnDisabled = false;
         gobbledegookDisabled = true;
         console.log('Gobbledegook, Gobbledegook!!! The game is now over, time to tally the points!');
-        player1.points = calculatePoints(player1);
-        player2.points = calculatePoints(player2);
+        player1.points = calculateTotalPoints(player1, player2);
+        player2.points = calculateTotalPoints(player2, player1);
         determineWinner();
         showDeck();
         showDeck(true);
     }
-      
+    
+    // Initiaties a new round
     function startGame() {
         player1.points = 0;
         player2.points = 0;
@@ -939,81 +949,7 @@
         }
     }
 
-    function calculatePoints(player) {
-        let basePoints = 0;
-        let specialPoints = 0;
-        let humanPoints = 0;
-        let goblinPoints = 0;
-        let elfPoints = 0;
-        let dwarfPoints = 0;
-        let botPoints = 0;
-        let beastPoints = 0;
-        
-        if (player.hand.includes('emperor')) {
-            return calculate__emperor(player);
-        }
-        if (player.hand.includes('goblinLord')) specialPoints += 100;
-        if (player.hand.includes('elfKing')) specialPoints += 100;
-        if (player.hand.includes('longbeardLeader')) specialPoints += 100;
-        if (player.hand.includes('crusher541A57')) specialPoints += 100;
-        if (player.hand.includes('dreamDestroyer')) specialPoints += 100;
-        // calculates points based on race, picks highest points
-        player.hand.forEach((card) => {
-            const race = cardDetails[card].race;
-
-            switch(race) {
-                case 'human':
-                    humanPoints += cardDetails[card].points;
-                    break;
-
-                case 'goblin':
-                    goblinPoints += cardDetails[card].points;
-                    break;
-
-                case 'elf':
-                    elfPoints += cardDetails[card].points;
-                    break;
-
-                case 'dwarf':
-                    dwarfPoints += cardDetails[card].points;
-                    break;
-
-                case 'bot':
-                    botPoints += cardDetails[card].points;
-                    break;
-
-                case 'beast':
-                    beastPoints += cardDetails[card].points;
-                    break;
-
-                default:
-                    console.log("Didn't match a race???");
-            }
-
-            basePoints = Math.max(humanPoints, goblinPoints, elfPoints, dwarfPoints, botPoints, beastPoints);
-        });
-        return basePoints + specialPoints;
-    }
-
-    function calculateSpecialPoints(card) {
-        // TODO: check if card is special, if not, do nothing
-        // TODO: Check which special card it is (currently leaders only)
-        // Apply special rule to points of that race
-        if (cardDetails[card].trait) {
-
-        } else {
-            return;
-        }
-    }
-
-    function calculate__emperor(player) {
-        let points = 0;
-        player.hand.forEach(card => {
-            points += cardDetails[card].points;
-        });
-        return points;
-    }
-
+    // Display game results
     function determineWinner() {
         if(player1.points > player2.points) {
             winMessage = `Player 1 is the winner with ${player1.points} points! Player 2 loses with ${player2.points} points...`;
@@ -1021,15 +957,186 @@
         } else if(player2.points > player1.points) {
             winMessage = `Player 2 is the winner with ${player2.points} points!!!🎊🥳🍾, player 1 loses with ${player1.points} points...`;
             console.log(`Player 2 is the winner with ${player2.points} points!!!🎊🥳🍾, player 1 loses with ${player1.points} points...`);
+        } else if (player1.points === 500_000 && player2.points === 500_000) {
+            winMessage = `It seems neither the goblins nor the elves want to go to war with each other while their leaders are on the field... it's a draw🥷🏽!`;
+            console.log(`It seems neither the goblins nor the elves want to go to war with each other while their leaders are on the field... it's a draw🥷🏽!`);
+
         } else {
-            winMessage = `Player 2 is the winner with ${player2.points} points!!!🎊🥳🍾, player 1 loses with ${player1.points} points...`;
+            winMessage = `It's a.... draw ? Player 1 had ${player1.points} points and player 2 had ${player2.points} points.😢💔`;
             console.log(`It's a.... draw ? Player 1 had ${player1.points} points and player 2 had ${player2.points} points.😢💔`);
         }
     }
+
+    // Calculates card points by race, doesn't include special traits
+    function calculateBasePoints(playerHand) {
+        let highestPoints = 0;
+        const allPoints = {
+            humanPoints: 0,
+            goblinPoints: 0,
+            elfPoints: 0,
+            dwarfPoints: 0,
+            botPoints: 0,
+            beastPoints: 0
+        };
+
+        // calculates points based on race, picks highest points
+        playerHand.forEach((card) => {
+            const race = cardDetails[card].race;
+            switch(race) {
+                case 'human':
+                    allPoints.humanPoints += cardDetails[card].points;
+                    break;
+
+                case 'goblin':
+                    allPoints.goblinPoints += cardDetails[card].points;
+                    break;
+
+                case 'elf':
+                    allPoints.elfPoints += cardDetails[card].points;
+                    break;
+
+                case 'dwarf':
+                    allPoints.dwarfPoints += cardDetails[card].points;
+                    break;
+
+                case 'bot':
+                    allPoints.botPoints += cardDetails[card].points;
+                    break;
+
+                case 'beast':
+                    allPoints.beastPoints += cardDetails[card].points;
+                    break;
+
+                default:
+                    console.log("Didn't match a race???");
+            }
+
+            highestPoints = Math.max(
+                allPoints.humanPoints,
+                allPoints.goblinPoints,
+                allPoints.elfPoints,
+                allPoints.dwarfPoints,
+                allPoints.botPoints,
+                allPoints.beastPoints);
+        });
+        return highestPoints;
+    }
+
+    // Calculates total points (special and base)
+    function calculateTotalPoints(player, enemy) {
+        let highestPoints = 0;
+        let humanPoints = 0;
+        let goblinPoints = 0;
+        let elfPoints = 0;
+        let dwarfPoints = 0;
+        let botPoints = 0;
+        let beastPoints = 0;
+
+        highestPoints = calculateBasePoints(player.hand);
+
+        if (player.hand.includes('emperor')) {
+            humanPoints = calculateEmperor(player);
+            console.log('emperor detected');
+        }
+
+        if (player.hand.includes('goblinLord')) {
+            goblinPoints = calculateGoblinLord(player, enemy);
+            console.log('goblinLord detected');
+        }
+
+        if (player.hand.includes('elfKing')) {
+            goblinPoints = calculateElfKing(player, enemy);
+            console.log('elfKing detected');
+        }
+
+        highestPoints = Math.max(
+            highestPoints,
+            humanPoints,
+            goblinPoints,
+            elfPoints,
+            dwarfPoints,
+            botPoints,
+            beastPoints);
+
+            console.log({
+                player: player.title,
+                highestPoints: highestPoints,
+                humanPoints: humanPoints,
+                goblinPoints: goblinPoints,
+                elfPoints: elfPoints,
+                dwarfPoints: dwarfPoints,
+                botPoints: botPoints,
+                beastPoints: beastPoints,
+            })
+
+        return highestPoints;
+    }
+
+    // Adds all card points in hand, regardless of race
+    function calculateEmperor(player) {
+        let points = 0;
+        player.hand.forEach(card => {
+            points += cardDetails[card].points;
+        });
+        return points;
+    }
+
+    // Instant win for goblins unless enemy has full elf hand + elf king, if so, then instant draw.
+    function calculateGoblinLord(player, enemy) {
+        // Checks if player hand has only goblins
+            const goblinHand = player.hand.every(card => { 
+            return cardDetails[card].race === 'goblin';
+        });
+        console.log(`from inside calculateGoblinLord, goblinHand = ${goblinHand}`)
+        
+        // Checks if enemy has only elves
+        const enemyFullElf = enemy.hand.every(card => {
+            return cardDetails[card].race === 'elf';
+        });
+
+        // Checks if enemy has the elf king
+        const enemyElfKing = enemy.hand.includes('elfKing');
+
+        if (goblinHand && (enemyFullElf && enemyElfKing)) {
+            return 500_000;
+        } else if (goblinHand) {
+            return 1_000_000;
+        } else {
+            console.log('inside calculateGoblinLord(), else statement :(');
+            return calculateBasePoints(player.hand);
+        }
+    }
+
+    function calculateElfKing(player, enemy) {
+    // Checks if enemy hand has only goblins
+        const goblinHand = enemy.hand.every(card => { 
+        return cardDetails[card].race === 'goblin';
+    });
+    console.log(`from inside calculateElfKing, goblinHand = ${goblinHand}`)
+    
+    // Checks if hand has only elves
+    const fullElfHand = player.hand.every(card => {
+        return cardDetails[card].race === 'elf';
+    });
+
+    // Checks if hand has the elf king
+    const elfKing = player.hand.includes('elfKing');
+
+    if (goblinHand && (fullElfHand && elfKing)) {
+        return 500_000;
+    } else {
+        console.log('inside calculateElfKing(), else statement :(');
+        return calculateBasePoints(player.hand);
+    }
+}
 </script>
 
 <main>
-    <p>{winMessage}</p>
+    {#if winMessage}
+    <div class="game-results">
+        <p>{winMessage}</p>
+    </div>
+    {/if}
     {#if !startBtnDisabled}
         <Button on:click={startGame} customClasses="btn__green w-25">Start game</Button>
         <Button on:click={decideFirstPlayer} customClasses="btn__orange w-25">Decide who starts</Button>
@@ -1055,7 +1162,6 @@
             {/each}
         </div>
         <div class="game-buttons">
-            <!-- <Button on:click={changeTurns} round={true} customClasses="btn__brown">Change Turns</Button> -->
             <GGCard on:click={() => {player1.turn ? drawCard(player1.hand) : drawCard(player2.hand)}} faceDown={true} />
                 {#if gobbledegookDisabled}
                 <Button round={true} customClasses="btn__orange_disabled">Gobbledegook!</Button>
@@ -1082,6 +1188,21 @@
 
 
 <style>
+    .game-results {
+        font-size: 1.5rem;
+        background-color: #1d1d1d;
+        color: #fff;
+        border-radius: 0.5rem;
+        position: absolute;
+        top: 5rem;
+        left: 5rem;
+        padding: 1rem;
+        width: 25rem;
+        line-height: 1.5;
+        border: 1px solid #af4819;
+        z-index: 100;
+    }
+
     .game-board {
         position: relative;
         height: 85dvh;
