@@ -642,7 +642,7 @@
         rhino: {
             title: 'rhino',
             displayTitle: 'Rhinestone',
-            points: 5,
+            points: 6,
             amount: 3,
             rank: 'amazing',
             trait: '',
@@ -653,7 +653,7 @@
         bear: {
             title: 'bear',
             displayTitle: 'Theodore Thunderpaws',
-            points: 5,
+            points: 6,
             amount: 3,
             rank: 'amazing',
             trait: '',
@@ -664,7 +664,7 @@
         lion: {
             title: 'lion',
             displayTitle: 'Savannah Goldenmane',
-            points: 3,
+            points: 5,
             amount: 4,
             rank: 'great',
             trait: '',
@@ -675,7 +675,7 @@
         panther: {
             title: 'panther',
             displayTitle: 'Panthera Nocturna',
-            points: 3,
+            points: 4,
             amount: 4,
             rank: 'great',
             trait: '',
@@ -749,12 +749,12 @@
 
     // Deck players draw from, includes all race decks
     const fullDeck = {
-    // humans: [...humanDeck],
-    goblins: [...goblinDeck],
-    elves: [...elfDeck],
-    // dwarves: [...dwarfDeck],
-    // bots: [...botDeck],
-    // beasts: [...beastDeck],
+        humans: [...humanDeck],
+        goblins: [...goblinDeck],
+        elves: [...elfDeck],
+        dwarves: [...dwarfDeck],
+        bots: [...botDeck],
+        beasts: [...beastDeck],
     };
 
     // array for each deck, humans, goblins, elves and dwarves
@@ -911,7 +911,7 @@
         gobbledegookDisabled = true;
         console.log('Gobbledegook, Gobbledegook!!! The game is now over, time to tally the points!');
         player1.points = calculateTotalPoints(player1, player2);
-        player2.points = calculateTotalPoints(player2, player1);
+        player2.points = calculateTotalPoints(player2, player1); // TODO:Compare each time if existing points are higher (bots)
         determineWinner();
         showDeck();
         showDeck(true);
@@ -952,16 +952,28 @@
     // Display game results
     function determineWinner() {
         if(player1.points > player2.points) {
+            player1.wins += 1;
+            player2.losses += 1;
+
             winMessage = `Player 1 is the winner with ${player1.points} points! Player 2 loses with ${player2.points} points...`;
             console.log(`Player 1 is the winner with ${player1.points} points!!!🎉🙌🎆🥂, player 2 loses with ${player2.points} points...`);
         } else if(player2.points > player1.points) {
+            player2.wins += 1;
+            player1.losses += 1;
+
             winMessage = `Player 2 is the winner with ${player2.points} points!!!🎊🥳🍾, player 1 loses with ${player1.points} points...`;
             console.log(`Player 2 is the winner with ${player2.points} points!!!🎊🥳🍾, player 1 loses with ${player1.points} points...`);
         } else if (player1.points === 500_000 && player2.points === 500_000) {
+            player2.draws += 1;
+            player1.draws += 1;
+
             winMessage = `It seems neither the goblins nor the elves want to go to war with each other while their leaders are on the field... it's a draw🥷🏽!`;
             console.log(`It seems neither the goblins nor the elves want to go to war with each other while their leaders are on the field... it's a draw🥷🏽!`);
 
         } else {
+            player2.draws += 1;
+            player1.draws += 1;
+
             winMessage = `It's a.... draw ? Player 1 had ${player1.points} points and player 2 had ${player2.points} points.😢💔`;
             console.log(`It's a.... draw ? Player 1 had ${player1.points} points and player 2 had ${player2.points} points.😢💔`);
         }
@@ -1044,9 +1056,15 @@
             console.log('goblinLord detected');
         }
 
+        // TODO: Finish elf King 
         if (player.hand.includes('elfKing')) {
             goblinPoints = calculateElfKing(player, enemy);
             console.log('elfKing detected');
+        }
+
+        if (player.hand.includes('dreamDestroyer')) {
+            beastPoints = calculateDreamDestroyer(player);
+            console.log('dreamDestroyer detected');
         }
 
         highestPoints = Math.max(
@@ -1108,33 +1126,73 @@
     }
 
     function calculateElfKing(player, enemy) {
-    // Checks if enemy hand has only goblins
+        // Checks if enemy hand has only goblins
         const goblinHand = enemy.hand.every(card => { 
-        return cardDetails[card].race === 'goblin';
-    });
-    console.log(`from inside calculateElfKing, goblinHand = ${goblinHand}`)
+            return cardDetails[card].race === 'goblin';
+        });
+        console.log(`from inside calculateElfKing, goblinHand = ${goblinHand}`)
     
-    // Checks if hand has only elves
-    const fullElfHand = player.hand.every(card => {
-        return cardDetails[card].race === 'elf';
-    });
+        // Checks if hand has only elves
+        const fullElfHand = player.hand.every(card => {
+            return cardDetails[card].race === 'elf';
+        });
 
-    // Checks if hand has the elf king
-    const elfKing = player.hand.includes('elfKing');
+        // Checks if hand has the elf king
+        const elfKing = player.hand.includes('elfKing');
 
-    if (goblinHand && (fullElfHand && elfKing)) {
-        return 500_000;
-    } else {
-        console.log('inside calculateElfKing(), else statement :(');
-        return calculateBasePoints(player.hand);
+        if (goblinHand && (fullElfHand && elfKing)) {
+            return 500_000;
+        } else {
+            console.log('inside calculateElfKing(), else statement :(');
+            return calculateBasePoints(player.hand);
+        }
     }
-}
+
+    // Adds all card points in hand, regardless of race
+    function calculateDreamDestroyer(player) {  
+        let points = 0;      
+        // Checks if player hand has only beasts
+        const fullBeastHand = player.hand.every(card => { 
+            return cardDetails[card].race === 'beast';
+        });
+        console.log(`from inside calculateDreamDestroyer, beastHand = ${fullBeastHand}`)
+
+        if (fullBeastHand) {
+            return 42;
+        } else {
+            player.hand.forEach(card => {
+                if (cardDetails[card].race === 'beast') points += cardDetails[card].points;
+            })
+            return points;
+        }
+    }
+
+    // Adds all card points in hand, regardless of race
+    // function calculateCrusher(player, enemy) {  
+    //     let points = 0;      
+    //     // Checks if player hand has only beasts
+    //     const fullBeastHand = player.hand.every(card => { 
+    //         return cardDetails[card].race === 'beast';
+    //     });
+    //     console.log(`from inside calculateDreamDestroyer, beastHand = ${fullBeastHand}`)
+
+    //     if (fullBeastHand) {
+    //         return 42;
+    //     } else {
+    //         player.hand.forEach(card => {
+    //             if (cardDetails[card].race === 'beast') points += cardDetails[card].points;
+    //         })
+    //         return points;
+    //     }
+    // }
 </script>
 
 <main>
     {#if winMessage}
     <div class="game-results">
         <p>{winMessage}</p>
+        <p>Player 1 stats: Wins: {player1.wins}, Losses: {player1.losses}, Draws: {player1.draws}</p>
+        <p>Player 2 stats: Wins: {player2.wins}, Losses: {player2.losses}, Draws: {player2.draws}</p>
     </div>
     {/if}
     {#if !startBtnDisabled}
