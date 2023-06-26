@@ -26,9 +26,6 @@
         'scout',
         'scout',
         'scout',
-        'scout',
-        'villager',
-        'villager',
         'villager',
         'villager',
         'villager',
@@ -45,7 +42,6 @@
         'shaman',
         'shaman',
         'shaman',
-        'shaman',
         'thief',
         'thief',
         'thief',
@@ -54,8 +50,6 @@
         'hobgoblin',
         'hobgoblin',
         'hobgoblin',
-        'bokoblin',
-        'bokoblin',
         'bokoblin',
         'bokoblin',
         'bokoblin',
@@ -68,12 +62,10 @@
         'elfChampion',
         'darkElf',
         'darkElf',
-        'darkElf',
         'forestDweller',
         'forestDweller',
         'forestDweller',
         'nadallen',
-        'nadallen',
         'nelladan',
         'nelladan',
         'nelladan',
@@ -81,12 +73,9 @@
         'woodElf',
         'woodElf',
         'woodElf',
-        'woodElf',
         'wildElf',
         'wildElf',
         'wildElf',
-        'wildElf',
-        'bard',
         'bard',
         'bard',
         'bard'
@@ -108,10 +97,14 @@
         'miner',
         'blacksmith',
         'blacksmith',
+        'blacksmith',
+        'traveller',
         'traveller',
         'traveller',
         'bartender',
         'bartender',
+        'bartender',
+        'hobbit',
         'hobbit',
         'hobbit'
     ];
@@ -135,8 +128,6 @@
         'incubator',
         'incubator',
         'incubator',
-        'incubator',
-        'virus',
         'virus',
         'virus',
         'virus',
@@ -156,20 +147,15 @@
         'lion',
         'lion',
         'lion',
-        'lion',
-        'panther',
         'panther',
         'panther',
         'panther',
         'wolf',
         'wolf',
         'wolf',
-        'wolf',
         'fox',
         'fox',
         'fox',
-        'fox',
-        'dog',
         'dog',
         'dog',
         'dog'
@@ -756,10 +742,10 @@
 
     // Deck players draw from, includes all race decks
     const fullDeck = {
-        // humans: [...humanDeck],
-        // goblins: [...goblinDeck],
-        // elves: [...elfDeck],
-        // dwarves: [...dwarfDeck],
+        humans: [...humanDeck],
+        goblins: [...goblinDeck],
+        elves: [...elfDeck],
+        dwarves: [...dwarfDeck],
         bots: [...botDeck],
         beasts: [...beastDeck],
     };
@@ -1253,8 +1239,7 @@
             fullDeck['beasts'].length
         )
 
-        points += fullDeck['dwarves'].length === mostCards ? 30 : 0;
-        return points;
+        return mostCards === fullDeck['dwarves'].length ? (points + 30) : 0;  
 }
 
     // Reduce bot poitns if player got hacked
