@@ -756,10 +756,10 @@
 
     // Deck players draw from, includes all race decks
     const fullDeck = {
-        humans: [...humanDeck],
-        goblins: [...goblinDeck],
-        elves: [...elfDeck],
-        dwarves: [...dwarfDeck],
+        // humans: [...humanDeck],
+        // goblins: [...goblinDeck],
+        // elves: [...elfDeck],
+        // dwarves: [...dwarfDeck],
         bots: [...botDeck],
         beasts: [...beastDeck],
     };
@@ -944,6 +944,8 @@
         player2.points = 0;
         player1.hacked = false;
         player2.hacked = false;
+        player1.discards = [];
+        player2.discards = [];
         gameOver = false;
         startBtnDisabled = true;
         gobbledegookDeclared = false;
@@ -1081,7 +1083,7 @@
 
         // TODO: Finish elf King 
         if (player.hand.includes('elfKing')) {
-            goblinPoints = calculateElfKing(player, enemy);
+            elfPoints = calculateElfKing(player, enemy);
             console.log('elfKing detected');
         }
 
@@ -1189,8 +1191,9 @@
             return 500_000;
         } else if (fullElfHand && elfKing) {
             player.hand.forEach(card => {
-                totalElfPoints += card.points;
+                totalElfPoints += cardDetails[card].points;
             })
+            console.log(totalElfPoints);
             return totalElfPoints *= 3;
         } else {
             console.log('inside calculateElfKing(), else statement :(');
@@ -1362,7 +1365,7 @@
         z-index: 100;
         height: 110%;
         width: 110%;
-        background-color: #55431e;
+        background-color: #1d1d1d;
         filter: blur(20px);
 
         position: absolute;
