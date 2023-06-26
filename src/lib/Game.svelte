@@ -728,7 +728,10 @@
         losses: 0,
         draws: 0,
         turn: false,
-        hand: []
+        dwarfNextTurn: false,
+        hacked: false,
+        hand: [],
+        discards: []
     };
     $: player2 = {
         title: 'Player 2',
@@ -736,14 +739,18 @@
         wins: 0,
         losses: 0,
         draws: 0,
+        dwarfNextTurn: false,
+        hacked: false,
         turn: false,
-        hand: []
+        hand: [],
+        discards: []
     };
     let gobbledegookDeclared = false;
     let gobbledegookDisabled = false;
     let startBtnDisabled = false;
     let gameOver = true;
     let winMessage = '';
+    let boardBlur = false;
     
 
 
@@ -798,6 +805,7 @@
     function changeTurns() {
         player1.turn = !player1.turn;
         player2.turn = !player2.turn;
+        boardBlur = !boardBlur;
     }
 
     // Deals 5 cards to each player at the start of the round
@@ -829,16 +837,26 @@
     }
 
     // Draws and removes 1 random card from the deck
-    function drawCard(playerHand) {
+    function drawCard(player) {
         if (gameOver) return;
+        let currentDeck = '';
+        let randomNum = 0;
 
         // Player can't declare gobbledegook if they drew that turn
         gobbledegookDisabled = true;
 
-        if (playerHand.length > 5) return;
-        // Grab random deck 
-        let randomNum = Math.floor(Math.random() * deckTypes.length);
-        let currentDeck = deckTypes[randomNum];
+        // Player can't draw when he has 6 cards
+        if (player.hand.length > 5) return;
+        
+        // If player has longbeard leader, next card is dward
+        if (player.dwarfNextTurn) {
+            currentDeck = 'dwarf';
+            player.dwarfNextTurn = false;
+        } else {
+            // Grab random deck 
+            randomNum = Math.floor(Math.random() * deckTypes.length);
+            currentDeck = deckTypes[randomNum];
+        }
 
         // When the last card is drawn, currentDeck becomes undefined. This will catch that
         if (deckTypes.length === 0 && currentDeck === undefined) {
@@ -858,31 +876,30 @@
         randomNum = Math.floor(Math.random() * fullDeck[currentDeck].length);
         const cardDrawn = fullDeck[currentDeck][randomNum];
 
+        // If it's the longbeard leader, the next card will be dwarf
+        if (cardDrawn === 'longbeardLeader') player.dwarfNextTurn = true;
+
         // const removedCard = fullDeck[currentDeck].find(card => card === cardDrawn);
         const removedCardIndex = fullDeck[currentDeck].indexOf(cardDrawn);
         fullDeck[currentDeck].splice(removedCardIndex, 1);
 
-        // Add to player's hand
-        playerHand.push(cardDrawn);
-
-        // Need to reassign for svelte to be reactive
-        if (playerHand === player1.hand) {
-            player1.hand = [...playerHand];
-        } else {
-            player2.hand = [...playerHand];
-        }
+        // Add to player's hand and trigger reactivity
+        (player.title === 'Player 1') ? player1.hand = [...player.hand, cardDrawn] : player2.hand = [...player.hand, cardDrawn];
+        
     }
 
-    // Removes card from hand if player hand has over 6 cards
+    // Removes card from hand if player hand has over 6 cards TODO: show discards array after!
     function discard(card) {
         if (player1.turn) {
             const index = player1.hand.indexOf(card);
             player1.hand.splice(index, 1)
             player1.hand = [...player1.hand];
+            player1.discards = [...player1.discards, card];
         } else {
             const index = player2.hand.indexOf(card);
             player2.hand.splice(index, 1)
             player2.hand = [...player2.hand];
+            player2.discards = [...player2.discards, card];
         }
         if (gobbledegookDeclared) {
             endGame();
@@ -912,6 +929,10 @@
         console.log('Gobbledegook, Gobbledegook!!! The game is now over, time to tally the points!');
         player1.points = calculateTotalPoints(player1, player2);
         player2.points = calculateTotalPoints(player2, player1); // TODO:Compare each time if existing points are higher (bots)
+        
+        // Remove bot points from players hands if hacked
+        if (player1.hacked) playerHacked(player1);
+        if (player2.hacked) playerHacked(player2);
         determineWinner();
         showDeck();
         showDeck(true);
@@ -921,6 +942,8 @@
     function startGame() {
         player1.points = 0;
         player2.points = 0;
+        player1.hacked = false;
+        player2.hacked = false;
         gameOver = false;
         startBtnDisabled = true;
         gobbledegookDeclared = false;
@@ -1062,10 +1085,26 @@
             console.log('elfKing detected');
         }
 
+        // TODO: Fix, even if not all beasts, still get buff. reminder to account for DD 
         if (player.hand.includes('dreamDestroyer')) {
-            beastPoints = calculateDreamDestroyer(player);
+            
+            // +2 because Dream Destroyer is worth 10 points, not 8
+            beastPoints = calculateDreamDestroyer(player) + 2;
             console.log('dreamDestroyer detected');
         }
+
+        if (player.hand.includes('crusher541A57')) {
+            botPoints = calculateCrusher(player, enemy);
+            console.log('crusher541A57 detected');
+        }
+
+        if (player.hand.includes('longbeardLeader')) {
+            dwarfPoints = calculateLongbeard(player);
+
+            console.log('longbeardLeader detected');
+        }
+
+        //TODO: If Crusher, enemy bot points are added to yours, and all bots gain +2 points
 
         highestPoints = Math.max(
             highestPoints,
@@ -1090,11 +1129,15 @@
         return highestPoints;
     }
 
-    // Adds all card points in hand, regardless of race
+    // Adds all card points in hand, regardless of race. Humans worth double
     function calculateEmperor(player) {
         let points = 0;
         player.hand.forEach(card => {
-            points += cardDetails[card].points;
+            if (cardDetails[card].race === 'human') {
+                points += (cardDetails[card].points * 2);
+            } else {
+                points += cardDetails[card].points;
+            }
         });
         return points;
     }
@@ -1126,6 +1169,8 @@
     }
 
     function calculateElfKing(player, enemy) {
+        let totalElfPoints = 0;
+
         // Checks if enemy hand has only goblins
         const goblinHand = enemy.hand.every(card => { 
             return cardDetails[card].race === 'goblin';
@@ -1142,6 +1187,11 @@
 
         if (goblinHand && (fullElfHand && elfKing)) {
             return 500_000;
+        } else if (fullElfHand && elfKing) {
+            player.hand.forEach(card => {
+                totalElfPoints += card.points;
+            })
+            return totalElfPoints *= 3;
         } else {
             console.log('inside calculateElfKing(), else statement :(');
             return calculateBasePoints(player.hand);
@@ -1158,33 +1208,58 @@
         console.log(`from inside calculateDreamDestroyer, beastHand = ${fullBeastHand}`)
 
         if (fullBeastHand) {
-            return 42;
+            return 40;
         } else {
             player.hand.forEach(card => {
-                if (cardDetails[card].race === 'beast') points += cardDetails[card].points;
+                if (cardDetails[card].race === 'beast') points += 8;
             })
             return points;
         }
     }
 
-    // Adds all card points in hand, regardless of race
-    // function calculateCrusher(player, enemy) {  
-    //     let points = 0;      
-    //     // Checks if player hand has only beasts
-    //     const fullBeastHand = player.hand.every(card => { 
-    //         return cardDetails[card].race === 'beast';
-    //     });
-    //     console.log(`from inside calculateDreamDestroyer, beastHand = ${fullBeastHand}`)
+    // Adds ALL bot card points on the field to players score, and bots have +2
+    function calculateCrusher(player, enemy) {  
+        let allBotPoints = 0;      
 
-    //     if (fullBeastHand) {
-    //         return 42;
-    //     } else {
-    //         player.hand.forEach(card => {
-    //             if (cardDetails[card].race === 'beast') points += cardDetails[card].points;
-    //         })
-    //         return points;
-    //     }
-    // }
+        // Add all bot points
+        player.hand.forEach(card => {
+            if (cardDetails[card].race === 'bot') allBotPoints += (cardDetails[card].points + 2);
+        });
+        enemy.hand.forEach(card => {
+            if (cardDetails[card].race === 'bot') allBotPoints += (cardDetails[card].points + 2);
+        });
+        enemy.hacked = true;
+
+        return allBotPoints;
+    }
+
+    // Adds ALL bot card points on the field to players score, and bots have +2
+    function calculateLongbeard(player) {  
+        let points = 0;
+
+        player.hand.forEach(card => {
+            if (cardDetails[card].race === 'dwarf') points += (cardDetails[card].points);
+        });
+
+        const mostCards = Math.max(
+            fullDeck['humans'].length,
+            fullDeck['goblins'].length,
+            fullDeck['elves'].length,
+            fullDeck['dwarves'].length,
+            fullDeck['bots'].length,
+            fullDeck['beasts'].length
+        )
+
+        points += fullDeck['dwarves'].length === mostCards ? 30 : 0;
+        return points;
+}
+
+    // Reduce bot poitns if player got hacked
+    function playerHacked(player) {
+        player.hand.forEach(card => {
+            if (cardDetails[card].race === 'bot') player.points -= cardDetails[card].points;
+        });
+    }
 </script>
 
 <main>
@@ -1193,6 +1268,18 @@
         <p>{winMessage}</p>
         <p>Player 1 stats: Wins: {player1.wins}, Losses: {player1.losses}, Draws: {player1.draws}</p>
         <p>Player 2 stats: Wins: {player2.wins}, Losses: {player2.losses}, Draws: {player2.draws}</p>
+        <h4>Player 1 cards discarded:</h4>
+        <ul>
+            {#each player1.discards as card}
+            <li>{card}</li>
+            {/each}
+        </ul>
+        <h4>Player 2 cards discarded:</h4>
+        <ul>
+            {#each player2.discards as card}
+            <li>{card}</li>
+            {/each}
+        </ul>
     </div>
     {/if}
     {#if !startBtnDisabled}
@@ -1201,11 +1288,21 @@
     {:else}
         <Button customClasses="btn__green_disabled w-25">Game in progress...</Button>
     {/if}
-    <div class="game-board">
-        {#if startBtnDisabled}
-            <p class="turn-text">{player1.turn ? "Player 1" : "Player 2"}<span>'s turn</span></p>
-        {/if}
-        <div class="card-section card-section__ally {player1.turn ? "section-active" : ""}">
+    <div class="game-board {gobbledegookDeclared ? 'gobble-declared' : ''}">
+        <!-- Blurs board between turns -->
+        {#if boardBlur}
+            {#if player1.turn}
+                <h1 class="player-turn-alert">Player 1, click when ready.</h1>
+            {/if}
+            {#if player2.turn}
+                <h1 class="player-turn-alert">Player 2, click when ready.</h1>
+            {/if}
+            <div on:click={() => boardBlur = false} class="board-blurred"></div>
+            {/if}
+            {#if startBtnDisabled}
+                <p class="turn-text">{player1.turn ? "Player 1" : "Player 2"}<span>'s turn</span></p>
+            {/if}
+            <div class="card-section card-section__ally {player1.turn ? "section-active" : ""}">
             <p class="p1-name {player1.turn ? "turn-active" : ""}">Player 1</p>
             {#each player1.hand as cardTitle}
                 <GGCard
@@ -1220,7 +1317,7 @@
             {/each}
         </div>
         <div class="game-buttons">
-            <GGCard on:click={() => {player1.turn ? drawCard(player1.hand) : drawCard(player2.hand)}} faceDown={true} />
+            <GGCard on:click={() => {player1.turn ? drawCard(player1) : drawCard(player2)}} faceDown={true} />
                 {#if gobbledegookDisabled}
                 <Button round={true} customClasses="btn__orange_disabled">Gobbledegook!</Button>
                 {:else}
@@ -1261,6 +1358,16 @@
         z-index: 100;
     }
 
+    .board-blurred {
+        z-index: 100;
+        height: 110%;
+        width: 110%;
+        background-color: #55431e;
+        filter: blur(20px);
+
+        position: absolute;
+    }
+
     .game-board {
         position: relative;
         height: 85dvh;
@@ -1276,6 +1383,10 @@
         display: flex;
         justify-content: center;
         align-items: center;
+    }
+
+    .gobble-declared {
+        border: 10px dotted #ffee69;
     }
 
     .card-section {
@@ -1351,5 +1462,12 @@
         gap: 2rem;
         justify-content: center;
         align-items: center;
+    }
+
+    .player-turn-alert {
+        z-index: 1000;
+        color: #9dff5c;
+        text-shadow: 0 4px 10px #ffe17d36;
+        font-size: 4rem;
     }
 </style>
