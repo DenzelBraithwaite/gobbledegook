@@ -1251,25 +1251,6 @@
 </script>
 
 <main>
-    {#if winMessage}
-        <div class="game-results">
-            <p>{winMessage}</p>
-            <p>Player 1 stats: Wins: {player1.wins}, Losses: {player1.losses}, Draws: {player1.draws}</p>
-            <p>Player 2 stats: Wins: {player2.wins}, Losses: {player2.losses}, Draws: {player2.draws}</p>
-            <h4>Player 1 cards discarded:</h4>
-            <ul>
-                {#each player1.discards as card}
-                <li>{card}</li>
-                {/each}
-            </ul>
-            <h4>Player 2 cards discarded:</h4>
-            <ul>
-                {#each player2.discards as card}
-                <li>{card}</li>
-                {/each}
-            </ul>
-        </div>
-    {/if}
     {#if !startBtnDisabled}
         <Button on:click={startGame} customClasses="btn__green w-25">Start game</Button>
         <Button on:click={decideFirstPlayer} customClasses="btn__orange w-25">Decide who starts</Button>
@@ -1333,6 +1314,35 @@
             {/each}
         </div>
     </div>
+    {#if winMessage}
+    <div class="game-results">
+        <p>{winMessage}</p>
+        <p>Player 1 stats: Wins: {player1.wins}, Losses: {player1.losses}, Draws: {player1.draws}</p>
+        <p>Player 2 stats: Wins: {player2.wins}, Losses: {player2.losses}, Draws: {player2.draws}</p>
+        <h4>Player 1 cards discarded:</h4>
+        <ul class="discarded-cards">
+            {#each player1.discards as card}
+                <GGCard
+                displayTitle={cardDetails[card].displayTitle}
+                title={cardDetails[card].title}
+                img={cardDetails[card].image}
+                race={cardDetails[card].race}
+                points={cardDetails[card].points} />
+            {/each}
+        </ul>
+        <h4>Player 2 cards discarded:</h4>
+        <ul class="discarded-cards">
+            {#each player2.discards as card}
+                <GGCard
+                displayTitle={cardDetails[card].displayTitle}
+                title={cardDetails[card].title}
+                img={cardDetails[card].image}
+                race={cardDetails[card].race}
+                points={cardDetails[card].points} />
+            {/each}
+        </ul>
+    </div>
+{/if}
 </main>
 
 
@@ -1342,14 +1352,18 @@
         background-color: #1d1d1d;
         color: #fff;
         border-radius: 0.5rem;
-        position: absolute;
-        top: 5rem;
-        left: 5rem;
         padding: 1rem;
-        width: 25rem;
+        margin: 5rem auto;
+        width: 70%;
         line-height: 1.5;
         border: 1px solid #af4819;
         z-index: 100;
+    }
+
+    .discarded-cards {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
     }
 
     .board-blurred {
