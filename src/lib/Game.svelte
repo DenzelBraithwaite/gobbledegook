@@ -794,11 +794,11 @@
     // Deck players draw from, includes all race decks
     const fullDeck = {
         humans: [...humanDeck],
-        // goblins: [...goblinDeck],
-        // elves: [...elfDeck],
-        // dwarves: [...dwarfDeck],
-        // bots: [...botDeck],
-        // beasts: [...beastDeck],
+        goblins: [...goblinDeck],
+        elves: [...elfDeck],
+        dwarves: [...dwarfDeck],
+        bots: [...botDeck],
+        beasts: [...beastDeck],
     };
 
     // array for each deck, humans, goblins, elves and dwarves
