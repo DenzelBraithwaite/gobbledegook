@@ -170,8 +170,9 @@
             points: 10,
             amount: 1,
             rank: 'legendary',
-            trait: 'No discrimination, your hand will mix with all races.',
-            description: 'The leader of the human racew',
+            trait: 'All cards in your hand will count towards your final score, regardless of race.',
+            traitTitle: 'No Discrimination',
+            description: 'The leader of the human race',
             race: 'human',
             image: '/public/humans/emperor.gif'
         },
@@ -182,6 +183,7 @@
             amount: 2,
             rank: 'epic',
             trait: '',
+            traitTitle: '',
             description: 'Powerful warrior second only to the emperor',
             race: 'human',
             image: 'public/humans/commander.png'
@@ -193,6 +195,7 @@
             amount: 3,
             rank: 'amazing',
             trait: '',
+            traitTitle: '',
             description: 'A highly skilled professional killer',
             race: 'human',
             image: 'public/humans/assassin.png'
@@ -204,6 +207,7 @@
             amount: 4,
             rank: 'good',
             trait: '',
+            traitTitle: '',
             description: 'A middle ranked warrior',
             race: 'human',
             image: 'public/humans/knight.png'
@@ -215,6 +219,7 @@
             amount: 4,
             rank: 'good',
             trait: '',
+            traitTitle: '',
             description: 'A low ranked warrior',
             race: 'human',
             image: 'public/humans/soldier.png'
@@ -226,6 +231,7 @@
             amount: 5,
             rank: 'basic',
             trait: '',
+            traitTitle: '',
             description: 'The lowest ranked in the human army',
             race: 'human',
             image: 'public/humans/scout.png'
@@ -237,6 +243,7 @@
             amount: 6,
             rank: 'basic',
             trait: '',
+            traitTitle: '',
             description: 'An innocent villager',
             race: 'human',
             image: 'public/humans/villager.png'
@@ -249,7 +256,8 @@
             points: 10,
             amount: 1,
             rank: 'legendary',
-            trait: 'Instant win with full goblin hand + goblin lord. Exception: enemy has Elf hand with Elf king, then draw.',
+            trait: "If your hand contains only goblins, you receive an insane amount of bonus points. Beware, the elf king can block this trait, resulting in a draw.",
+            traitTitle: 'Gobbledegook',
             description: 'The leader of the goblins',
             race: 'goblin',
             image: '/public/goblins/goblin-lord.gif'
@@ -261,6 +269,7 @@
             amount: 2,
             rank: 'epic',
             trait: '',
+            traitTitle: '',
             description: 'The strongest weapons of the goblin lord',
             race: 'goblin',
             image: '/public/goblins/giant.png'
@@ -272,6 +281,7 @@
             amount: 3,
             rank: 'amazing',
             trait: '',
+            traitTitle: '',
             description: 'Loyal high ranked soldier in the goblin army',
             race: 'goblin',
             image: '/public/goblins/troll.png'
@@ -283,6 +293,7 @@
             amount: 4,
             rank: 'great',
             trait: '',
+            traitTitle: '',
             description: 'A magic wielding goblin',
             race: 'goblin',
             image: '/public/goblins/shaman.png'
@@ -294,6 +305,7 @@
             amount: 4,
             rank: 'good',
             trait: '',
+            traitTitle: '',
             description: 'A quick, elusive but weak goblin',
             race: 'goblin',
             image: '/public/goblins/thief.png'
@@ -305,6 +317,7 @@
             amount: 4,
             rank: 'good',
             trait: '',
+            traitTitle: '',
             description: 'A low ranked goblin',
             race: 'goblin',
             image: '/public/goblins/hobgoblin.png'
@@ -316,6 +329,7 @@
             amount: 6,
             rank: 'basic',
             trait: '',
+            traitTitle: '',
             description: 'The weakest of goblins',
             race: 'goblin',
             image: '/public/goblins/bokoblin.png'
@@ -328,7 +342,8 @@
             points: 10,
             amount: 1,
             rank: 'legendary',
-            trait: '',
+            trait: "If your hand contains only elves, they will have their points trippled! The elf king also prevents the enemy from using the goblin lord's special trait",
+            traitTitle: 'Superior Race',
             description: 'The purest, most powerful and respected leader of the elves',
             race: 'elf',
             image: '/public/elves/elf-king.gif'
@@ -340,7 +355,8 @@
             amount: 2,
             rank: 'epic',
             trait: '',
-            description: 'Elf king guard candidates',
+            traitTitle: '',
+            description: 'Elf king guard candidate',
             race: 'elf',
             image: '/public/elves/champion.png'
         },
@@ -351,6 +367,7 @@
             amount: 3,
             rank: 'amazing',
             trait: '',
+            traitTitle: '',
             description: 'High ranked powerful elf',
             race: 'elf',
             image: '/public/elves/dark-elf.png'
@@ -362,6 +379,7 @@
             amount: 3,
             rank: 'amazing',
             trait: '',
+            traitTitle: '',
             description: "An elf in tuned with nature, they're quite strong.",
             race: 'elf',
             image: '/public/elves/forest-dweller.png'
@@ -373,6 +391,7 @@
             amount: 1,
             rank: 'great',
             trait: '',
+            traitTitle: '',
             description: 'The stronger half of the rate elvan twins',
             race: 'elf',
             image: '/public/elves/nadallen.png'
@@ -384,6 +403,7 @@
             amount: 4,
             rank: 'good',
             trait: '',
+            traitTitle: '',
             description: 'A rare elvan twin',
             race: 'elf',
             image: '/public/elves/nelladan.png'
@@ -395,6 +415,7 @@
             amount: 4,
             rank: 'good',
             trait: '',
+            traitTitle: '',
             description: 'An elf who aspires to be a forest dwelling elf',
             race: 'elf',
             image: '/public/elves/wood-elf.png'
@@ -406,6 +427,7 @@
             amount: 4,
             rank: 'good',
             trait: '',
+            traitTitle: '',
             description: 'An elf with no social status',
             race: 'elf',
             image: '/public/elves/wild-elf.png'
@@ -417,6 +439,7 @@
             amount: 4,
             rank: 'basic',
             trait: '',
+            traitTitle: '',
             description: 'A weak musician',
             race: 'elf',
             image: '/public/elves/bard.png'
@@ -430,6 +453,7 @@
             amount: 1,
             rank: 'legendary',
             trait: '',
+            traitTitle: '',
             description: 'The bravest and most feared amongst the dwarves',
             race: 'dwarf',
             image: '/public/dwarves/longbeard-leader.gif'
@@ -441,6 +465,7 @@
             amount: 2,
             rank: 'epic',
             trait: '',
+            traitTitle: '',
             description: 'Right hand man to the longbeard leader himself',
             race: 'dwarf',
             image: '/public/dwarves/dwarf-commander.png'
@@ -452,6 +477,7 @@
             amount: 2,
             rank: 'amazing',
             trait: '',
+            traitTitle: '',
             description: 'A dwarven warrior wielding science as magic',
             race: 'dwarf',
             image: '/public/dwarves/alchemist.png'
@@ -463,6 +489,7 @@
             amount: 3,
             rank: 'amazing',
             trait: '',
+            traitTitle: '',
             description: 'A strong and reliable dwarven warrior',
             race: 'dwarf',
             image: '/public/dwarves/warrior.png'
@@ -474,6 +501,7 @@
             amount: 3,
             rank: 'great',
             trait: '',
+            traitTitle: '',
             description: 'A strong and capable hunter',
             race: 'dwarf',
             image: '/public/dwarves/hunter.png'
@@ -485,6 +513,7 @@
             amount: 3,
             rank: 'good',
             trait: '',
+            traitTitle: '',
             description: 'An average miner, not great in a fight',
             race: 'dwarf',
             image: '/public/dwarves/miner.png'
@@ -496,6 +525,7 @@
             amount: 3,
             rank: 'good',
             trait: '',
+            traitTitle: '',
             description: 'A typical blacksmith, not very strong',
             race: 'dwarf',
             image: '/public/dwarves/blacksmith.png'
@@ -507,6 +537,7 @@
             amount: 4,
             rank: 'good',
             trait: '',
+            traitTitle: '',
             description: 'An adventurous but feeble dwarf',
             race: 'dwarf',
             image: '/public/dwarves/traveller.png'
@@ -518,6 +549,7 @@
             amount: 4,
             rank: 'basic',
             trait: '',
+            traitTitle: '',
             description: 'A popular dwarf at the local pub, a serious drinker even amongst dwarves',
             race: 'dwarf',
             image: '/public/dwarves/bartender.png'
@@ -529,6 +561,7 @@
             amount: 4,
             rank: 'basic',
             trait: '',
+            traitTitle: '',
             description: "Half elf, half human. Although rare and different, the're generally accepted by all dwarves",
             race: 'dwarf',
             image: '/public/dwarves/hobbit.png'
@@ -542,6 +575,7 @@
             amount: 1,
             rank: 'legendary',
             trait: '',
+            traitTitle: '',
             description: 'The most advanced battle and hacking unit known to man',
             race: 'bot',
             image: '/public/bots/crusher-5A1A-57.gif'
@@ -553,6 +587,7 @@
             amount: 2,
             rank: 'epic',
             trait: '',
+            traitTitle: '',
             description: 'The core of the modern bot society',
             race: 'bot',
             image: '/public/bots/ai.png'
@@ -564,6 +599,7 @@
             amount: 3,
             rank: 'amazing',
             trait: '',
+            traitTitle: '',
             description: 'A bot created as a gift to the elves as a peace treaty',
             race: 'bot',
             image: '/public/bots/fae-bot.png'
@@ -575,6 +611,7 @@
             amount: 4,
             rank: 'great',
             trait: '',
+            traitTitle: '',
             description: 'A bot designed to kill, beware',
             race: 'bot',
             image: '/public/bots/saw-bot-3000.png'
@@ -586,6 +623,7 @@
             amount: 4,
             rank: 'great',
             trait: '',
+            traitTitle: '',
             description: 'An angry aggressive bot, known to attack on sight',
             race: 'bot',
             image: '/public/bots/inferno-bot.png'
@@ -597,6 +635,7 @@
             amount: 5,
             rank: 'good',
             trait: '',
+            traitTitle: '',
             description: 'A weak mother bot used to raise young infants',
             race: 'bot',
             image: '/public/bots/incubator.png'
@@ -608,6 +647,7 @@
             amount: 7,
             rank: 'basic',
             trait: '',
+            traitTitle: '',
             description: 'A common computer virus',
             race: 'bot',
             image: '/public/bots/virus.png'
@@ -621,6 +661,7 @@
             amount: 1,
             rank: 'legendary',
             trait: '',
+            traitTitle: '',
             description: 'The fiercest creature in the animal kingdomw',
             race: 'beast',
             image: '/public/beasts/dream-destroyer.gif'
@@ -632,6 +673,7 @@
             amount: 3,
             rank: 'amazing',
             trait: '',
+            traitTitle: '',
             description: 'A feared beast at the top of the food chain',
             race: 'beast',
             image: '/public/beasts/rhino.png'
@@ -643,6 +685,7 @@
             amount: 3,
             rank: 'amazing',
             trait: '',
+            traitTitle: '',
             description: 'A powerful top level beast, matched by few',
             race: 'beast',
             image: '/public/beasts/bear.png'
@@ -654,6 +697,7 @@
             amount: 4,
             rank: 'great',
             trait: '',
+            traitTitle: '',
             description: 'The original kings of the jungle',
             race: 'beast',
             image: '/public/beasts/lion.png'
@@ -665,6 +709,7 @@
             amount: 4,
             rank: 'great',
             trait: '',
+            traitTitle: '',
             description: "A quick and efficient beast, known to stalk it's prey before pouncing",
             race: 'beast',
             image: '/public/beasts/panther.png'
@@ -676,6 +721,7 @@
             amount: 4,
             rank: 'great',
             trait: '',
+            traitTitle: '',
             description: 'A lone wolf with the strength of a pack',
             race: 'beast',
             image: '/public/beasts/wolf.png'
@@ -687,6 +733,7 @@
             amount: 4,
             rank: 'good',
             trait: '',
+            traitTitle: '',
             description: 'A fox on steroids',
             race: 'beast',
             image: '/public/beasts/fox.png'
@@ -698,6 +745,7 @@
             amount: 4,
             rank: 'good',
             trait: '',
+            traitTitle: '',
             description: 'More bark than bite, recognized as the weakest beast',
             race: 'beast',
             image: '/public/beasts/dog.png'
@@ -742,12 +790,12 @@
 
     // Deck players draw from, includes all race decks
     const fullDeck = {
-        humans: [...humanDeck],
-        goblins: [...goblinDeck],
+        // humans: [...humanDeck],
+        // goblins: [...goblinDeck],
         elves: [...elfDeck],
-        dwarves: [...dwarfDeck],
-        bots: [...botDeck],
-        beasts: [...beastDeck],
+        // dwarves: [...dwarfDeck],
+        // bots: [...botDeck],
+        // beasts: [...beastDeck],
     };
 
     // array for each deck, humans, goblins, elves and dwarves
@@ -763,6 +811,7 @@
             player1.turn = false
             player2.turn = true;
         }
+        boardBlur = !boardBlur;
     }
 
     // Controller logic for game
@@ -926,6 +975,7 @@
     
     // Initiaties a new round
     function startGame() {
+        // Reset
         player1.points = 0;
         player2.points = 0;
         player1.hacked = false;
@@ -943,8 +993,11 @@
         fullDeck['dwarves'] = [...dwarfDeck];
         fullDeck['bots'] = [...botDeck];
         fullDeck['beasts'] = [...beastDeck];
+
+        // Start
         dealCards(player1.hand);
         dealCards(player2.hand);
+        decideFirstPlayer();
     }
 
     // End the game
@@ -1242,18 +1295,22 @@
         return mostCards === fullDeck['dwarves'].length ? (points + 30) : 0;  
 }
 
-    // Reduce bot poitns if player got hacked
+    // Reduce bot points if player got hacked
     function playerHacked(player) {
         player.hand.forEach(card => {
             if (cardDetails[card].race === 'bot') player.points -= cardDetails[card].points;
         });
+    }
+
+    // Analyze current game state, change styling accordingly
+    function currentGameState(p1, p2){
+
     }
 </script>
 
 <main>
     {#if !startBtnDisabled}
         <Button on:click={startGame} customClasses="btn__green w-25">Start game</Button>
-        <Button on:click={decideFirstPlayer} customClasses="btn__orange w-25">Decide who starts</Button>
     {:else}
         <Button customClasses="btn__green_disabled w-25">Game in progress...</Button>
     {/if}
@@ -1261,13 +1318,11 @@
         <!-- Blurs board between turns -->
         {#if boardBlur}
             {#if player1.turn}
-                <p class="player-turn-alert">Player 1, click when ready.</p>
+                <p class="player-turn-alert"><span class="text-orange">Player 1</span>, click when ready.</p>
             {/if}
             {#if player2.turn}
-                <p class="player-turn-alert">Player 2, click when ready.</p>
+                <p class="player-turn-alert"><span class="text-orange">Player 2</span>, click when ready.</p>
             {/if}
-            <div on:click={() => boardBlur = false} class="board-blurred"></div>
-            <div on:click={() => boardBlur = false} class="board-blurred"></div>
             <div on:click={() => boardBlur = false} class="board-blurred"></div>
         {:else}
             <div class="card-section card-section__ally {player1.turn ? "section-active" : ""}">
@@ -1275,74 +1330,76 @@
                 {#each player1.hand as cardTitle}
                     <GGCard
                     on:cardClick={(event) => selectCard(event, player1.hand)}
-                    blur={player1.turn ? false : true}
+                    faceDown={player1.turn ? false : true}
                     displayTitle={cardDetails[cardTitle].displayTitle}
                     title={cardDetails[cardTitle].title}
                     img={cardDetails[cardTitle].image}
                     trait={cardDetails[cardTitle].trait}
+                    traitTitle={cardDetails[cardTitle].traitTitle}
                     description={cardDetails[cardTitle].description}
                     race={cardDetails[cardTitle].race}
-                    points={cardDetails[cardTitle].points} />
+                    points={cardDetails[cardTitle].points}
+                    newToHand={player1.hand[5] === cardTitle ? true : false}/>
                 {/each}
             </div>
-        {/if}
-        {#if startBtnDisabled}
-            <p class="turn-text">{player1.turn ? "Player 1" : "Player 2"}<span>'s turn</span></p>
-        {/if}
+            <div class="card-section card-section__enemy {player2.turn ? "section-active" : ""}">
+                <p class="p2-name {player2.turn ? "turn-active" : ""}">Player 2</p>
+                {#each player2.hand as cardTitle}
+                    <GGCard
+                    on:cardClick={(event) => selectCard(event, player2.hand)}
+                    faceDown={player2.turn ? false : true}
+                    displayTitle={cardDetails[cardTitle].displayTitle}
+                    title={cardDetails[cardTitle].title}
+                    img={cardDetails[cardTitle].image}
+                    trait={cardDetails[cardTitle].trait}
+                    traitTitle={cardDetails[cardTitle].traitTitle}
+                    description={cardDetails[cardTitle].description}
+                    race={cardDetails[cardTitle].race}
+                    points={cardDetails[cardTitle].points}
+                    newToHand={player2.hand[5] === cardTitle ? true : false}/>
+                {/each}
+            </div>
 
-        <div class="game-buttons">
-            <GGCard on:click={() => {player1.turn ? drawCard(player1) : drawCard(player2)}} faceDown={true} />
+            <div class="game-buttons">
+                <GGCard on:click={() => {player1.turn ? drawCard(player1) : drawCard(player2)}} faceDown={true} />
                 {#if gobbledegookDisabled}
                     <Button round={true} customClasses="btn__orange_disabled">Gobbledegook!</Button>
                 {:else}
                     <Button on:click={gobbledegook} round={true} customClasses="btn__orange">Gobbledegook!</Button>
                 {/if}
-        </div>
-        <div class="card-section card-section__enemy {player2.turn ? "section-active" : ""}">
-            <p class="p2-name {player2.turn ? "turn-active" : ""}">Player 2</p>
-            {#each player2.hand as cardTitle}
-                <GGCard
-                on:cardClick={(event) => selectCard(event, player2.hand)}
-                blur={player2.turn ? false : true}
-                displayTitle={cardDetails[cardTitle].displayTitle}
-                title={cardDetails[cardTitle].title}
-                img={cardDetails[cardTitle].image}
-                trait={cardDetails[cardTitle].trait}
-                description={cardDetails[cardTitle].description}
-                race={cardDetails[cardTitle].race}
-                points={cardDetails[cardTitle].points} />
-            {/each}
-        </div>
+            </div>
+        {/if}
+        {#if startBtnDisabled} <p class="turn-text">{player1.turn ? "Player 1" : "Player 2"}<span>'s turn</span></p>{/if}
     </div>
     {#if winMessage}
-    <div class="game-results">
-        <p>{winMessage}</p>
-        <p>Player 1 stats: Wins: {player1.wins}, Losses: {player1.losses}, Draws: {player1.draws}</p>
-        <p>Player 2 stats: Wins: {player2.wins}, Losses: {player2.losses}, Draws: {player2.draws}</p>
-        <h4>Player 1 cards discarded:</h4>
-        <ul class="discarded-cards">
-            {#each player1.discards as card}
-                <GGCard
-                displayTitle={cardDetails[card].displayTitle}
-                title={cardDetails[card].title}
-                img={cardDetails[card].image}
-                race={cardDetails[card].race}
-                points={cardDetails[card].points} />
-            {/each}
-        </ul>
-        <h4>Player 2 cards discarded:</h4>
-        <ul class="discarded-cards">
-            {#each player2.discards as card}
-                <GGCard
-                displayTitle={cardDetails[card].displayTitle}
-                title={cardDetails[card].title}
-                img={cardDetails[card].image}
-                race={cardDetails[card].race}
-                points={cardDetails[card].points} />
-            {/each}
-        </ul>
-    </div>
-{/if}
+        <div class="game-results">
+            <p>{winMessage}</p>
+            <p>Player 1 stats: Wins: {player1.wins}, Losses: {player1.losses}, Draws: {player1.draws}</p>
+            <p>Player 2 stats: Wins: {player2.wins}, Losses: {player2.losses}, Draws: {player2.draws}</p>
+            <h4>Player 1 cards discarded:</h4>
+            <ul class="discarded-cards">
+                {#each player1.discards as card}
+                    <GGCard
+                    displayTitle={cardDetails[card].displayTitle}
+                    title={cardDetails[card].title}
+                    img={cardDetails[card].image}
+                    race={cardDetails[card].race}
+                    points={cardDetails[card].points} />
+                {/each}
+            </ul>
+            <h4>Player 2 cards discarded:</h4>
+            <ul class="discarded-cards">
+                {#each player2.discards as card}
+                    <GGCard
+                    displayTitle={cardDetails[card].displayTitle}
+                    title={cardDetails[card].title}
+                    img={cardDetails[card].image}
+                    race={cardDetails[card].race}
+                    points={cardDetails[card].points} />
+                {/each}
+            </ul>
+        </div>
+    {/if}
 </main>
 
 
@@ -1370,19 +1427,17 @@
         z-index: 100;
         height: 110%;
         width: 110%;
-        background-color: #4b3b33e1;
-        filter: blur(50px);
 
         position: absolute;
     }
 
     .game-board {
         position: relative;
-        height: 90dvh;
+        height: 85dvh;
         width: 90%;
         padding: 0.5rem;
         max-width: 1500px;
-        margin: 2rem auto;
+        margin: 1rem auto;
         border-radius: 1rem;
         background-color: #200f009d;
         box-shadow: 0 4px 20px #000000;
@@ -1391,6 +1446,8 @@
         display: flex;
         justify-content: center;
         align-items: center;
+        gap: 1rem;
+
     }
 
     .gobble-declared {
@@ -1398,10 +1455,10 @@
     }
 
     .card-section {
-        width: 70%;
+        width: 85%;
         padding: 1rem;
         background-color: #e4c82e1f;
-        min-height: 270px;
+        height: 32%;
 
         display: flex;
         justify-content: center;
@@ -1413,16 +1470,12 @@
         border-radius: 1rem 1rem 0 0;
         position: absolute;
         bottom: 0;
-        right: 1rem;
-        transform: translate(-20%)
     }
     
     .card-section__enemy {
         border-radius: 0 0 1rem 1rem;
         position: absolute;
         top: 0;
-        left: 1rem;
-        transform: translate(20%)
     }
 
     .section-active {
@@ -1474,10 +1527,15 @@
 
     .player-turn-alert {
         z-index: 1000;
-        color: #1b1b1b;
+        color: #ccc;
         text-shadow: 0 4px 10px #cacaca28;
         font-size: 3rem;
         cursor: default;
         font-family: 'Franklin Gothic Medium';
+    }
+
+    /* Utility */
+    .text-orange {
+        color: #af4819;
     }
 </style>

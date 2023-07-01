@@ -4,7 +4,6 @@
 
   // props
   export let faceDown = false;
-  export let blur = false;
   export let displayTitle = 'Title here...';
   export let title = '';
   export let img = '/public/card-bg.png';
@@ -12,6 +11,8 @@
   export let race = 'none';
   export let description = '';
   export let trait = '';
+  export let traitTitle = '';
+  export let newToHand = false;
 
   const createEvent = createEventDispatcher();
 
@@ -34,29 +35,52 @@
 {#if faceDown}
   <!-- svelte-ignore a11y-click-events-have-key-events -->
   <div on:click class="card facedown bottom-deck"></div>
-{:else if blur}
-  <div on:click class="card facedown bottom-deck"></div>
 {:else}
 <!-- svelte-ignore a11y-click-events-have-key-events -->
-<div on:click={cardClickHandler} class="card bg-{race} {blur ? 'blur' : ''}">
+<div on:click={cardClickHandler} class="card bg-{race} {blur ? 'blur' : ''} {newToHand ? 'slide-in' : ''}">
   <img class="card-img" src={img} alt="img of card">
-  <p class="card-title">{displayTitle}</p>
   <p class="race {race}-race">{capitalize(race)}</p>
   <p class="points {race}-race">{points}</p>
+  <p class="card-title {race}-title">{displayTitle}</p>
   <div class="card-bottom-section">
-    <p>{description}</p>
-    <p>{trait}</p>
+    <div class="bottom-section-wrapper">
+      <p class="description">{description}</p>
+      {#if trait}<p class="special-trait">{traitTitle}</p>{/if}
+      <p>{trait}</p>
+    </div>
   </div>
 </div>
 {/if}
 
 <style>
+  /* Animation */
+  @keyframes slideInLeft {
+    from {
+      transform: translateX(100px);
+    }
+
+    to {
+      transform: translateX(0);
+    }
+  }
+
+  .slide-in {
+    /* Animation */
+    animation-name: slideInLeft;
+    animation-duration: 1s;
+    /* animation-timing-function: ; */
+    /* animation-delay: ; */
+    /* animation-iteration-count: ; */
+    /* animation-direction: ; */
+    /* animation-fill-mode: ; */
+  }
+
   .card {
     z-index: 0;
     cursor: pointer;
     position: relative;
-    width: 11rem;
-    height: 15.5rem;
+    width: 10.5rem;
+    height: 14.5rem;
     border-radius: 0.25rem;
     box-shadow: 0 4px 12px #00000063;
     transition: all 0.3s ease-out;
@@ -68,7 +92,7 @@
   }
 
   .card:hover {
-    scale: 1.6;
+    scale: 1.4;
     z-index: 2;
     box-shadow: 0 4px 12px #000000a8;
   }
@@ -76,46 +100,57 @@
   .card-bottom-section {
     position: relative;
     width: 100%;
+    height: 100%;
     background-color: #ffffff3b;
     overflow-y: scroll;
-    height: 40%;
     border-radius: 0.25rem;
-    padding: 0.25rem;
-    padding-top: 2.25rem;
-    padding-bottom: 0.5rem;
     text-align: center;
-
+    line-height: 1.125;
 
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    gap: 0.5rem;
   }
 
   .card-title {
     color: #ddd;
-    width: 80%;
-    height: 2.6rem;
+    width: 100%;
+    height: 4rem;
     text-shadow: 0 2px 8px #000000a8;
     font-size: 1.25rem;
     font-weight: bold;
     text-align: center;
-    background-color: #cf9c8e82;
-    border-radius: 0.5rem;
-
-    position: absolute;
-    top: 55%;
+    z-index: 10;
+    white-space: nowrap;
+    font-size: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
   }
 
   .card-img {
-    height: 150px;
-    width: 150px;
+    height: 55%;
+    width: 100%;
+    object-fit: contain;
+    object-position: center;
     border-radius: 0.25rem 0.25rem 0 0;
-    background-size: cover;
+  }
+
+  .bottom-section-wrapper::-webkit-scrollbar,
+  .card-bottom-section::-webkit-scrollbar {
+    background: transparent;
+    width: 0;
+  }
+
+  .bottom-section-wrapper {
+    width: 90%;
+    padding-bottom: 0.9rem;
+    font-size: 0.85rem;
+    color: #ebebeb;
+    text-shadow: 0 1px 3px #0000008f;
+    padding-top: 0.5rem;
+    overflow-y: scroll;
   }
 
   .race {
@@ -145,11 +180,11 @@
     z-index: 10;
     text-align: center;
     font-weight: 500;
-    font-size: 0.8rem;
+    font-size: 0.9rem;
     letter-spacing: 1px;
-    height: 1.5rem;
-    border-radius: 0 0 1rem 0;
-    padding: 0.35rem;
+    height: 1.75rem;
+    width: 1.75rem;
+    border-radius: 0 0 0.75rem 0;
     box-shadow: inset -2px -2px 8px #0000004d;
 
     position: absolute;
@@ -160,19 +195,13 @@
     justify-content: center;
   }
 
-  .description::-webkit-scrollbar,
-  .card-bottom-section::-webkit-scrollbar {
-    background: transparent;
-    width: 0;
+  .special-trait {
+    font-weight: bold;
+    color: #fdf3c8;
   }
 
   .description {
-    width: 90%;
-    margin: 0 auto;
-    font-size: 0.8rem;
-    padding: 0.25rem;
-    color: #ffe7d7;
-    overflow-y: scroll;
+    margin-bottom: 0.5rem;
   }
 
   .facedown {
@@ -287,5 +316,30 @@
   .beast-race {
     background-color: #55431e;
     border: 2px solid #55431e;
+  }
+
+  /* race title color */
+  .human-title {
+    background-color: #3242775e;
+  }
+
+  .goblin-title {
+    background-color: #3277385e;
+  }
+
+  .elf-title {
+    background-color: #726b7a5e;
+  }
+
+  .dwarf-title {
+    background-color: #774b325e;
+  }
+
+  .bot-title {
+    background-color: #4242425e;
+  }
+
+  .beast-title {
+    background-color: #55431e5e;
   }
 </style>
