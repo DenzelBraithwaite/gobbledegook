@@ -793,12 +793,12 @@
 
     // Deck players draw from, includes all race decks
     const fullDeck = {
-        humans: [...humanDeck],
-        goblins: [...goblinDeck],
-        elves: [...elfDeck],
-        dwarves: [...dwarfDeck],
+        // humans: [...humanDeck],
+        // goblins: [...goblinDeck],
+        elves: [...elfDeck], 
+        // dwarves: [...dwarfDeck],
         bots: [...botDeck],
-        beasts: [...beastDeck],
+        // beasts: [...beastDeck],
     };
 
     // array for each deck, humans, goblins, elves and dwarves
@@ -1058,12 +1058,12 @@
     }
 
     // Calculates card points by race, doesn't include special traits
-    function calculateBasePoints(playerHand) {
+    function calculateBasePoints(playerHand, options={elfBonus: 0}) {
         let highestPoints = 0;
         const allPoints = {
             humanPoints: 0,
             goblinPoints: 0,
-            elfPoints: 0,
+            elfPoints: 0 + options.elfBonus, // To handle elf twins
             dwarfPoints: 0,
             botPoints: 0,
             beastPoints: 0
@@ -1127,39 +1127,30 @@
         // Deck leaders
         if (player.hand.includes('emperor')) {
             humanPoints = calculateEmperor(player);
-            console.log('emperor detected');
         }
 
         if (player.hand.includes('goblinLord')) {
             goblinPoints = calculateGoblinLord(player, enemy);
-            console.log('goblinLord detected');
         }
 
         if (player.hand.includes('elfKing')) {
             elfPoints = calculateElfKing(player, enemy);
-            console.log('elfKing detected');
+        } else if (player.hand.includes('nelladan') && player.hand.includes('nadallen')) {
+            // Elf twins bonus 10 points, elf king bonus (*3 points) handled in calculateElfKing()
+            elfPoints += 10;
         }
 
         if (player.hand.includes('dreamDestroyer')) {
             beastPoints = calculateDreamDestroyer(player);
-            console.log('dreamDestroyer detected');
         }
 
         if (player.hand.includes('crusher541A57')) {
             botPoints = calculateCrusher(player, enemy);
-            console.log('crusher541A57 detected');
         }
 
         if (player.hand.includes('longbeardLeader')) {
             dwarfPoints = calculateLongbeard(player);
 
-            console.log('longbeardLeader detected');
-        }
-
-        // Other special traits
-        // Elf twins
-        if (player.hand.includes('nelladan') && player.hand.includes('nadallen')) {
-            elfPoints += 10;
         }
 
         // Human commander
@@ -1178,7 +1169,6 @@
                 })
             }
         };
-
             
         highestPoints = Math.max(
             highestPoints,
@@ -1256,12 +1246,9 @@
         const goblinHand = enemy.hand.every(card => { 
             return cardDetails[card].race === 'goblin';
         });
-        console.log(`from inside calculateElfKing, goblinHand = ${goblinHand}`)
     
-        // Checks if hand has only elves
-        const fullElfHand = player.hand.every(card => {
-            return cardDetails[card].race === 'elf';
-        });
+        // Checks if hand has only elves or faebots
+        const fullElfHand = player.hand.every(card => cardDetails[card].race === 'elf' || cardDetails[card].title === 'faeBot');
 
         // Checks if hand has the elf king
         const elfKing = player.hand.includes('elfKing');
@@ -1269,11 +1256,25 @@
         if (goblinHand && (fullElfHand && elfKing)) {
             return 500_000;
         } else if (fullElfHand && elfKing) {
+            // Multiples all card points by 3 due to elf king bonus
             player.hand.forEach(card => {
-                totalElfPoints += cardDetails[card].points;
+                totalElfPoints += cardDetails[card].points * 3;
             })
-            console.log(totalElfPoints);
-            return totalElfPoints *= 3;
+            
+            // Checks if player has the only Nadallen in deck, then adds bonus to nadallen and one nelladan.
+            if (player.hand.includes('nadallen') && player.hand.includes('nelladan')) {
+                let nadPts = 4 * 3;
+                let nelPts = 2 * 3;
+                totalElfPoints -= (nadPts + nelPts);
+
+                nadPts = 9 * 3;
+                nelPts = 7 * 3;
+                totalElfPoints += (nadPts + nelPts);
+            }
+
+            return totalElfPoints;
+        } else if (player.hand.includes('nelladan') && player.hand.includes('nadallen')) {
+            return calculateBasePoints(player.hand, {elfBonus: 10});
         } else {
             console.log('inside calculateElfKing(), else statement :(');
             return calculateBasePoints(player.hand);
@@ -1338,9 +1339,11 @@
     function playerHacked(player) {
         player.hand.forEach(card => {
             if (cardDetails[card].race === 'bot') {
+                // FIXME: Shouldn't deduct from total points, but bot points.
+                // TODO: add race points to player objects
                 cardDetails[card].points > 0 ? player.points -= cardDetails[card].points : player.points += 0;
             }
-        });
+        }); 
     }
 
     // Analyze current game state, change styling accordingly
@@ -1363,30 +1366,34 @@
                     <br>
                     <p>Player 1 stats: Wins: {player1.wins}, Losses: {player1.losses}, Draws: {player1.draws}</p>
                     <p>Player 2 stats: Wins: {player2.wins}, Losses: {player2.losses}, Draws: {player2.draws}</p>
-                    <br>
-                    <h4>Player 1 cards discarded:</h4>
-                    <ul class="discarded-cards">
-                        {#each player1.discards as card}
-                            <GGCard
-                            displayTitle={cardDetails[card].displayTitle}
-                            title={cardDetails[card].title}
-                            img={cardDetails[card].image}
-                            race={cardDetails[card].race}
-                            points={cardDetails[card].points} />
-                        {/each}
-                    </ul>
-                    <br>
-                    <h4>Player 2 cards discarded:</h4>
-                    <ul class="discarded-cards">
-                        {#each player2.discards as card}
-                            <GGCard
-                            displayTitle={cardDetails[card].displayTitle}
-                            title={cardDetails[card].title}
-                            img={cardDetails[card].image}
-                            race={cardDetails[card].race}
-                            points={cardDetails[card].points} />
-                        {/each}
-                    </ul>
+                    <div class="lg-discard-wrapper">
+                        <div class="discard-wrapper">
+                            <h4>Player 1 cards discarded:</h4>
+                            <ul class="discarded-cards">
+                                {#each player1.discards as card}
+                                    <GGCard
+                                    displayTitle={cardDetails[card].displayTitle}
+                                    title={cardDetails[card].title}
+                                    img={cardDetails[card].image}
+                                    race={cardDetails[card].race}
+                                    points={cardDetails[card].points} />
+                                {/each}
+                            </ul>
+                        </div>
+                        <div class="discard-wrapper">
+                            <h4>Player 2 cards discarded:</h4>
+                            <ul class="discarded-cards">
+                                {#each player2.discards as card}
+                                    <GGCard
+                                    displayTitle={cardDetails[card].displayTitle}
+                                    title={cardDetails[card].title}
+                                    img={cardDetails[card].image}
+                                    race={cardDetails[card].race}
+                                    points={cardDetails[card].points} />
+                                {/each}
+                            </ul>
+                        </div>
+                    </div>
                 </div>
         {/if}
         <div class="game-board {gobbledegookDeclared ? 'gobble-declared' : ''}">
@@ -1477,6 +1484,11 @@
 
     .game-results::-webkit-scrollbar {
         appearance: none;
+    }
+
+    .lg-discard-wrapper {
+        margin-top: 3rem;
+        display: flex;
     }
 
     .discarded-cards {
