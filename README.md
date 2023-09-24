@@ -1,3 +1,43 @@
+# Gobbledegook
+### A fantasy card game.
+
+![Drifters screenshot](./src/assets/gdg_1.png)
+
+<br>
+<br>
+
+**What is Gobbledegook?**
+
+Gobbledegook is a 2 player card game where players need to collect 5 cards of the same race to win. The rules are nowhere near that strict though, since the main goal is simply to have more points at the end of the game. The game ends whenever one player calls "Gobbledegook"(_hereafter GDG_) by clicking the GDG button in the middle of the board. Different races have different strengths and risks with the Goblins being the most rewarding. The game is currently played locally by taking turns, but will be online in the future. At the time of writing this, there are 6 races; Goblins, Humans, Elves, Dwarves, Beasts and Bots (_with aliens possibly making an appearance one day_).
+
+<br>
+
+**What's the gameplay like?**
+
+Each user takes a turn by first drawing a card and then discarding a card. If the player thinks they have more points than their opponent, they may press the GDG button on their turn, but only after 3 turns to avoid an instant GDG click on a lucky hand. Once the gobbledegook has been declared, the opponent has 1 more turn before the results are announced. It should also be noted that each deck has a leader which significantly buffs their race, players should aim to have at least one leader before calling Gobbledegook.
+
+![Gobbledegook screenshot](./src/assets/gdg_2.png)
+
+<br>
+
+**What about mobile?**
+
+No plans to make this game available on mobile.
+
+<br>
+
+**Contact info**
+
+If you want to contact me to discuss a PR or a bug or simply some ideas, you can email me using braithwaite.de@gmail.com.
+
+<br>
+
+**P.S.** I always appreciate those who take the time to read these, since I rarely take the time to type them! Thanks for popping in, stay awesome 😎.
+
+<br>
+<br>
+___
+
 # Svelte + TS + Vite
 
 This template should help get you started developing with Svelte and TypeScript in Vite.

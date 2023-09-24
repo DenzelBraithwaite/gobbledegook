@@ -562,7 +562,7 @@
             rank: 'basic',
             trait: '',
             traitTitle: '',
-            description: "Half elf, half human. Although rare and different, they're generally accepted by all dwarves.",
+            description: "Half dwarf, half human. Although rare and different, they're generally accepted by all dwarves.",
             race: 'dwarf',
             image: '/public/dwarves/hobbit.png'
         },
@@ -660,7 +660,7 @@
             points: 10,
             amount: 1,
             rank: 'legendary',
-            trait: 'All of your beasts are worth 10 points, except the Dream Destroyer who remains at 10 points.',
+            trait: 'All of your beasts are worth 10 points.',
             traitTitle: 'Roid Rage',
             description: 'The fiercest creature in the animal kingdom.',
             race: 'beast',
@@ -788,17 +788,19 @@
     let winMessage = '';
     let loseMessage = '';
     let boardBlur = false;
+    let turnCount = 0;
     
 
 
     // Deck players draw from, includes all race decks
+    // TODO: let user decide which decks and how many
     const fullDeck = {
-        // humans: [...humanDeck],
-        // goblins: [...goblinDeck],
+        humans: [...humanDeck],
+        goblins: [...goblinDeck],
         elves: [...elfDeck], 
-        // dwarves: [...dwarfDeck],
+        dwarves: [...dwarfDeck],
         bots: [...botDeck],
-        // beasts: [...beastDeck],
+        beasts: [...beastDeck],
     };
 
     // array for each deck, humans, goblins, elves and dwarves
@@ -841,6 +843,7 @@
 
     // Changes active player turn
     function changeTurns() {
+        turnCount += 0.5;
         player1.turn = !player1.turn;
         player2.turn = !player2.turn;
         boardBlur = !boardBlur;
@@ -990,6 +993,7 @@
         player2.justWon = false;
 
         // General reset
+        turnCount = 0;
         gameOver = false;
         startBtnDisabled = true;
         gobbledegookDeclared = false;
@@ -1086,11 +1090,16 @@
                     break;
 
                 case 'dwarf':
-                    allPoints.dwarfPoints += cardDetails[card].points;
+                    if (cardDetails[card].title = 'hobbit') {
+                        allPoints.dwarfPoints += cardDetails[card].points;
+                        allPoints.humanPoints += cardDetails[card].points;
+                    } else {
+                        allPoints.dwarfPoints += cardDetails[card].points;
+                    }
                     break;
 
                 case 'bot':
-                    allPoints.botPoints += cardDetails[card].points;
+                    cardDetails[card].title = 'faeBot' ? allPoints.elfPoints += cardDetails[card].points : allPoints.botPoints += cardDetails[card].points;
                     break;
 
                 case 'beast':
@@ -1444,7 +1453,7 @@
 
                 <div class="game-buttons">
                     <GGCard on:click={() => {player1.turn ? drawCard(player1) : drawCard(player2)}} faceDown={true} />
-                    {#if gobbledegookDisabled}
+                    {#if gobbledegookDisabled || turnCount < 3}
                         <Button round={true} customClasses="btn__orange_disabled">Gobbledegook!</Button>
                     {:else}
                         <Button on:click={gobbledegook} round={true} customClasses="btn__orange">Gobbledegook!</Button>
