@@ -6,7 +6,7 @@
   export let faceDown = false;
   export let displayTitle = 'Title here...';
   export let title = '';
-  export let img = '/public/card-bg.png';
+  export let img = '/card-bg.png';
   export let points = 0;
   export let race = 'none';
   export let description = '';
@@ -205,7 +205,7 @@
   }
 
   .facedown {
-    background: url('/public/card-bg.png');
+    background: url('/card-bg.png');
     background-repeat: no-repeat;
     background-position: center;
     background-size: cover;
