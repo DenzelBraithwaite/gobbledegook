@@ -12,7 +12,8 @@
   // Websocket
   import { io } from 'socket.io-client';
 
-  let socket = io('http://10.0.0.100:6912');
+  $: console.log({p1: $player1, p2: $player2});
+  let socket = io('http://192.168.2.10:6912');
   let gobbledegookDeclared = false;
   let gobbledegookDisabled = false;
   let startBtnDisabled = false;
@@ -21,7 +22,6 @@
   let loseMessage = '';
   let boardBlur = false;
   let turnCount = 0;
-  // TODO: let user decide which decks and how many
   // Deck players draw from, includes all race decks
   let fullDeck = {
     humans: [...$humanDeck],
@@ -33,16 +33,14 @@
   };
   
   onMount(() => {
-    // TODO: Use id to differentiate between players
     // Handles connects
     socket.on('connect', () => console.log(`User ID: ${socket.id} connected!`));
 
     // Handles connection errors
-    socket.on('connect_error', (error) => console.error('Connection error:', error));
-    
+    socket.on('connect_error', error => console.error('Connection error:', error));
+
     // Handles game start
     socket.on('start-game', (data) => {
-      // TODO: update player stores
       console.log('Game started:', data);
 
       player1.update(store => {
@@ -55,13 +53,35 @@
         return store;
       });
 
-      // player2.set(data.player2);
       fullDeck = {...data.fullDeck};
     });
+
+    // Sets users (Beware that p1 might be titled player 2 and vice versa due to server.js)
+    socket.on('set-users', data => {
+      console.log('Setting users:', data);
+      Object.entries(data).forEach(([key, value]) => {
+        if (socket.id === value) {
+          player1.update(store => {
+            store.id = value;
+            store.title = key;
+            return store;
+          });
+        } else {
+          player2.update(store => {
+            store.id = value;
+            store.title = key;
+            return store;
+          });
+        }
+      });  
+    });
+
+    // Lets server know client is ready.
+    socket.emit('client-ready');
   });
 
-    // Ends current round
-    function endGame() {
+  // Ends current round
+  function endGame() {
     gameOver = true;
     startBtnDisabled = false;
     gobbledegookDisabled = true;
@@ -189,6 +209,7 @@
 
   // Deals 5 cards to each player at the start of the round
   function dealCards(playerHand) {
+    
     // Clear players hands before drawing cards, keeps reference to array without reassigning.
     playerHand.length = 0;
 
