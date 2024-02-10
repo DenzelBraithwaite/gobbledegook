@@ -25,7 +25,7 @@ const cardDetails = writable({
     traitTitle: 'Rally',
     description: 'Powerful warrior second only to the emperor.',
     race: 'human',
-    image: 'public/humans/commander.png'
+    image: '/humans/commander.png'
   },
   assassin: {
     title: 'assassin',
@@ -37,7 +37,7 @@ const cardDetails = writable({
     traitTitle: '',
     description: 'A highly skilled professional killer.',
     race: 'human',
-    image: 'public/humans/assassin.png'
+    image: '/humans/assassin.png'
   },
   knight: {
     title: 'knight',
@@ -49,7 +49,7 @@ const cardDetails = writable({
     traitTitle: '',
     description: 'A middle ranked warrior.',
     race: 'human',
-    image: 'public/humans/knight.png'
+    image: '/humans/knight.png'
   },
   soldier: {
     title: 'soldier',
@@ -61,7 +61,7 @@ const cardDetails = writable({
     traitTitle: '',
     description: 'A low ranked warrior.',
     race: 'human',
-    image: 'public/humans/soldier.png'
+    image: '/humans/soldier.png'
   },
   scout: {
     title: 'scout',
@@ -73,7 +73,7 @@ const cardDetails = writable({
     traitTitle: '',
     description: 'The lowest ranked in the human army.',
     race: 'human',
-    image: 'public/humans/scout.png'
+    image: '/humans/scout.png'
   },
   villager: {
     title: 'villager',
@@ -85,7 +85,7 @@ const cardDetails = writable({
     traitTitle: '',
     description: 'An innocent villager.',
     race: 'human',
-    image: 'public/humans/villager.png'
+    image: '/humans/villager.png'
   },
 
   // Goblins
