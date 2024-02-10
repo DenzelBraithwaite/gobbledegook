@@ -6,5 +6,8 @@ export default defineConfig({
   plugins: [svelte()],
   server: {
     port: 6912
+  },
+  build: {
+    outDir: 'public'
   }
 })
