@@ -2,6 +2,7 @@
 import { writable } from 'svelte/store';
 
 const player1 = writable({
+  id: undefined,
   title: 'Player 1',
   points: 0,
   justWon: false,
