@@ -23,7 +23,8 @@ const io = new Server(server, {
 // Serve static files from the "public" directory
 app.use(express.static(__dirname + '/public'));
 app.get('/', (req, res) => {
-  res.sendFile('index.html', {root: __dirname + '/public'}); // Send a simple response for GET requests to the root path
+  // Send a simple response for GET requests to the root path
+  res.sendFile('index.html', {root: __dirname + '/public'});
 });
 
 // Log new users and list of users.
@@ -42,16 +43,16 @@ function assignUsernames() {
   const numUsers = Object.keys(users).length;
   let username = '';
   if (numUsers < 2) {
-    username = `Player ${numUsers + 1}`;
+    username = 'p' + (numUsers + 1);
+    if (users[username] && username === 'p1') username = 'p2';
+    if (users[username] && username === 'p2') username = 'p1';
   } else {
     username = `Guest_${Math.floor(Math.random() * 100)}`;
     while (users[username]) username = `Guest_${Math.floor(Math.random() * 100)}`;
-    if (!users['Player 1']) username = 'Player 1';
-    if (!users['Player 2']) username = 'Player 2';
+    if (!users['p1']) username = 'p1';
+    if (!users['p2']) username = 'p2';
   }
 
-  if (users[username] && username === 'Player 1') username = 'Player 2';
-  if (users[username] && username === 'Player 2') username = 'Player 1';
   return username;
 }
 
@@ -59,21 +60,37 @@ io.on('connection', socket => {
   const username = assignUsernames();
   users[username] = socket.id;
   console.log(`\n${username} connected.`);
+  
+  // emit that client is ready to all clients
+  socket.on('client-ready', () => io.emit('set-users', users));
 
   // Remove users from list of users.
-  socket.on('disconnect', () => { 
+  socket.on('disconnect', () => {
     console.log(`\n${username} disconnected.`);
     delete users[username];
     logUsers();
   });
 
   // Start game
-  socket.on('start-game', data => io.emit('start-game', data));
+  socket.on('start-game', data => socket.broadcast.emit('game-started', data));
 
-  // emit that client is ready to all clients
+  // Change turns
+  socket.on('change-turns', data => io.emit('turn-changed', data));
+
+  // Card drawn
+  socket.on('draw-card', data => socket.broadcast.emit('card-drawn', data));
+
+  // Card discarded
+  socket.on('discard-card', data => socket.broadcast.emit('card-discarded', data));
+
+  // Gobbledegook declared
+  socket.on('gdg-declared', () => socket.broadcast.emit('gdg-declared'));
+
+  // Game ended
+  socket.on('end-game', data => io.emit('game-ended', data));
+
+  // Log connected users in the server console.
   logUsers();
-  socket.on('client-ready', () => io.emit('set-users', users));
-
 });
 
 // Start the server

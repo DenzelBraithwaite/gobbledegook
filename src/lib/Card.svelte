@@ -3,7 +3,7 @@
   import { createEventDispatcher } from 'svelte';
 
   // props
-  export let faceDown = false;
+  export let faceUp = true;
   export let displayTitle = 'Title here...';
   export let title = '';
   export let img = '/card-bg.png';
@@ -32,7 +32,7 @@
   };
 </script>
 
-{#if faceDown}
+{#if !faceUp}
   <!-- svelte-ignore a11y-click-events-have-key-events -->
   <div on:click class="card facedown bottom-deck"></div>
 {:else}

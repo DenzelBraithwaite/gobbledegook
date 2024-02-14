@@ -7,6 +7,7 @@ import dwarfDeck from "./dwarfDeck.js";
 import elfDeck from "./elfDeck.js";
 import goblinDeck from "./goblinDeck.js";
 import humanDeck from "./humanDeck.js";
+import socket from "./socket.js";
 
 export {
   player1,
@@ -18,4 +19,5 @@ export {
   elfDeck,
   goblinDeck,
   humanDeck,
+  socket
 }

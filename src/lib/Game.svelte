@@ -11,6 +11,7 @@
 
   // Websocket
   import { io } from 'socket.io-client';
+  import { emitKeypressEvents } from 'readline';
 
   $: console.log({p1: $player1, p2: $player2});
   let socket = io('http://192.168.2.10:6912');
@@ -20,7 +21,6 @@
   let gameOver = true;
   let winMessage = '';
   let loseMessage = '';
-  let boardBlur = false;
   let turnCount = 0;
   // Deck players draw from, includes all race decks
   let fullDeck = {
@@ -31,6 +31,8 @@
     bots: [...$botDeck],
     beasts: [...$beastDeck],
   };
+  // array for each deck, humans, goblins, elves and dwarves
+  let deckTypes = Object.keys(fullDeck);
   
   onMount(() => {
     // Handles connects
@@ -39,42 +41,78 @@
     // Handles connection errors
     socket.on('connect_error', error => console.error('Connection error:', error));
 
-    // Handles game start
-    socket.on('start-game', (data) => {
-      console.log('Game started:', data);
+    // Sets users (Beware that p1 might be titled player 2 and vice versa due to server.js)
+    socket.on('set-users', users => {
+      Object.entries(users).forEach(([username, userId]) => {
+        player1.update(store => {
+          store.id = users['p1'];
+          return store;
+        });
 
+        player2.update(store => {
+          store.id = users['p2'];
+          return store;
+        });
+
+        // TODO: Handle guests.
+      }); 
+    });
+
+    // Resets game and updates player hands
+    socket.on('game-started', data => {
+      resetGame();
+
+      // Update player hands
       player1.update(store => {
         store.hand = data.player1.hand;
+        store.turn = data.player1.turn;
         return store;
       });
 
       player2.update(store => {
         store.hand = data.player2.hand;
+        store.turn = data.player2.turn;
         return store;
       });
 
       fullDeck = {...data.fullDeck};
     });
 
-    // Sets users (Beware that p1 might be titled player 2 and vice versa due to server.js)
-    socket.on('set-users', data => {
-      console.log('Setting users:', data);
-      Object.entries(data).forEach(([key, value]) => {
-        if (socket.id === value) {
-          player1.update(store => {
-            store.id = value;
-            store.title = key;
-            return store;
-          });
-        } else {
-          player2.update(store => {
-            store.id = value;
-            store.title = key;
-            return store;
-          });
-        }
-      });  
+    // Handles turn change for all users
+    socket.on('turn-changed', data => {
+      turnCount += 0.5;
+      player1.update(store => {
+        store.turn = !data.player1.turn;
+        return store;
+      });
+
+      player2.update(store => {
+        store.turn = !data.player2.turn;
+        return store;
+      });
     });
+
+    // Handles card draw for all users
+    socket.on('card-drawn', data => {
+      fullDeck = {...data.fullDeck};
+      deckTypes = data.deckTypes;
+
+      // Make sure player's (hands) are consistent.
+      player1.set(data.player1);
+      player2.set(data.player2);
+    });
+
+    // Handles card discard for all users
+    socket.on('card-discarded', data => {
+      player1.set(data.player1);
+      player2.set(data.player2);
+    });
+
+    // Handles gobbledegook declaration for all users
+    socket.on('gdg-declared', () => gobbledegookDeclared = true);
+
+    // Handles game end for all users
+    socket.on('game-ended', () => endGame());
 
     // Lets server know client is ready.
     socket.emit('client-ready');
@@ -102,6 +140,8 @@
     if ($player1.hacked) playerHacked($player1);
     if ($player2.hacked) playerHacked($player2);
     determineWinner();
+
+    // Loggs decks to console
     showDeck();
     showDeck(true);
   }
@@ -126,19 +166,21 @@
       return store;
     });
 
-    // General reset
-    turnCount = 0;
-    gameOver = false;
-    startBtnDisabled = true;
-    gobbledegookDeclared = false;
-    gobbledegookDisabled = false;
-    winMessage = '';
+    // Reset Deck
     fullDeck['humans'] = [...$humanDeck];
     fullDeck['goblins'] = [...$goblinDeck];
     fullDeck['elves'] = [...$elfDeck];
     fullDeck['dwarves'] = [...$dwarfDeck];
     fullDeck['bots'] = [...$botDeck];
     fullDeck['beasts'] = [...$beastDeck];
+
+    // General resets
+    turnCount = 0;
+    gameOver = false;
+    startBtnDisabled = true;
+    gobbledegookDeclared = false;
+    gobbledegookDisabled = false;
+    winMessage = '';
   }
   
   // Initiaties a new round
@@ -154,16 +196,6 @@
     socket.emit('start-game', {player1: $player1, player2: $player2, fullDeck});
   }
 
-  // TODO: Joins a user's game
-  function joinGame() {
-    console.log('Joining game...');
-
-    resetGame();
-  }
-
-  // array for each deck, humans, goblins, elves and dwarves
-  const deckTypes = Object.keys(fullDeck);
-
   // Ensures player 1 isn't always first to start
   function decideFirstPlayer() {
     const num = Math.ceil(Math.random() * 2);
@@ -174,10 +206,9 @@
       $player1.turn = false
       $player2.turn = true;
     }
-    boardBlur = !boardBlur;
   }
 
-  // Controller logic for game
+  // Logs how many cards are left in the deck
   function showDeck(allDecks = false) {
     const humanCardsLeft = fullDeck['humans'].length || 0;
     const goblinCardsLeft = fullDeck['goblins'].length || 0;
@@ -199,20 +230,36 @@
     }
   }
 
+  // Determine if it is the player's turn or not
+  function isPlayerTurn() {
+    if ($player1.id === socket.id && $player1.turn) return true;
+    if ($player2.id === socket.id && $player2.turn) return true;
+    return false;
+  }
+
+  // Determine's if the player is p1, p2 or guest
+  function playingAs() {
+    if ($player1.id === socket.id) return 'p1';
+    if ($player2.id === socket.id) return 'p2';
+    return 'guest';
+  }
+
+  // Determines if card should be visible or not
+  function isCardVisible(playerSide) {
+    if (gameOver) return true;
+    if (playingAs() === 'guest') return true;
+    if (playingAs() === 'p1' && playerSide === 'p1') return true;
+    if (playingAs() === 'p2' && playerSide === 'p2') return true;
+    return false;
+  }
+
   // Changes active player turn
   function changeTurns() {
-    turnCount += 0.5;
-    $player1.turn = !$player1.turn;
-    $player2.turn = !$player2.turn;
-    boardBlur = !boardBlur;
+    socket.emit('change-turns', {player1: $player1, player2: $player2});
   }
 
   // Deals 5 cards to each player at the start of the round
   function dealCards(playerHand) {
-    
-    // Clear players hands before drawing cards, keeps reference to array without reassigning.
-    playerHand.length = 0;
-
     for(let counter = 1; counter <= 5; counter++) {
       // Grab random deck 
       let randomNum = Math.floor(Math.random() * deckTypes.length);
@@ -228,11 +275,18 @@
       // Add to player's hand
       playerHand.push(cardDrawn);
     }
+
     // Need to reassign for svelte to be reactive
-    if (playerHand === $player1.hand) {
-      $player1.hand = [...playerHand];
+    if ($player1.hand === playerHand) {
+      player1.update(store => {
+        store.hand = playerHand;
+        return store;
+      });
     } else {
-      $player2.hand = [...playerHand];
+      player2.update(store => {
+        store.hand = playerHand;
+        return store;
+      });
     }
   }
 
@@ -248,7 +302,7 @@
     // Player can't draw when he has 6 cards
     if (player.hand.length > 5) return;
     
-    // If player has longbeard leader, next card is dward
+    // If player has longbeard leader, next card is a dwarf
     if (player.dwarfNextTurn) {
       currentDeck = 'dwarf';
       player.dwarfNextTurn = false;
@@ -261,6 +315,8 @@
     // When the last card is drawn, currentDeck becomes undefined. This will catch that
     if (deckTypes.length === 0 && currentDeck === undefined) {
       console.log("No more cards!");
+
+      // TODO: emit end game to server
       endGame();
       return;
     };
@@ -279,29 +335,58 @@
     // If it's the longbeard leader, the next card will be dwarf
     if (cardDrawn === 'longbeardLeader') player.dwarfNextTurn = true;
 
-    // const removedCard = fullDeck[currentDeck].find(card => card === cardDrawn);
+    // Remove card from deck
     const removedCardIndex = fullDeck[currentDeck].indexOf(cardDrawn);
     fullDeck[currentDeck].splice(removedCardIndex, 1);
 
-    // Add to player's hand and trigger reactivity
-    (player.title === 'Player 1') ? $player1.hand = [...player.hand, cardDrawn] : $player2.hand = [...player.hand, cardDrawn];
+    // Checks if player is player 1 or 2, then adds card to hand
+    if (player.title === 'Player 1') {
+      player1.update(store => {
+        store.hand = [...store.hand, cardDrawn];
+        return store;
+      });
+    } else {
+      player2.update(store => {
+        store.hand = [...store.hand, cardDrawn];
+        return store;
+      });
+    }
+    
+    // Emits to server that a card was drawn
+    socket.emit('draw-card', {player1: $player1, player2: $player2, deckTypes: deckTypes, fullDeck: fullDeck});
+  }
+
+  // Determines who can click on deck
+  function deckClickHandler() {
+    if (gameOver) return;
+    if (playingAs() === 'guest') return;
+    if (isPlayerTurn() && $player1.turn) drawCard($player1);
+    if (isPlayerTurn() && $player2.turn) drawCard($player2);
   }
 
   // Removes card from hand if player hand has over 6 cards
   function discard(card) {
     if ($player1.turn) {
       const index = $player1.hand.indexOf(card);
-      $player1.hand.splice(index, 1)
-      $player1.hand = [...$player1.hand];
-      $player1.discards = [...$player1.discards, card];
+      player1.update(store => {
+        store.hand.splice(index, 1);
+        store.discards = [...store.discards, card];
+        return store;
+      });
     } else {
       const index = $player2.hand.indexOf(card);
-      $player2.hand.splice(index, 1)
-      $player2.hand = [...$player2.hand];
-      $player2.discards = [...$player2.discards, card];
+      player2.update(store => {
+        store.hand.splice(index, 1);
+        store.discards = [...store.discards, card];
+        return store;
+      });
     }
+
+    // Emits to server that a card was discarded
+    socket.emit('discard-card', {player1: $player1, player2: $player2});
+
     if (gobbledegookDeclared) {
-      endGame();
+      socket.emit('end-game');
     } else {
       changeTurns();
       gobbledegookDisabled = false;
@@ -318,16 +403,19 @@
     }
   }
  
-  // End the game
+  // Handles player click on gobbledegook button
   function gobbledegook() {
+    // Check if it's player's turn
+    if (!isPlayerTurn()) return;
     if (gameOver) return;
 
     if (gobbledegookDeclared) {
-      endGame();
+      socket.emit('end-game');
     } else {
       console.log('Gobbledegook declared!!');
       changeTurns();
       gobbledegookDeclared = true;
+      socket.emit('gdg-declared');
     }
   }
 
@@ -703,60 +791,49 @@
     {/if}
 
     <div class="game-board {gobbledegookDeclared ? 'gobble-declared' : ''}">
-      <!-- Blurs board between turns -->
-      {#if boardBlur}
-        {#if $player1.turn}
-          <p class="player-turn-alert"><span class="text-orange">Player 1</span>, click when ready.</p>
-        {/if}
-        {#if $player2.turn}
-          <p class="player-turn-alert"><span class="text-orange">Player 2</span>, click when ready.</p>
-        {/if}
-        <div on:click={() => boardBlur = false} class="board-blurred"></div>
-      {:else}
-        <div class="card-section card-section__ally {$player1.turn || $player1.justWon ? "section-active" : ""}">
-          <p class="p1-name {$player1.turn ? "turn-active" : ""}">Player 1</p>
-          {#each $player1.hand as cardTitle}
-            <GGCard
-             on:cardClick={(event) => selectCard(event, $player1.hand)}
-             faceDown={$player1.turn || gameOver? false : true}
-             displayTitle={$cardDetails[cardTitle].displayTitle}
-             title={$cardDetails[cardTitle].title}
-             img={$cardDetails[cardTitle].image}
-             trait={$cardDetails[cardTitle].trait}
-             traitTitle={$cardDetails[cardTitle].traitTitle}
-             description={$cardDetails[cardTitle].description}
-             race={$cardDetails[cardTitle].race}
-             points={$cardDetails[cardTitle].points}
-             newToHand={$player1.hand[5] === cardTitle ? true : false}/>
-          {/each}
-        </div>
-        <div class="card-section card-section__enemy {$player2.turn || $player2.justWon ? "section-active" : ""}">
-          <p class="p2-name {$player2.turn ? "turn-active" : ""}">Player 2</p>
-          {#each $player2.hand as cardTitle}
-            <GGCard
-             on:cardClick={(event) => selectCard(event, $player2.hand)}
-             faceDown={$player2.turn || gameOver ? false : true}
-             displayTitle={$cardDetails[cardTitle].displayTitle}
-             title={$cardDetails[cardTitle].title}
-             img={$cardDetails[cardTitle].image}
-             trait={$cardDetails[cardTitle].trait}
-             traitTitle={$cardDetails[cardTitle].traitTitle}
-             description={$cardDetails[cardTitle].description}
-             race={$cardDetails[cardTitle].race}
-             points={$cardDetails[cardTitle].points}
-             newToHand={$player2.hand[5] === cardTitle ? true : false}/>
-          {/each}
-        </div>
+      <div class="card-section card-section__ally {$player1.turn || $player1.justWon ? "section-active" : ""}">
+        <p class="p1-name {$player1.turn ? "turn-active" : ""}">Player 1</p>
+        {#each $player1.hand as cardTitle}
+          <GGCard
+            on:cardClick={(event) => selectCard(event, $player1.hand)}
+            faceUp={isCardVisible('p1')}
+            displayTitle={$cardDetails[cardTitle].displayTitle}
+            title={$cardDetails[cardTitle].title}
+            img={$cardDetails[cardTitle].image}
+            trait={$cardDetails[cardTitle].trait}
+            traitTitle={$cardDetails[cardTitle].traitTitle}
+            description={$cardDetails[cardTitle].description}
+            race={$cardDetails[cardTitle].race}
+            points={$cardDetails[cardTitle].points}
+            newToHand={$player1.hand[5] === cardTitle ? true : false}/>
+        {/each}
+      </div>
+      <div class="card-section card-section__enemy {$player2.turn || $player2.justWon ? "section-active" : ""}">
+        <p class="p2-name {$player2.turn ? "turn-active" : ""}">Player 2</p>
+        {#each $player2.hand as cardTitle}
+          <GGCard
+            on:cardClick={(event) => selectCard(event, $player2.hand)}
+            faceUp={isCardVisible('p2')}
+            displayTitle={$cardDetails[cardTitle].displayTitle}
+            title={$cardDetails[cardTitle].title}
+            img={$cardDetails[cardTitle].image}
+            trait={$cardDetails[cardTitle].trait}
+            traitTitle={$cardDetails[cardTitle].traitTitle}
+            description={$cardDetails[cardTitle].description}
+            race={$cardDetails[cardTitle].race}
+            points={$cardDetails[cardTitle].points}
+            newToHand={$player2.hand[5] === cardTitle ? true : false}/>
+        {/each}
+      </div>
 
-        <div class="game-buttons">
-          <GGCard on:click={() => {$player1.turn ? drawCard($player1) : drawCard($player2)}} faceDown={true} />
-          {#if gobbledegookDisabled || turnCount < 3}
-            <Button round={true} customClasses="btn__orange_disabled">Gobbledegook!</Button>
-          {:else}
-            <Button on:click={gobbledegook} round={true} customClasses="btn__orange">Gobbledegook!</Button>
-          {/if}
-        </div>
-      {/if}
+      <div class="game-buttons">
+        <GGCard on:click={deckClickHandler} faceUp={false} />
+        {#if gobbledegookDisabled || turnCount < 3}
+          <Button round={true} customClasses="btn__orange_disabled">Gobbledegook!</Button>
+        {:else}
+          <Button on:click={gobbledegook} round={true} customClasses="btn__orange">Gobbledegook!</Button>
+        {/if}
+      </div>
       {#if startBtnDisabled}
         <p class="turn-text">{$player1.turn ? "Player 1" : "Player 2"}<span>'s turn</span></p>
       {/if}
@@ -766,158 +843,135 @@
 
 
 <style>
-    .game-end-wrapper {
-        width: 100%;
-        display: flex;
-        align-items: center;
-        padding: 1rem;
-        gap: 1rem;
-    }
+  .game-end-wrapper {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    gap: 1rem;
+  }
 
-    .game-results {
-        font-size: 1.5rem;
-        background-color: #200f009d;
-        box-shadow: 0 4px 20px #000000;
-        border: 10px double #e29836;
-        color: #fff;
-        border-radius: 0.5rem;
-        padding: 1rem;
-        flex-basis: 40%;
-        line-height: 1.5;
-        z-index: 100;
-        height: 85dvh;
-        overflow-y: scroll;
+  .game-results {
+    font-size: 1.5rem;
+    background-color: #200f009d;
+    box-shadow: 0 4px 20px #000000;
+    border: 10px double #e29836;
+    color: #fff;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    flex-basis: 40%;
+    line-height: 1.5;
+    z-index: 100;
+    height: 85dvh;
+    overflow-y: scroll;
 
-    }
+  }
 
-    .game-results::-webkit-scrollbar {
-        appearance: none;
-    }
+  .game-results::-webkit-scrollbar {
+    appearance: none;
+  }
 
-    .lg-discard-wrapper {
-        margin-top: 3rem;
-        display: flex;
-    }
+  .lg-discard-wrapper {
+    margin-top: 3rem;
+    display: flex;
+  }
 
-    .discarded-cards {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-    }
+  .discarded-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
 
-    .board-blurred {
-        z-index: 100;
-        height: 110%;
-        width: 110%;
+  .game-board {
+    position: relative;
+    height: 85dvh;
+    width: 90%;
+    padding: 0.5rem;
+    max-width: 1500px;
+    margin: 1rem auto;
+    border-radius: 1rem;
+    background-color: #200f009d;
+    box-shadow: 0 4px 20px #000000;
+    border: 2px solid #e4802e3f;
 
-        position: absolute;
-    }
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+  }
 
-    .game-board {
-        position: relative;
-        height: 85dvh;
-        width: 90%;
-        padding: 0.5rem;
-        max-width: 1500px;
-        margin: 1rem auto;
-        border-radius: 1rem;
-        background-color: #200f009d;
-        box-shadow: 0 4px 20px #000000;
-        border: 2px solid #e4802e3f;
+  .gobble-declared {
+    border: 10px dotted #e29836;
+  }
 
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 1rem;
+  .card-section {
+    width: 85%;
+    padding: 1rem;
+    background-color: #e4c82e1f;
+    height: 32%;
 
-    }
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1.5rem;
+  }
 
-    .gobble-declared {
-        border: 10px dotted #e29836;
-    }
+  .card-section__ally {
+    border-radius: 1rem 1rem 0 0;
+    position: absolute;
+    bottom: 0;
+  }
+  
+  .card-section__enemy {
+    border-radius: 0 0 1rem 1rem;
+    position: absolute;
+    top: 0;
+  }
 
-    .card-section {
-        width: 85%;
-        padding: 1rem;
-        background-color: #e4c82e1f;
-        height: 32%;
+  .section-active {
+    background-color: #7abe8b75;
+  }
 
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 1.5rem;
-    }
+  .turn-text {
+    z-index: 1;
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    font-size: 1.75rem;
+    color: #af4819;
+  }
 
-    .card-section__ally {
-        border-radius: 1rem 1rem 0 0;
-        position: absolute;
-        bottom: 0;
-    }
-    
-    .card-section__enemy {
-        border-radius: 0 0 1rem 1rem;
-        position: absolute;
-        top: 0;
-    }
+  .turn-text > span {
+    color: #CAB097;
+  }
 
-    .section-active {
-        background-color: #7abe8b75;
-    }
+  .p1-name {
+    position: absolute;
+    font-size: 1.5rem;
+    color: #af4819;
+    bottom: 17.5rem;
+    right: 0;
+  }
 
-    .turn-text {
-        z-index: 1;
-        position: absolute;
-        top: 1rem;
-        right: 1rem;
-        font-size: 1.75rem;
-        color: #af4819;
-    }
+  .p2-name {
+    position: absolute;
+    font-size: 1.5rem;
+    color: #af4819;
+    top: 17.5rem;
+    left: 0;
+  }
 
-    .turn-text > span {
-        color: #CAB097;
-    }
+  .turn-active {
+    color: #6fff93;
+    font-size: 1.75rem;
+  }
 
-    .p1-name {
-        position: absolute;
-        font-size: 1.5rem;
-        color: #af4819;
-        bottom: 17.5rem;
-        right: 0;
-    }
+  .game-buttons {
+    z-index: 1;
 
-    .p2-name {
-        position: absolute;
-        font-size: 1.5rem;
-        color: #af4819;
-        top: 17.5rem;
-        left: 0;
-    }
-
-    .turn-active {
-        color: #6fff93;
-        font-size: 1.75rem;
-    }
-
-    .game-buttons {
-        z-index: 1;
-
-        display: flex;
-        gap: 2rem;
-        justify-content: center;
-        align-items: center;
-    }
-
-    .player-turn-alert {
-        z-index: 10;
-        color: #ccc;
-        text-shadow: 0 4px 10px #cacaca28;
-        font-size: 3rem;
-        cursor: default;
-        font-family: 'Franklin Gothic Medium';
-    }
-
-    /* Utility */
-    .text-orange {
-        color: #af4819;
-    }
+    display: flex;
+    gap: 2rem;
+    justify-content: center;
+    align-items: center;
+  }
 </style>
