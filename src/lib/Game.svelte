@@ -707,24 +707,25 @@
     return allBotPoints;
   }
 
-  // Adds ALL bot card points on the field to players score, and bots have +2
+  // If there are more discarded dwarves than remaining dwarves in the deck, dwarves receive bonus points.
   function calculateLongbeard(player) {  
     let points = 0;
+    let discardedDwarvesCount = 0;
 
     player.hand.forEach(card => {
       if ($cardDetails[card].race === 'dwarf') points += ($cardDetails[card].points);
     });
 
-    const mostCards = Math.max(
-      fullDeck['humans'].length,
-      fullDeck['goblins'].length,
-      fullDeck['elves'].length,
-      fullDeck['dwarves'].length,
-      fullDeck['bots'].length,
-      fullDeck['beasts'].length
-    )
+    // Count how many dwarves have been discarded
+    $player1.discards.forEach(card => {
+      if ($dwarfDeck.includes(card)) discardedDwarvesCount += 1;
+    });
+    $player2.discards.forEach(card => {
+      if ($dwarfDeck.includes(card)) discardedDwarvesCount += 1;
+    });
 
-    return mostCards === fullDeck['dwarves'].length ? (points + 40) : 0;  
+    // Calculate ohow many dwarves have been discarded
+    return discardedDwarvesCount >= fullDeck['dwarves'].length ? points += 50 : 0;
   }
 
   // Reduce bot points if player got hacked
@@ -796,7 +797,7 @@
         {#each $player1.hand as cardTitle}
           <GGCard
             on:cardClick={(event) => selectCard(event, $player1.hand)}
-            faceUp={isCardVisible('p1')}
+            faceUp={isCardVisible('p1') || gameOver}
             displayTitle={$cardDetails[cardTitle].displayTitle}
             title={$cardDetails[cardTitle].title}
             img={$cardDetails[cardTitle].image}
@@ -813,7 +814,7 @@
         {#each $player2.hand as cardTitle}
           <GGCard
             on:cardClick={(event) => selectCard(event, $player2.hand)}
-            faceUp={isCardVisible('p2')}
+            faceUp={isCardVisible('p2') || gameOver}
             displayTitle={$cardDetails[cardTitle].displayTitle}
             title={$cardDetails[cardTitle].title}
             img={$cardDetails[cardTitle].image}

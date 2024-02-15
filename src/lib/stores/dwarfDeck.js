@@ -24,7 +24,6 @@ const dwarfDeck = writable([
   'bartender',
   'bartender',
   'hobbit',
-  'hobbit',
   'hobbit'
 ]);
 
