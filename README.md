@@ -1,7 +1,7 @@
 # Gobbledegook
 ### A fantasy card game.
 
-![Gobbledegook screenshot](/others/gdg_screenshot.png)
+![Gobbledegook screenshot](others/gdg_screenshot.png)
 
 <br>
 <br>
