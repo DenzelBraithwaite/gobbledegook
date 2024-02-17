@@ -3,7 +3,7 @@
   import { onMount } from 'svelte';
 
   // Stores
-  import { player1, player2, cardDetails, beastDeck, botDeck, dwarfDeck, elfDeck, goblinDeck, humanDeck } from './stores';
+  import { player1, player2, cardDetails, xenoDeck, beastDeck, botDeck, dwarfDeck, elfDeck, goblinDeck, humanDeck } from './stores';
 
   // Custom components
   import { Button } from './index';
@@ -24,12 +24,13 @@
   let turnCount = 0;
   // Deck players draw from, includes all race decks
   let fullDeck = {
-    humans: [...$humanDeck],
-    goblins: [...$goblinDeck],
-    elves: [...$elfDeck], 
-    dwarves: [...$dwarfDeck],
-    bots: [...$botDeck],
     beasts: [...$beastDeck],
+    bots: [...$botDeck],
+    dwarves: [...$dwarfDeck],
+    elves: [...$elfDeck], 
+    goblins: [...$goblinDeck],
+    humans: [...$humanDeck],
+    // xenos: [...$xenoDeck]
   };
   // array for each deck, humans, goblins, elves and dwarves
   let deckTypes = Object.keys(fullDeck);
@@ -123,22 +124,18 @@
     gameOver = true;
     startBtnDisabled = false;
     gobbledegookDisabled = true;
-
+    
     player1.update(store => {
       store.turn = false;
-      store.points = calculateTotalPoints($player1, $player2);
+      return store;
+    });
+    player2.update(store => {
+      store.turn = false;
       return store;
     });
 
-    player2.update(store => {
-      store.turn = false;
-      store.points = calculateTotalPoints($player2, $player1);
-      return store;
-    });
-    
-    // Remove bot points from players hands if hacked
-    if ($player1.hacked) playerHacked($player1);
-    if ($player2.hacked) playerHacked($player2);
+    calculateTotalPoints($player1, $player2);
+    calculateTotalPoints($player2, $player1);
     determineWinner();
 
     // Loggs decks to console
@@ -150,18 +147,30 @@
   function resetGame() {
     // Reset p1
     player1.update(store => {
-      store.points = 0;
+      store.highestPoints = 0;
+      store.points.beasts = 0;
+      store.points.bots = 0;
+      store.points.dwarves = 0;
+      store.points.elves = 0;
+      store.points.goblins = 0;
+      store.points.humans = 0;
+      // store.points.xenos = 0;
       store.discards = [];
-      store.hacked = false;
       store.justWon = false;
       return store;
     });
 
     // Reset p2
     player2.update(store => {
-      store.points = 0;
+      store.highestPoints = 0;
+      store.points.beasts = 0;
+      store.points.bots = 0;
+      store.points.dwarves = 0;
+      store.points.elves = 0;
+      store.points.goblins = 0;
+      store.points.humans = 0;
+      // store.points.xenos = 0;
       store.discards = [];
-      store.hacked = false;
       store.justWon = false;
       return store;
     });
@@ -173,6 +182,7 @@
     fullDeck['dwarves'] = [...$dwarfDeck];
     fullDeck['bots'] = [...$botDeck];
     fullDeck['beasts'] = [...$beastDeck];
+    // fullDeck['xenos'] = [...$xenoDeck];
 
     // General resets
     turnCount = 0;
@@ -210,12 +220,15 @@
 
   // Logs how many cards are left in the deck
   function showDeck(allDecks = false) {
-    const humanCardsLeft = fullDeck['humans'].length || 0;
-    const goblinCardsLeft = fullDeck['goblins'].length || 0;
-    const elfCardsLeft = fullDeck['elves'].length || 0;
-    const dwarfCardsLeft = fullDeck['dwarves'].length || 0;
-    const botCardsLeft = fullDeck['bots'].length || 0;
     const beastCardsLeft = fullDeck['beasts'].length || 0;
+    const botCardsLeft = fullDeck['bots'].length || 0;
+    const dwarfCardsLeft = fullDeck['dwarves'].length || 0;
+    const elfCardsLeft = fullDeck['elves'].length || 0;
+    const goblinCardsLeft = fullDeck['goblins'].length || 0;
+    const humanCardsLeft = fullDeck['humans'].length || 0;
+    // const xenoCardsLeft = fullDeck['xenos'].length || 0;
+
+    // TODO: add xeno log
     if (allDecks) {
       console.log(`Cards remaining per deck:\n
       Humans: ${humanCardsLeft}\n
@@ -294,6 +307,7 @@
   function drawCard(player) {
     if (gameOver) return;
     let currentDeck = '';
+    let cardDrawn = '';
     let randomNum = 0;
 
     // Player can't declare gobbledegook if they drew that turn
@@ -304,9 +318,15 @@
     
     // If player has longbeard leader, next card is a dwarf
     if (player.dwarfNextTurn) {
-      currentDeck = 'dwarf';
       player.dwarfNextTurn = false;
+    if (fullDeck['dwarves'].length !== 0) {
+      currentDeck = 'dwarves';
     } else {
+      // If no remaining dwarves, random deck 
+      randomNum = Math.floor(Math.random() * deckTypes.length);
+      currentDeck = deckTypes[randomNum];
+    }
+  } else {
       // Grab random deck 
       randomNum = Math.floor(Math.random() * deckTypes.length);
       currentDeck = deckTypes[randomNum];
@@ -321,19 +341,36 @@
       return;
     };
 
-    // When a smaller race deck runs out, it will be removed here.
+    // If player has goblin lord's mark, next card is the goblin lord
+    if (player.goblinLordMarked) {
+      player.goblinLordMarked = false;
+      fullDeck['goblins'].length === 0 ? currentDeck = deckTypes[randomNum] : currentDeck = 'goblins';
+
+      if (fullDeck['goblins'].includes('goblinLord')) {
+        cardDrawn = fullDeck['goblins'].find(card => card === 'goblinLord')
+      } else {
+        // If the goblin lord isn't in deck, grab a random goblin
+        randomNum = Math.floor(Math.random() * fullDeck[currentDeck].length);
+        cardDrawn = fullDeck[currentDeck][randomNum];
+      };
+    } else {
+      // Grab random card from that deck
+      randomNum = Math.floor(Math.random() * fullDeck[currentDeck].length);
+      cardDrawn = fullDeck[currentDeck][randomNum];
+    
+      // If it's the longbeard leader or dwarf commander, the next card will be dwarf
+      if (cardDrawn === 'longbeardLeader' || cardDrawn === 'dwarfCommander') player.dwarfNextTurn = true;
+
+      // If it's the goblin lord's mark, the next card will be the goblin lord
+      if (cardDrawn === 'goblinLordsMark') player.goblinLordMarked = true;
+    }
+
+    // When a smaller race deck runs out, it will be removed here. Placed below the cardDrawn logic to ensure the card is actually drawn (think goblin lord's mark)
     if (fullDeck[currentDeck].length <= 1) {
       // Remove deck from main deck
       const index = deckTypes.indexOf(currentDeck);
       deckTypes.splice(index, 1);
     }
-
-    // Grab random card from that deck
-    randomNum = Math.floor(Math.random() * fullDeck[currentDeck].length);
-    const cardDrawn = fullDeck[currentDeck][randomNum];
-
-    // If it's the longbeard leader, the next card will be dwarf
-    if (cardDrawn === 'longbeardLeader') player.dwarfNextTurn = true;
 
     // Remove card from deck
     const removedCardIndex = fullDeck[currentDeck].indexOf(cardDrawn);
@@ -366,21 +403,25 @@
 
   // Removes card from hand if player hand has over 6 cards
   function discard(card) {
-    if ($player1.turn) {
+    if (!isPlayerTurn()) return;
+
+    if (isPlayerTurn() && $player1.turn) {
       const index = $player1.hand.indexOf(card);
       player1.update(store => {
         store.hand.splice(index, 1);
         store.discards = [...store.discards, card];
         return store;
       });
-    } else {
+    }
+    
+    if (isPlayerTurn() && $player2.turn) {
       const index = $player2.hand.indexOf(card);
       player2.update(store => {
         store.hand.splice(index, 1);
         store.discards = [...store.discards, card];
         return store;
       });
-    }
+   }
 
     // Emits to server that a card was discarded
     socket.emit('discard-card', {player1: $player1, player2: $player2});
@@ -421,21 +462,21 @@
 
   // Display game results
   function determineWinner() {
-    if($player1.points > $player2.points) {
+    if($player1.highestPoints > $player2.highestPoints) {
       $player1.justWon = true;
       $player1.wins += 1;
       $player2.losses += 1;
 
-      winMessage = `Player 1 is the winner with ${$player1.points} points!🎊🥳🍾`;
-      loseMessage = `Player 2 loses with ${$player2.points} points...${$player2.points <= 0 ? '💩💩💩' : '💩'}`;
-    } else if($player2.points > $player1.points) {
+      winMessage = `Player 1 is the winner with ${$player1.highestPoints} points!🎊🥳🍾`;
+      loseMessage = `Player 2 loses with ${$player2.highestPoints} points...${$player2.highestPoints <= 0 ? '💩💩💩' : '💩'}`;
+    } else if($player2.highestPoints > $player1.highestPoints) {
       $player2.justWon = true;
       $player2.wins += 1;
       $player1.losses += 1;
 
-      winMessage = `Player 2 is the winner with ${$player2.points} points!🎊🥳🍾`;
-      loseMessage = `Player 1 loses with ${$player1.points} points...${$player1.points <= 0 ? '💩💩💩' : '💩'}`;
-    } else if ($player1.points === 500_000 && $player2.points === 500_000) {
+      winMessage = `Player 2 is the winner with ${$player2.highestPoints} points!🎊🥳🍾`;
+      loseMessage = `Player 1 loses with ${$player1.highestPoints} points...${$player1.highestPoints <= 0 ? '💩💩💩' : '💩'}`;
+    } else if ($player1.highestPoints === 500_000 && $player2.highestPoints === 500_000) {
       $player1.justWon = true;
       $player2.justWon = true;
       $player2.draws += 1;
@@ -449,159 +490,139 @@
       $player2.draws += 1;
       $player1.draws += 1;
 
-      winMessage = `Player 1 had ${$player1.points} points and player 2 had ${$player2.points} points...`;
+      winMessage = `Player 1 had ${$player1.highestPoints} points and player 2 had ${$player2.highestPoints} points...`;
       loseMessage = " it's a draw!😓"
     }
   }
 
   // Calculates card points by race, doesn't include special traits
-  function calculateBasePoints(playerHand, options={elfBonus: 0}) {
-    let highestPoints = 0;
-    const allPoints = {
-      humanPoints: 0,
-      goblinPoints: 0,
-      elfPoints: 0 + options.elfBonus, // To handle elf twins
-      dwarfPoints: 0,
-      botPoints: 0,
-      beastPoints: 0
-    };
-
-    // calculates points based on race, picks highest points
-    playerHand.forEach((card) => {
+  function calculateBasePoints(player) {
+    player.hand.forEach(card => {
       const race = $cardDetails[card].race;
       switch(race) {
-        case 'human':
-          allPoints.humanPoints += $cardDetails[card].points;
-        break;
-
-        case 'goblin':
-          allPoints.goblinPoints += $cardDetails[card].points;
-        break;
-
-        case 'elf':
-          allPoints.elfPoints += $cardDetails[card].points;
-        break;
-
-        case 'dwarf':
-          if ($cardDetails[card].title = 'hobbit') {
-            allPoints.dwarfPoints += $cardDetails[card].points;
-            allPoints.humanPoints += $cardDetails[card].points;
-          } else {
-            allPoints.dwarfPoints += $cardDetails[card].points;
-          }
+        case 'beast':
+          player.points.beasts += $cardDetails[card].points;
         break;
 
         case 'bot':
-          $cardDetails[card].title = 'faeBot' ? allPoints.elfPoints += $cardDetails[card].points : allPoints.botPoints += $cardDetails[card].points;
+          if ($cardDetails[card].title === 'faeBot') player.points.elves += $cardDetails[card].points;
+           player.points.bots += $cardDetails[card].points;
         break;
 
-        case 'beast':
-          allPoints.beastPoints += $cardDetails[card].points;
+        case 'elf':
+          player.points.elves += $cardDetails[card].points;
         break;
 
+        case 'dwarf':
+          if ($cardDetails[card].title === 'hobbit') player.points.humans += $cardDetails[card].points;
+            player.points.dwarves += $cardDetails[card].points;
+        break;
+
+        case 'goblin':
+          player.points.goblins += $cardDetails[card].points;
+        break;
+
+        case 'human':
+          player.points.humans += $cardDetails[card].points;
+        break;
+
+        // case 'xeno':
+        //   player.points.xenos += $cardDetails[card].points;
         default:
           console.log("Didn't match a race???");
       }
 
-      highestPoints = Math.max(
-        allPoints.humanPoints,
-        allPoints.goblinPoints,
-        allPoints.elfPoints,
-        allPoints.dwarfPoints,
-        allPoints.botPoints,
-        allPoints.beastPoints
+      player.highestPoints = Math.max(
+        player.points.beasts,
+        player.points.bots,
+        player.points.dwarves,
+        player.points.elves,
+        player.points.goblins,
+        player.points.humans
+        // player.points.xenos,
       );
     });
-    return highestPoints;
   }
 
   // Calculates total points (special and base)
   function calculateTotalPoints(player, enemy) {
-    let highestPoints = 0;
-    let humanPoints = 0;
-    let goblinPoints = 0;
-    let elfPoints = 0;
-    let dwarfPoints = 0;
-    let botPoints = 0;
-    let beastPoints = 0;
+    calculateBasePoints(player);
 
-    highestPoints = calculateBasePoints(player.hand);
+    // Special cards)
+    if (player.hand.includes('commander')) calculateCommander(player); // Must be before emperor since emperor multiplies final points.
+    if (player.hand.includes('emperor')) calculateEmperor(player);
+    if (player.hand.includes('goblinLord')) calculateGoblinLord(player, enemy);
+    if (player.hand.includes('elfKing')) calculateElfKing(player, enemy);
+    if (player.hand.includes('dreamDestroyer')) calculateDreamDestroyer(player);
+    if (player.hand.includes('crusher541A57')) calculateCrusher(player, enemy);
+    if (player.hand.includes('ai')) calculateAI(player, enemy); // Must be after crusher since crusher resets bot points.
+    if (player.hand.includes('longbeardLeader')) calculateLongbeard(player);
 
-    // Deck leaders
-    if (player.hand.includes('emperor')) humanPoints = calculateEmperor(player);
+    // Elf twins bonus 10 points, placed after calculateElfKing() since it does not stack with elf king
+    if (player.hand.includes('nelladan') && player.hand.includes('nadallen')) player.points.elves += 10;
 
-    if (player.hand.includes('goblinLord')) goblinPoints = calculateGoblinLord(player, enemy);
-
-    if (player.hand.includes('elfKing')) {
-        elfPoints = calculateElfKing(player, enemy);
-    } else if (player.hand.includes('nelladan') && player.hand.includes('nadallen')) {
-        // Elf twins bonus 10 points, elf king bonus (*3 points) handled in calculateElfKing()
-        elfPoints += 10;
-    }
-
-    if (player.hand.includes('dreamDestroyer')) beastPoints = calculateDreamDestroyer(player);
-
-    if (player.hand.includes('crusher541A57')) botPoints = calculateCrusher(player, enemy);
-
-    if (player.hand.includes('longbeardLeader')) dwarfPoints = calculateLongbeard(player);
-
-    // Human commander
-    if (player.hand.includes('commander')) {
-      if (!player.hand.includes('emperor')) {
-        let numOfCommanders = 0;
-
-        player.hand.forEach(card => {
-          if ($cardDetails[card].title === 'commander') numOfCommanders += 1;
-        });
-
-        player.hand.forEach(card => {
-          if ($cardDetails[card].race === 'human') humanPoints += $cardDetails[card].points + numOfCommanders;
-        });
-      }
-    };
-        
-    highestPoints = Math.max(
-      highestPoints,
-      humanPoints,
-      goblinPoints,
-      elfPoints,
-      dwarfPoints,
-      botPoints,
-      beastPoints
+    player.highestPoints = Math.max(
+      player.points.beasts,
+      player.points.bots,
+      player.points.dwarves,
+      player.points.elves,
+      player.points.goblins,
+      player.points.humans,
+      // player.points.xenos
     );
 
     console.log({
       player: player.title,
-      highestPoints: highestPoints,
-      humanPoints: humanPoints,
-      goblinPoints: goblinPoints,
-      elfPoints: elfPoints,
-      dwarfPoints: dwarfPoints,
-      botPoints: botPoints,
-      beastPoints: beastPoints,
+      highestPoints: player.highestPoints,
+      beastPoints: player.points.beasts,
+      botPoints: player.points.bots,
+      dwarfPoints: player.points.dwarves,
+      elfPoints: player.points.elves,
+      goblinPoints: player.points.goblins,
+      humanPoints: player.points.humans,
+      // xenoPoints: player.points.xenos
     });
-
-    return highestPoints;
   }
 
   // Adds all card points in hand, regardless of race. Humans worth double
   function calculateEmperor(player) {
-    let points = 0;
-    let numOfCommanders = 0;
-
-    // Checks for commanders
-    player.hand.forEach(card => {
-      if ($cardDetails[card].title === 'commander') numOfCommanders += 1;
-    });
+    player.points.humans *= 2;
 
     player.hand.forEach(card => {
-      if ($cardDetails[card].race === 'human') {
-        points += (($cardDetails[card].points + numOfCommanders) * 2);
-      } else {
-        points += $cardDetails[card].points;
-      }
+      if ($cardDetails[card].race !== 'human' && $cardDetails[card].title !== 'hobbit') player.points.humans += $cardDetails[card].points;
     });
-    return points;
+  }
+
+  // Handles human commanders who buff their team
+  function calculateCommander(player) {
+    let numOfCommanders = player.hand.filter(card => card === 'commander').length;
+      
+      player.hand.forEach(card => {
+        if ($cardDetails[card].race === 'human' || $cardDetails[card].title === 'hobbit') player.points.humans += numOfCommanders;
+      });
+  }
+  // Handles human commanders who buff their team
+  function calculateAI(player, enemy) {
+    let numOfAi = player.hand.filter(card => card === 'ai').length;
+    let numOfViruses = player.hand.filter(card => card === 'virus').length;
+
+    // If player also has crusher, steal their bots too
+    if (player.hand.includes('crusher541A57')) {
+      numOfAi += enemy.hand.filter(card => card === 'ai').length;
+      numOfViruses += enemy.hand.filter(card => card === 'virus').length;
+    }
+      
+    player.hand.forEach(card => {
+      if (card === 'virus') player.points.bots += 8; // since -2 + 8 = 6
+      if (card === 'ai') player.points.bots += (numOfAi * numOfViruses); // buffed for each virus
+    });
+
+    if (player.hand.includes('crusher541A57')) {
+      enemy.hand.forEach(card => {
+        if (card === 'virus') player.points.bots += 8; // since -2 + 8 = 6
+        if (card === 'ai') player.points.bots += (numOfAi * numOfViruses); // buffed for each virus
+      });
+    }
   }
 
   // Instant win for goblins unless enemy has full elf hand + elf king, if so, then instant draw.
@@ -621,18 +642,13 @@
     const enemyElfKing = enemy.hand.includes('elfKing');
 
     if (goblinHand && (enemyFullElf && enemyElfKing)) {
-      return 500_000;
+      player.points.goblins = 500_000;
     } else if (goblinHand) {
-      return 1_000_000;
-    } else {
-      console.log('inside calculateGoblinLord(), else statement :(');
-      return calculateBasePoints(player.hand);
+      player.points.goblins = 1_000_000;
     }
   }
 
   function calculateElfKing(player, enemy) {
-    let totalElfPoints = 0;
-
     // Checks if enemy hand has only goblins
     const goblinHand = enemy.hand.every(card => { 
       return $cardDetails[card].race === 'goblin';
@@ -641,80 +657,46 @@
     // Checks if hand has only elves or faebots
     const fullElfHand = player.hand.every(card => $cardDetails[card].race === 'elf' || $cardDetails[card].title === 'faeBot');
 
-    // Checks if hand has the elf king
-    const elfKing = player.hand.includes('elfKing');
+    // Checks if enemy has the goblin king
+    const enemyGoblinKing = enemy.hand.includes('goblinLord');
 
-    if (goblinHand && (fullElfHand && elfKing)) {
-      return 500_000;
-    } else if (fullElfHand && elfKing) {
+    if (goblinHand && enemyGoblinKing && fullElfHand) {
+      player.points.elves = 500_000;
+    } else if (fullElfHand) {
       // Multiples all card points by 3 due to elf king bonus
-      player.hand.forEach(card => {
-        totalElfPoints += $cardDetails[card].points * 3;
-      })
-      
-      // Checks if player has the only Nadallen in deck, then adds bonus to nadallen and one nelladan.
-      if (player.hand.includes('nadallen') && player.hand.includes('nelladan')) {
-        let nadPts = 4 * 3;
-        let nelPts = 2 * 3;
-        totalElfPoints -= (nadPts + nelPts);
-
-        nadPts = 9 * 3;
-        nelPts = 7 * 3;
-        totalElfPoints += (nadPts + nelPts);
-      }
-
-      return totalElfPoints;
-    } else if (player.hand.includes('nelladan') && player.hand.includes('nadallen')) {
-      return calculateBasePoints(player.hand, {elfBonus: 10});
+      player.points.elves *= 3;
     } else {
-      console.log('inside calculateElfKing(), else statement :(');
-      return calculateBasePoints(player.hand);
+      player.points.elves *=2;
     }
   }
 
   // Adds all card points in hand, regardless of race
-  function calculateDreamDestroyer(player) {  
-    let points = 0;      
-    // Checks if player hand has only beasts
-    const fullBeastHand = player.hand.every(card => { 
-      return $cardDetails[card].race === 'beast';
+  function calculateDreamDestroyer(player) {
+    // Need to reset since beast points are added in calculateBasePoints()
+    player.points.beasts = 0;
+    player.hand.forEach(card => {
+      if ($cardDetails[card].race === 'beast') player.points.beasts += 12;
     });
-
-    if (fullBeastHand) {
-      return 50;
-    } else {
-      player.hand.forEach(card => {
-        if ($cardDetails[card].race === 'beast') points += 10;
-      })
-      return points;
-    }
   }
 
   // Adds ALL bot card points on the field to players score, and bots have +2
   function calculateCrusher(player, enemy) {  
-    let allBotPoints = 0;      
+    // Need to reset since bot points are added in calculateBasePoints()
+    player.points.bots = 0;
+    enemy.points.bots = 0;
 
-    // Add all bot points
+    // Add all bot points from both hands
     player.hand.forEach(card => {
-      if ($cardDetails[card].race === 'bot') allBotPoints += ($cardDetails[card].points + 2);
+      if ($cardDetails[card].race === 'bot') player.points.bots += ($cardDetails[card].points + 2);
     });
-
     enemy.hand.forEach(card => {
-      if ($cardDetails[card].race === 'bot') allBotPoints += ($cardDetails[card].points + 2);
+      if ($cardDetails[card].race === 'bot') player.points.bots += ($cardDetails[card].points + 2);
     });
-
-    enemy.hacked = true;
-    return allBotPoints;
   }
 
   // If there are more discarded dwarves than remaining dwarves in the deck, dwarves receive bonus points.
   function calculateLongbeard(player) {  
-    let points = 0;
     let discardedDwarvesCount = 0;
-
-    player.hand.forEach(card => {
-      if ($cardDetails[card].race === 'dwarf') points += ($cardDetails[card].points);
-    });
 
     // Count how many dwarves have been discarded
     $player1.discards.forEach(card => {
@@ -724,24 +706,13 @@
       if ($dwarfDeck.includes(card)) discardedDwarvesCount += 1;
     });
 
-    // Calculate ohow many dwarves have been discarded
-    return discardedDwarvesCount >= fullDeck['dwarves'].length ? points += 50 : 0;
-  }
-
-  // Reduce bot points if player got hacked
-  function playerHacked(player) {
-    player.hand.forEach(card => {
-      if ($cardDetails[card].race === 'bot') {
-        // FIXME: Shouldn't deduct from total points, but bot points.
-        // TODO: add race points to player objects
-        // TODO: if not reactive, update stores to trigger reactivity.
-        if ($cardDetails[card].points > 0) {
-          player.points -= $cardDetails[card].points;
-        } else {
-          player.points += 0;
-        }
-      }
-    }); 
+    // Check if there are more discarded dwarves than remaining dwarves in the deck, account for if deck has been removed
+    if (fullDeck['dwarves']) {
+      discardedDwarvesCount >= fullDeck['dwarves'].length ? player.points.dwarves += 50 : player.points.dwarves += 0;
+    } else {
+      // If the deck has been removed, give the bonus points since there are no more dwarves to draw
+      player.points.dwarves += 50
+    }
   }
 </script>
 
@@ -770,6 +741,7 @@
                 title={$cardDetails[card].title}
                 img={$cardDetails[card].image}
                 race={$cardDetails[card].race}
+                rarity={$cardDetails[card].rarity}
                 points={$cardDetails[card].points} />
               {/each}
             </ul>
@@ -783,6 +755,7 @@
                 title={$cardDetails[card].title}
                 img={$cardDetails[card].image}
                 race={$cardDetails[card].race}
+                rarity={$cardDetails[card].rarity}
                 points={$cardDetails[card].points} />
               {/each}
             </ul>
@@ -794,36 +767,38 @@
     <div class="game-board {gobbledegookDeclared ? 'gobble-declared' : ''}">
       <div class="card-section card-section__ally {$player1.turn || $player1.justWon ? "section-active" : ""}">
         <p class="p1-name {$player1.turn ? "turn-active" : ""}">Player 1</p>
-        {#each $player1.hand as cardTitle}
+        {#each $player1.hand as card}
           <GGCard
             on:cardClick={(event) => selectCard(event, $player1.hand)}
             faceUp={isCardVisible('p1') || gameOver}
-            displayTitle={$cardDetails[cardTitle].displayTitle}
-            title={$cardDetails[cardTitle].title}
-            img={$cardDetails[cardTitle].image}
-            trait={$cardDetails[cardTitle].trait}
-            traitTitle={$cardDetails[cardTitle].traitTitle}
-            description={$cardDetails[cardTitle].description}
-            race={$cardDetails[cardTitle].race}
-            points={$cardDetails[cardTitle].points}
-            newToHand={$player1.hand[5] === cardTitle ? true : false}/>
+            displayTitle={$cardDetails[card].displayTitle}
+            title={$cardDetails[card].title}
+            img={$cardDetails[card].image}
+            trait={$cardDetails[card].trait}
+            traitTitle={$cardDetails[card].traitTitle}
+            description={$cardDetails[card].description}
+            race={$cardDetails[card].race}
+            rarity={$cardDetails[card].rarity}
+            points={$cardDetails[card].points}
+          />
         {/each}
       </div>
       <div class="card-section card-section__enemy {$player2.turn || $player2.justWon ? "section-active" : ""}">
         <p class="p2-name {$player2.turn ? "turn-active" : ""}">Player 2</p>
-        {#each $player2.hand as cardTitle}
+        {#each $player2.hand as card}
           <GGCard
             on:cardClick={(event) => selectCard(event, $player2.hand)}
             faceUp={isCardVisible('p2') || gameOver}
-            displayTitle={$cardDetails[cardTitle].displayTitle}
-            title={$cardDetails[cardTitle].title}
-            img={$cardDetails[cardTitle].image}
-            trait={$cardDetails[cardTitle].trait}
-            traitTitle={$cardDetails[cardTitle].traitTitle}
-            description={$cardDetails[cardTitle].description}
-            race={$cardDetails[cardTitle].race}
-            points={$cardDetails[cardTitle].points}
-            newToHand={$player2.hand[5] === cardTitle ? true : false}/>
+            displayTitle={$cardDetails[card].displayTitle}
+            title={$cardDetails[card].title}
+            img={$cardDetails[card].image}
+            trait={$cardDetails[card].trait}
+            traitTitle={$cardDetails[card].traitTitle}
+            description={$cardDetails[card].description}
+            race={$cardDetails[card].race}
+            rarity={$cardDetails[card].rarity}
+            points={$cardDetails[card].points}
+          />
         {/each}
       </div>
 
