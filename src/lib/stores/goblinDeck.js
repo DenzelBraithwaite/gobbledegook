@@ -13,15 +13,13 @@ const goblinDeck = writable([
   'thief',
   'thief',
   'thief',
-  'thief',
-  'hobgoblin',
   'hobgoblin',
   'hobgoblin',
   'hobgoblin',
   'bokoblin',
   'bokoblin',
   'bokoblin',
-  'bokoblin'
+  'goblinLordsMark'
 ]);
 
 export default goblinDeck;

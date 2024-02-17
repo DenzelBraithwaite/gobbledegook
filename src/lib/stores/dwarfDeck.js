@@ -16,13 +16,11 @@ const dwarfDeck = writable([
   'miner',
   'blacksmith',
   'blacksmith',
-  'blacksmith',
-  'traveller',
   'traveller',
   'traveller',
   'bartender',
   'bartender',
-  'bartender',
+  'hobbit',
   'hobbit',
   'hobbit'
 ]);
