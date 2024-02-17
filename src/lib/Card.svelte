@@ -2,6 +2,9 @@
   // hooks
   import { createEventDispatcher } from 'svelte';
 
+  // Transitions
+  import { fly, fade } from 'svelte/transition';
+
   // props
   export let faceUp = true;
   export let displayTitle = 'Title here...';
@@ -9,10 +12,12 @@
   export let img = '/card-bg.png';
   export let points = 0;
   export let race = 'none';
+  export let rarity = 'common';
   export let description = '';
   export let trait = '';
   export let traitTitle = '';
-  export let newToHand = false;
+
+  $: if (race === 'goblin-ish') race = 'goblin';
 
   const createEvent = createEventDispatcher();
 
@@ -34,10 +39,11 @@
 
 {#if !faceUp}
   <!-- svelte-ignore a11y-click-events-have-key-events -->
-  <div on:click class="card facedown bottom-deck"></div>
+  <div on:click class="card facedown bottom-deck" in:fly={{x: 100}} out:fade></div>
 {:else}
+<!-- If card is legendary, shows special race colors, otherwise matches race color -->
 <!-- svelte-ignore a11y-click-events-have-key-events -->
-<div on:click={cardClickHandler} class="card bg-{race} {blur ? 'blur' : ''} {newToHand ? 'slide-in' : ''}">
+<div on:click={cardClickHandler} class="card bg-{race}{rarity === 'legendary' ? '-rare' : ''}" in:fly={{x: 100}} out:fade>
   <img class="card-img" src={img} alt="img of card">
   <p class="race {race}-race">{capitalize(race)}</p>
   <p class="points {race}-race">{points}</p>
@@ -53,28 +59,6 @@
 {/if}
 
 <style>
-  /* Animation */
-  @keyframes slideInLeft {
-    from {
-      transform: translateX(100px);
-    }
-
-    to {
-      transform: translateX(0);
-    }
-  }
-
-  .slide-in {
-    /* Animation */
-    animation-name: slideInLeft;
-    animation-duration: 1s;
-    /* animation-timing-function: ; */
-    /* animation-delay: ; */
-    /* animation-iteration-count: ; */
-    /* animation-direction: ; */
-    /* animation-fill-mode: ; */
-  }
-
   .card {
     z-index: 0;
     cursor: pointer;
@@ -221,12 +205,73 @@
   }
 
   /* Utility classes */
-
+  
   .flip-180 {
     transform: rotate(0.5turn);
   }
-
+  
   /* bg color based on race */
+  .bg-xeno {
+    background: linear-gradient(to top left,#776832,#c2a84c 50%);
+    outline: 4px solid #957c1e;
+  }
+  
+  .bg-xeno-rare {
+    background: linear-gradient(to top left, #635628 5%, #e0de69b6, #9e692d 90%);
+
+    outline: 4px solid #8e7419;
+  }
+
+  .bg-beast {
+    background: linear-gradient(to top left, #55431e, #855a2a 50%);
+    outline: 4px solid #55431e;
+  }
+  
+  .bg-beast-rare {
+    background: linear-gradient(to top left, #614d22 5%, #e0de69b6, #855a2a 90%);
+    outline: 4px solid #774b32a8;
+  }
+  
+  .bg-bot {
+    background: linear-gradient(to top left, #424242, #7e7e7e 50%);
+    outline: 4px solid #424242;
+  }
+  
+  .bg-bot-rare {
+    background: linear-gradient(to top left, #424242 5%, #e0de69, #7e7e7e 90%);
+    outline: 4px solid #424242;
+  }
+  
+  .bg-dwarf {
+    background: linear-gradient(to top left, #774b32, #c07369 50%);
+    outline: 4px solid #774b32a8;
+  }
+  
+  .bg-dwarf-rare {
+    background: linear-gradient(to top left, #774b32 5%, #e0de69, #c07369 90%);
+    outline: 4px solid #774b32a8;
+  }
+  
+  .bg-elf {
+    background: linear-gradient(to top left, #726b7a, #ddceee 50%);
+    outline: 4px solid #726b7a;
+  }
+  
+  .bg-elf-rare {
+    background: linear-gradient(to top left, #726b7a 5%, #e0de69, #ddceee 90%);
+    outline: 4px solid #726b7a;
+  }
+  
+  .bg-goblin {
+    background: linear-gradient(to top left, #327738, #78c069 50%);
+    outline: 4px solid #327738a8;
+  }
+  
+  .bg-goblin-rare {
+    background: linear-gradient(to top left, #327738 5%, #e0de69, #78c069 90%);
+    outline: 4px solid #327738a8;
+  }
+  
   .bg-human {
     background: linear-gradient(to top left, #324277, #69c0ad 50%);
     outline: 4px solid #324277a8;
@@ -237,80 +282,10 @@
     outline: 4px solid #324277a8;
   }
 
-  .bg-goblin {
-    background: linear-gradient(to top left, #327738, #78c069 50%);
-    outline: 4px solid #327738a8;
-  }
-
-  .bg-goblin-rare {
-    background: linear-gradient(to top left, #327738 5%, #e0de69, #78c069 90%);
-    outline: 4px solid #327738a8;
-  }
-
-  .bg-elf {
-    background: linear-gradient(to top left, #726b7a, #ddceee 50%);
-    outline: 4px solid #726b7a;
-  }
-
-  .bg-elf-rare {
-    background: linear-gradient(to top left, #726b7a 5%, #e0de69, #ddceee 90%);
-    outline: 4px solid #726b7a;
-  }
-
-  .bg-dwarf {
-    background: linear-gradient(to top left, #774b32, #c07369 50%);
-    outline: 4px solid #774b32a8;
-  }
-
-  .bg-dwarf-rare {
-    background: linear-gradient(to top left, #774b32 5%, #e0de69, #c07369 90%);
-    outline: 4px solid #774b32a8;
-  }
-  
-  .bg-bot {
-    background: linear-gradient(to top left, #424242, #7e7e7e 50%);
-    outline: 4px solid #424242;
-  }
-
-  .bg-bot-rare {
-    background: linear-gradient(to top left, #424242 5%, #e0de69, #7e7e7e 90%);
-    outline: 4px solid #424242;
-  }
-  
-  .bg-beast {
-    background: linear-gradient(to top left, #55431e, #855a2a 50%);
-    outline: 4px solid #55431e;
-  }
-
-  .bg-beast-rare {
-    background: linear-gradient(to top left, #614d22 5%, #e0de69b6, #855a2a 90%);
-    outline: 4px solid #774b32a8;
-  }
-
-  /* Race text color */
-  .human-race {
-    background-color: #324277;
-    border: 2px solid #324277;
-  }
-
-  .goblin-race {
-    background-color: #327738;
-    border: 2px solid #327738;
-  }
-
-  .elf-race {
-    background-color: #726b7a;
-    border: 2px solid #726b7a;
-  }
-
-  .dwarf-race {
-    background-color: #774b32;
-    border: 2px solid #774b32;
-  }
-
-  .bot-race {
-    background-color: #424242;
-    border: 2px solid #424242;
+  /* Race text color */  
+  .xeno-race {
+    background-color: #8e7419;
+    border: 2px solid #8e7419;
   }
 
   .beast-race {
@@ -318,28 +293,58 @@
     border: 2px solid #55431e;
   }
 
+  .bot-race {
+    background-color: #424242;
+    border: 2px solid #424242;
+  }
+
+  .dwarf-race {
+    background-color: #774b32;
+    border: 2px solid #774b32;
+  }
+
+  .elf-race {
+    background-color: #726b7a;
+    border: 2px solid #726b7a;
+  }
+
+  .goblin-race {
+    background-color: #327738;
+    border: 2px solid #327738;
+  }
+
+  .human-race {
+    background-color: #324277;
+    border: 2px solid #324277;
+  }
+
   /* race title color */
-  .human-title {
-    background-color: #3242775e;
-  }
-
-  .goblin-title {
-    background-color: #3277385e;
-  }
-
-  .elf-title {
-    background-color: #726b7a5e;
-  }
-
-  .dwarf-title {
-    background-color: #774b325e;
-  }
-
-  .bot-title {
-    background-color: #4242425e;
+  .xeno-title {
+    background-color: #8e74195e;
   }
 
   .beast-title {
     background-color: #55431e5e;
   }
+
+  .bot-title {
+    background-color: #4242425e;
+  }
+  
+  .dwarf-title {
+    background-color: #774b325e;
+  }
+  
+  .elf-title {
+    background-color: #726b7a5e;
+  }
+  
+  .goblin-title {
+    background-color: #3277385e;
+  }
+
+  .human-title {
+    background-color: #3242775e;
+  }
+
 </style>
