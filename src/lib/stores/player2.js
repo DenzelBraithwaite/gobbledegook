@@ -18,13 +18,15 @@ const player2 = writable({
   wins: 0,
   losses: 0,
   draws: 0,
+  turn: false,
   dwarfNextTurn: false,
   goblinLordMarked: false,
-  turn: false,
-  startingHand: [],
   hand: [],
+  startingHand: [],
   cardsDrawn: [],
-  discards: []
+  discards: [],
+  warpStalkerPointValue: 0,
+  voidRunnerPointValue: 0
 });
 
 export default player2;

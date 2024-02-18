@@ -603,23 +603,23 @@ const cardDetails = writable({
     image: '/beasts/dog.png'
   },
 
-  // Xenos (Aliens)
+  // Xenos (Alien hive colony)
   xenoGuard: { 
     title: 'xenoGuard',
     displayTitle: 'Xeno Guard',
-    points: 11,
+    points: 10,
     amount: 3,
     rarity: 'epic',
     trait: '',
     traitTitle: '',
-    description: 'The xenoGuard is a highly intelligent and powerful creature, feared by many. It is the most feared creature in the xeno army, tasked with the safety of the xeno overlord.',
+    description: 'The xenoGuard is a highly intelligent and powerful creature, feared by many. It is the most feared creature in the xeno hive, tasked with the safety of the xeno overlord.',
     race: 'xeno',
     image: '/xenos/xeno_guard.png'
   },
   abyssolarian: { 
     title: 'abyssolarian',
     displayTitle: 'Abyssolarian',
-    points: 10,
+    points: 9,
     amount: 3,
     rarity: 'epic',
     trait: '',
@@ -631,11 +631,11 @@ const cardDetails = writable({
   warpstalker: { 
     title: 'warpstalker',
     displayTitle: 'Warpstalker',
-    points: Math.ceil(Math.random() * 5) + 7, // random between 8-12
+    points: 0, // random between 7-13
     amount: 3,
     rarity: 'epic',
-    trait: 'When drawn, gets a random point value between 9-12 inclusive.',
-    traitTitle: 'Xenigma',
+    trait: 'When drawn, a random point value (7-13 inclusive) will be chosen, then applied to ALL ally warpstalkers.',
+    traitTitle: 'Hive Resonance',
     description: 'A xeno capable of riftwalking, similar to teleporting over short distances. Sometimes riftwalks to the wrong place.',
     race: 'xeno',
     image: '/xenos/xeno_placeholder.png'
@@ -643,12 +643,12 @@ const cardDetails = writable({
   voidRunner: { 
     title: 'voidRunner',
     displayTitle: 'Void Runner',
-    points: 6, // increases by 1 per turn
+    points: 0, // increases by 1 per turn passed
     amount: 3,
     rarity: 'epic',
-    trait: 'Increases points by +1 every turn.',
-    traitTitle: 'Void Run',
-    description: "A non sentient xeno who's only purpose is to run. If it ever stops it will die.",
+    trait: "When drawn, ALL ally void Runners' points are set to the number of turns passed.",
+    traitTitle: 'Hive Unity',
+    description: "A non sentient xeno who's only purpose is to run and grow stronger. If it ever stops it will die.",
     race: 'xeno',
     image: '/xenos/xeno_placeholder.png'
   },
@@ -659,7 +659,7 @@ const cardDetails = writable({
     amount: 3,
     rarity: 'epic',
     trait: 'Buffs all xenos by +4, does not apply to self and does not stack with other Nebulites.',
-    traitTitle: 'Xenobloom',
+    traitTitle: 'Hive Blossom',
     description: 'Artificially created xenos incapable of speech.',
     race: 'xeno',
     image: '/xenos/xeno_placeholder.png'
@@ -667,12 +667,12 @@ const cardDetails = writable({
   celenial: { 
     title: 'celenial',
     displayTitle: 'Celenial',
-    points: 8,
+    points: 5,
     amount: 3,
     rarity: 'amazing',
     trait: '',
     traitTitle: '',
-    description: 'The omega of the xenos, often mistreated and ignored. Excluding the nebulites, celenials are the weakest of the xenos. They are often used as bait for the abyssolarians.',
+    description: 'The lowest of the xenos, often mistreated. Excluding the nebulites, celenials are the weakest of the xenos, often used as bait for the abyssolarians.',
     race: 'xeno',
     image: '/xenos/xeno_placeholder.png'
   }

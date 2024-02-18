@@ -24,7 +24,9 @@ const player1 = writable({
   hand: [],
   startingHand: [],
   cardsDrawn: [],
-  discards: []
+  discards: [],
+  warpStalkerPointValue: 0,
+  voidRunnerPointValue: 0
 });
 
 export default player1;

@@ -27,12 +27,12 @@
   let turnCount = 0;
   // Deck players draw from, includes all race decks
   let fullDeck = {
-    beasts: [...$beastDeck],
-    bots: [...$botDeck],
+    // beasts: [...$beastDeck],
+    // bots: [...$botDeck],
     dwarves: [...$dwarfDeck],
-    elves: [...$elfDeck], 
-    goblins: [...$goblinDeck],
-    humans: [...$humanDeck],
+    // elves: [...$elfDeck], 
+    // goblins: [...$goblinDeck],
+    // humans: [...$humanDeck],
     xenos: [...$xenoDeck]
   };
   // array for each deck, humans, goblins, elves and dwarves
@@ -117,8 +117,46 @@
     // Handles gobbledegook declaration for all users
     socket.on('gdg-declared', () => gobbledegookDeclared = true);
 
+    // Handles first server reply for xeno updates (like 3 way handshake pt 1)
+    socket.on('xeno-points-update-started', data => {
+      // The goal is to update the remote player's xeno points (since they will differ)
+      if (playingAs() === 'p1') {
+        player2.update(store => {
+          store.warpStalkerPointValue = data.warpStalkerPointValue;
+          store.voidRunnerPointValue = data.voidRunnerPointValue;
+          return store;
+        });
+      } else {
+        player1.update(store => {
+          store.warpStalkerPointValue = data.warpStalkerPointValue;
+          store.voidRunnerPointValue = data.voidRunnerPointValue;
+          return store;
+        });
+      }
+
+      // Make sure client who initiated the update gets their data updated as well.
+      socket.emit('finish-xeno-points-update', playingAs() === 'p1' ? $player1 : $player2);
+    });
+
+    // Handles last server reply for xeno updates (like 3 way handshake pt 2)
+    socket.on('xeno-points-update-started', data => {
+      if (playingAs() === 'p1') {
+        player2.update(store => {
+          store.warpStalkerPointValue = data.warpStalkerPointValue;
+          store.voidRunnerPointValue = data.voidRunnerPointValue;
+          return store;
+        });
+      } else {
+        player1.update(store => {
+          store.warpStalkerPointValue = data.warpStalkerPointValue;
+          store.voidRunnerPointValue = data.voidRunnerPointValue;
+          return store;
+        });
+      }
+    });
+
     // Handles game end for all users
-    socket.on('game-ended', () => endGame());
+    socket.on('game-ended', data => endGame());
 
     // Lets server know client is ready.
     socket.emit('client-ready');
@@ -188,6 +226,8 @@
     fullDeck['bots'] = [...$botDeck];
     fullDeck['beasts'] = [...$beastDeck];
     fullDeck['xenos'] = [...$xenoDeck];
+    $cardDetails['warpstalker'].points = 0;
+    $cardDetails['voidRunner'].points = 0;
 
     // General resets
     turnCount = 0;
@@ -342,6 +382,7 @@
     // When the last card is drawn, currentDeck becomes undefined. This will catch that
     if (deckTypes.length === 0 && currentDeck === undefined) {
       console.log("No more cards!");
+      socket.emit('start-xeno-points-update', playingAs() === 'p1' ? $player1 : $player2);
       socket.emit('end-game');
       return;
     };
@@ -369,8 +410,8 @@
       // If it's the goblin lord's mark, the next card will be the goblin lord
       if (cardDrawn === 'goblinLordsMark') player.goblinLordMarked = true;
 
-      // If it's the warpstalker, generate point value for card between 8-12 inclusive.
-      // if (cardDrawn === 'warpstalker') $cardDetails[cardDrawn].points = Math.ceil(Math.random() * 5) + 7;
+      // If the card is a special xeno card, handle it.
+      if (cardDrawn === 'warpstalker' || cardDrawn === 'voidRunner') calculateSpecialXenoCard(player, cardDrawn);
     }
 
     // Remove card from deck
@@ -437,6 +478,7 @@
     socket.emit('discard-card', {player1: $player1, player2: $player2});
 
     if (gobbledegookDeclared) {
+      socket.emit('start-xeno-points-update', playingAs() === 'p1' ? $player1 : $player2);
       socket.emit('end-game');
     } else {
       changeTurns();
@@ -461,6 +503,7 @@
     if (gameOver) return;
 
     if (gobbledegookDeclared) {
+      socket.emit('start-xeno-points-update', playingAs() === 'p1' ? $player1 : $player2);
       socket.emit('end-game');
     } else {
       console.log('Gobbledegook declared!!');
@@ -576,6 +619,9 @@
 
     // Elf twins bonus 10 points, placed after calculateElfKing() since it does not stack with elf king
     if (player.hand.includes('nelladan') && player.hand.includes('nadallen')) player.points.elves += 10;
+
+    // Nebulites buff xenos by 4 points
+    if (player.hand.includes('nebulite')) calculateSpecialXenoCard(player, 'nebulite');
 
     player.highestPoints = Math.max(
       player.points.beasts,
@@ -730,6 +776,42 @@
       player.points.dwarves += 50
     }
   }
+
+  // Calculates special xeno card points
+  function calculateSpecialXenoCard(player, card) {
+    // If it's the warpstalker, generate point value for card between 8-12 inclusive.
+    if (card === 'warpstalker') {
+      $cardDetails[card].points = Math.ceil(Math.random() * 7) + 6;
+      player.warpStalkerPointValue = $cardDetails[card].points;
+    }
+
+    // If it's the voidRunner, set points equal to amount of turns passed
+    if (card === 'voidRunner') {
+      $cardDetails[card].points = Math.ceil(turnCount);
+      player.voidRunnerPointValue = $cardDetails[card].points;
+    }
+
+    // Nebulites buff xenos by 4 points
+    if (card === 'nebulite') {
+      player.hand.forEach(card => {
+        if ($cardDetails[card].race === 'xeno' && $cardDetails[card].title !== 'nebulite') player.points.xenos += 4;
+      });
+    }
+  }
+
+  // For displaying special void points at the end of the game
+  function endGameXenoPointHandler(cardTitle, player) {
+    // Return regular points if it's not special xeno card
+    if (!['warpstalker', 'voidRunner'].includes(cardTitle)) return $cardDetails[cardTitle].points;
+    
+    if (player === 'p1') {
+      if (cardTitle === 'warpstalker') return $player1.warpStalkerPointValue;
+      if (cardTitle === 'voidRunner') return $player1.voidRunnerPointValue;
+    } else if (player === 'p2') {
+      if (cardTitle === 'warpstalker') return $player2.warpStalkerPointValue;
+      if (cardTitle === 'voidRunner') return $player2.voidRunnerPointValue;
+    } 
+  }
 </script>
 
 <main>
@@ -767,7 +849,7 @@
               img={$cardDetails[card].image}
               race={$cardDetails[card].race}
               rarity={$cardDetails[card].rarity}
-              points={$cardDetails[card].points}
+              points={endGameXenoPointHandler(card, 'p1')}
               />
             </div>
           {/each}
@@ -781,7 +863,7 @@
              img={$cardDetails[card].image}
              race={$cardDetails[card].race}
              rarity={$cardDetails[card].rarity}
-             points={$cardDetails[card].points}
+             points={endGameXenoPointHandler(card, 'p1')}
             />
           </div>
           {/each}
@@ -797,7 +879,7 @@
                 img={$cardDetails[card].image}
                 race={$cardDetails[card].race}
                 rarity={$cardDetails[card].rarity}
-                points={$cardDetails[card].points}
+                points={endGameXenoPointHandler(card, 'p1')}
               />
             </div>
           {/each}
@@ -812,7 +894,7 @@
                img={$cardDetails[card].image}
                race={$cardDetails[card].race}
                rarity={$cardDetails[card].rarity}
-               points={$cardDetails[card].points}
+               points={endGameXenoPointHandler(card, 'p1')}
               />
             </div>
           {/each}
@@ -832,7 +914,7 @@
               img={$cardDetails[card].image}
               race={$cardDetails[card].race}
               rarity={$cardDetails[card].rarity}
-              points={$cardDetails[card].points}
+              points={endGameXenoPointHandler(card, 'p2')}
               />
             </div>
           {/each}
@@ -846,7 +928,7 @@
              img={$cardDetails[card].image}
              race={$cardDetails[card].race}
              rarity={$cardDetails[card].rarity}
-             points={$cardDetails[card].points}
+             points={endGameXenoPointHandler(card, 'p2')}
             />
           </div>
           {/each}
@@ -862,7 +944,7 @@
                 img={$cardDetails[card].image}
                 race={$cardDetails[card].race}
                 rarity={$cardDetails[card].rarity}
-                points={$cardDetails[card].points}
+                points={endGameXenoPointHandler(card, 'p2')}
               />
             </div>
           {/each}
@@ -877,7 +959,7 @@
                img={$cardDetails[card].image}
                race={$cardDetails[card].race}
                rarity={$cardDetails[card].rarity}
-               points={$cardDetails[card].points}
+               points={endGameXenoPointHandler(card, 'p2')}
               />
             </div>
           {/each}
@@ -924,6 +1006,7 @@
       </div>
 
       <div class="game-buttons">
+        <h1 class="turn-count">Turn {Math.ceil(turnCount)}</h1>
         <GGCard on:click={deckClickHandler} faceUp={false} />
         {#if gobbledegookDisabled || turnCount < 3}
           <Button round={true} customClasses="btn__orange_disabled">Gobbledegook!</Button>
@@ -1089,6 +1172,11 @@
 
   .turn-text > span {
     color: #CAB097;
+  }
+
+  .turn-count {
+    color: #af4819;
+    font-size: 1.25rem;
   }
 
   .p1-name {

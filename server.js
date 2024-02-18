@@ -87,6 +87,12 @@ io.on('connection', socket => {
   // Game ended
   socket.on('end-game', data => io.emit('game-ended', data));
 
+  // Start updating xeno points, like 3 way handshake part 1
+  socket.on('start-xeno-points-update', data => socket.broadcast.emit('xeno-points-update-started', data));
+
+  // Finish updating xeno points
+  socket.on('finish-xeno-points-update', data => socket.broadcast.emit('xeno-points-update-finish', data)); 
+
   // Log connected users in the server console.
   logUsers();
 });
