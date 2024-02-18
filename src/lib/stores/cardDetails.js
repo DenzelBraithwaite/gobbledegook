@@ -626,7 +626,7 @@ const cardDetails = writable({
     traitTitle: '',
     description: 'A feral xeno born in the darkest depths of Xenopp. Produces light to lure prey.',
     race: 'xeno',
-    image: '/xenos/xeno_placeholder.png'
+    image: '/xenos/abyssolarian.png'
   },
   warpstalker: { 
     title: 'warpstalker',
@@ -675,7 +675,83 @@ const cardDetails = writable({
     description: 'The lowest of the xenos, often mistreated. Excluding the nebulites, celenials are the weakest of the xenos, often used as bait for the abyssolarians.',
     race: 'xeno',
     image: '/xenos/xeno_placeholder.png'
-  }
+  },
+
+  // Boosts Cards:
+  rejuvenate: { 
+    title: 'rejuvenate',
+    displayTitle: 'Rejuvenate',
+    points: 0,
+    amount: 2,
+    rarity: '',
+    trait: 'If drawn, player gains 10 points at the end of the game even after this card is discarded',
+    traitTitle: 'Rejuvenation',
+    description: '',
+    race: 'boost',
+    image: '/boosts/blue_boost.png'
+  },
+  dwarvenCall: { 
+    title: 'dwarvenCall',
+    displayTitle: 'Dwarven Call',
+    points: 0,
+    amount: 2,
+    rarity: '',
+    trait: 'If drawn, next card drawn is a dwarf. If no dwarves are left, draw random card.',
+    traitTitle: 'Last Call',
+    description: '',
+    race: 'boost',
+    image: '/boosts/ale.png'
+  },
+  charge: { 
+    title: 'charge',
+    displayTitle: 'Charge',
+    points: 0,
+    amount: 2,
+    rarity: '',
+    trait: 'Only affects bots and humans. If drawn, at the end of the game, gain points equal to (amount of turns - turns passed since drawn * charge cards) even if discarded.',
+    traitTitle: 'Recharge',
+    description: '',
+    race: 'boost',
+    image: '/boosts/charge.png'
+  },
+
+  // Trap Cards
+  sap: { 
+    title: 'sap',
+    displayTitle: 'Sap',
+    points: 0,
+    amount: 2,
+    rarity: '',
+    trait: 'If drawn, player loses 10 points at the end of the game even after this card is discarded.',
+    traitTitle: 'Sapped',
+    description: '',
+    race: 'trap',
+    image: '/traps/red_trap.png'
+  },
+  dissociation: { 
+    title: 'dissociation',
+    displayTitle: 'Dissociation',
+    points: 0,
+    amount: 1,
+    rarity: '',
+    trait: 'If drawn, xenos lose 10 points at the end of the game even after this card is discarded.',
+    traitTitle: 'Dissociate',
+    description: '',
+    race: 'trap',
+    image: '/traps/xeno_trap.png'
+  },
+  infect: { 
+    title: 'infect',
+    displayTitle: 'Infect',
+    points: 0,
+    amount: 2,
+    rarity: '',
+    trait: 'Does not affect bots. If drawn, at the end of the game, lose points equal to (amount of turns - turns passed since drawn * infect cards) even if discarded.',
+    traitTitle: 'Infection',
+    description: '',
+    race: 'trap',
+    image: '/traps/green_trap.png'
+  },
 });
 
 export default cardDetails;

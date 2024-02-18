@@ -6,7 +6,7 @@
   import { fade } from 'svelte/transition';
 
   // Stores
-  import { player1, player2, cardDetails, xenoDeck, beastDeck, botDeck, dwarfDeck, elfDeck, goblinDeck, humanDeck } from './stores';
+  import { player1, player2, cardDetails, beastDeck, botDeck, dwarfDeck, elfDeck, goblinDeck, humanDeck, xenoDeck, boostDeck,  trapDeck } from './stores';
 
   // Custom components
   import { Button } from './index';
@@ -27,13 +27,15 @@
   let turnCount = 0;
   // Deck players draw from, includes all race decks
   let fullDeck = {
-    // beasts: [...$beastDeck],
-    // bots: [...$botDeck],
+    beasts: [...$beastDeck],
+    bots: [...$botDeck],
     dwarves: [...$dwarfDeck],
-    // elves: [...$elfDeck], 
-    // goblins: [...$goblinDeck],
-    // humans: [...$humanDeck],
-    xenos: [...$xenoDeck]
+    elves: [...$elfDeck],
+    goblins: [...$goblinDeck],
+    humans: [...$humanDeck],
+    xenos: [...$xenoDeck],
+    boosts: [...$boostDeck],
+    traps: [...$trapDeck]
   };
   // array for each deck, humans, goblins, elves and dwarves
   let deckTypes = Object.keys(fullDeck);
@@ -164,6 +166,7 @@
 
   // Ends current round
   function endGame() {
+    turnCount += 0.5;
     gameOver = true;
     startBtnDisabled = false;
     gobbledegookDisabled = true;
@@ -226,6 +229,8 @@
     fullDeck['bots'] = [...$botDeck];
     fullDeck['beasts'] = [...$beastDeck];
     fullDeck['xenos'] = [...$xenoDeck];
+    fullDeck['boosts'] = [...$boostDeck];
+    fullDeck['traps'] = [...$trapDeck];
     $cardDetails['warpstalker'].points = 0;
     $cardDetails['voidRunner'].points = 0;
 
@@ -272,6 +277,8 @@
     const goblinCardsLeft = fullDeck['goblins'].length || 0;
     const humanCardsLeft = fullDeck['humans'].length || 0;
     const xenoCardsLeft = fullDeck['xenos'].length || 0;
+    const boostCardsLeft = fullDeck['boosts'].length || 0;
+    const trapCardsLeft = fullDeck['traps'].length || 0;
 
     if (allDecks) {
       console.log(`Cards remaining per deck:\n
@@ -281,9 +288,11 @@
       Dwarves: ${dwarfCardsLeft}\n)
       Bots: ${botCardsLeft}\n)
       Xenos: ${xenoCardsLeft}\n)
+      Boosts: ${boostCardsLeft}\n)
+      Traps: ${trapCardsLeft}\n)
       Beasts: ${beastCardsLeft}\n`);
     } else {
-      const cardsLeft = humanCardsLeft + goblinCardsLeft + elfCardsLeft + dwarfCardsLeft + botCardsLeft + beastCardsLeft + xenoCardsLeft;
+      const cardsLeft = humanCardsLeft + goblinCardsLeft + elfCardsLeft + dwarfCardsLeft + botCardsLeft + beastCardsLeft + xenoCardsLeft + boostCardsLeft + trapCardsLeft;
       console.log(`Cards remaining in deck: ${cardsLeft}`);
     }
   }
@@ -404,14 +413,20 @@
       randomNum = Math.floor(Math.random() * fullDeck[currentDeck].length);
       cardDrawn = fullDeck[currentDeck][randomNum];
     
-      // If it's the longbeard leader or dwarf commander, the next card will be dwarf
-      if (cardDrawn === 'longbeardLeader' || cardDrawn === 'dwarfCommander') player.dwarfNextTurn = true;
+      // If it's the longbeard leader, dwarf commander or dwarvenCall, the next card will be dwarf
+      if (cardDrawn === 'longbeardLeader' || cardDrawn === 'dwarfCommander' || cardDrawn === 'dwarvenCall') player.dwarfNextTurn = true;
 
       // If it's the goblin lord's mark, the next card will be the goblin lord
       if (cardDrawn === 'goblinLordsMark') player.goblinLordMarked = true;
 
       // If the card is a special xeno card, handle it.
       if (cardDrawn === 'warpstalker' || cardDrawn === 'voidRunner') calculateSpecialXenoCard(player, cardDrawn);
+
+      // If the card is a trap, handle it.
+      if ($cardDetails[cardDrawn].race === 'trap') addTrapCard(player, cardDrawn);
+
+      // If the card is a boost, handle it.
+      if ($cardDetails[cardDrawn].race === 'boost') addBoostCard(player, cardDrawn);
     }
 
     // Remove card from deck
@@ -633,6 +648,12 @@
       player.points.xenos
     );
 
+    // Handles end game boost cards
+    endGameBoostHandler(player);
+
+    // Handles end game trap cards
+    endGameTrapHandler(player);
+
     console.log({
       player: player.title,
       highestPoints: player.highestPoints,
@@ -812,6 +833,53 @@
       if (cardTitle === 'voidRunner') return $player2.voidRunnerPointValue;
     } 
   }
+
+  // Adds boost card to players boosts array
+  function addBoostCard(player, card) {
+    player.boosts = [card, ...player.boosts];
+
+    if (card === 'charge') player.chargeDrawnTurns = [...player.chargeDrawnTurns, Math.ceil(turnCount)];
+  }
+
+  // Handles boost cards at the end of the game
+  function endGameBoostHandler(player) {
+    // Handles charge boost
+    for (let i = 0; i < player.chargeDrawnTurns.length; i++) {
+      player.chargePoints += (Math.ceil(turnCount) - player.chargeDrawnTurns[i]);
+    }
+    player.points.bots += player.chargePoints;
+    player.points.humans += player.chargePoints;
+    if (player.points.bots > player.highestPoints) player.highestPoints = player.points.bots;
+    if (player.points.humans > player.highestPoints) player.highestPoints = player.points.humans;
+
+    // Handles other boosts
+    player.boosts.forEach(boost => {
+      if (boost === 'rejuvenate') player.highestPoints += 10;
+    });
+  }
+
+  // Adds trap card to players traps array
+  function addTrapCard(player, card) {
+    player.traps = [card, ...player.traps];
+
+    if (card === 'infect') player.infectDrawnTurns = [...player.infectDrawnTurns, Math.ceil(turnCount)];
+  }
+
+  // Handles trap cards at the end of the game
+  function endGameTrapHandler(player) {
+    // Handles infect trap
+    for (let i = 0; i < player.infectDrawnTurns.length; i++) {
+      player.infectPoints += (Math.ceil(turnCount) - player.infectDrawnTurns[i]);
+    }
+    if (player.points.bots !== player.highestPoints) player.highestPoints -= player.infectPoints;
+
+    // Handles other traps
+    player.traps.forEach(trap => {
+      if (trap === 'sap') player.highestPoints -= 10;
+      if (trap === 'dissociation') player.points.xenos -= 10;
+      if (trap === 'dissociation' && player.points.xenos === player.highestPoints) player.highestPoints -= 10;
+    });
+  }
 </script>
 
 <main>
@@ -826,13 +894,41 @@
       <div class="results-messages-flex-wrapper">
         <div>
           <p>{winMessage}</p>
-          <p>{loseMessage}</p>
+          <p class="margin-bottom-sm">{loseMessage}</p>
+
+          <p>Player1 Boosts: </p>
+          <p>Charge points: {$player1.chargePoints}</p>
+          {#each $player1.boosts as boost}
+            <span>{boost} &nbsp;</span>
+          {/each}
+          <br>
+          <p>Player1 Traps: </p>
+          <p>Infect penalty: {$player1.infectPoints}</p>
+          {#each $player1.traps as trap}
+            <span>{trap} &nbsp;</span>
+          {/each}
           <h2 class="results-player-floating-header results-player-float-left">Player 1</h2>
         </div>
         <div>
           <p>Player 1 Win/Lose/Draw: {$player1.wins}/{$player1.losses}/{$player1.draws}</p>
-          <p>Player 2 Win/Lose/Draw: {$player2.wins}/{$player2.losses}/{$player2.draws}</p>
+          <p class="margin-bottom-sm">Player 2 Win/Lose/Draw: {$player2.wins}/{$player2.losses}/{$player2.draws}</p>
+
+
+          <p>Player2 Boosts: </p>
+          <p>Charge bonus points: {$player2.chargePoints}</p>
+          <span>Boost cards: </span>
+          {#each $player2.boosts as boost}
+            <span>{boost} &nbsp;</span>
+          {/each}
+          <br>
+          <p>Player2 Traps: </p>
+          <p>Infect penalty: {$player2.infectPoints}</p>
+          <span>Trap cards: </span>
+          {#each $player2.traps as trap}
+            <span>{trap} &nbsp;</span>
+          {/each}
           <h2 class="results-player-floating-header results-player-float-right">Player 2</h2>
+          <h2 class="results-player-floating-header results-player-float-middle">Turn count: {Math.ceil(turnCount)}</h2>
         </div>
       </div>
 
@@ -1090,6 +1186,10 @@
     transform: translateX(25%);
   }
 
+  .results-player-float-middle {
+    transform: translateX(-14rem); /* roughly centers between p1 and p2 */
+  }
+
   .player-history-wrapper {
     display: flex;
     justify-content: center;
@@ -1207,5 +1307,10 @@
     gap: 2rem;
     justify-content: center;
     align-items: center;
+  }
+
+  /* Utility */
+  .margin-bottom-sm {
+    margin-bottom: 1rem;
   }
 </style>

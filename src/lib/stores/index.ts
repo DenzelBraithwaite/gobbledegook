@@ -7,7 +7,9 @@ import dwarfDeck from "./dwarfDeck.js";
 import elfDeck from "./elfDeck.js";
 import goblinDeck from "./goblinDeck.js";
 import humanDeck from "./humanDeck.js";
-import xenoDeck from "./xenoDeck.js"
+import xenoDeck from "./xenoDeck.js";
+import boostDeck from "./boostDeck.js";
+import trapDeck from "./trapDeck.js";
 
 export {
   player1,
@@ -19,5 +21,7 @@ export {
   elfDeck,
   goblinDeck,
   humanDeck,
-  xenoDeck
+  xenoDeck,
+  boostDeck,
+  trapDeck
 }

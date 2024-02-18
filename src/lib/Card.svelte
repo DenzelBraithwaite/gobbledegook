@@ -211,17 +211,6 @@
   }
   
   /* bg color based on race */
-  .bg-xeno {
-    background: linear-gradient(to top left,#776832,#c2a84c 50%);
-    outline: 4px solid #957c1e;
-  }
-  
-  .bg-xeno-rare {
-    background: linear-gradient(to top left, #635628 5%, #e0de69b6, #9e692d 90%);
-
-    outline: 4px solid #8e7419;
-  }
-
   .bg-beast {
     background: linear-gradient(to top left, #55431e, #855a2a 50%);
     outline: 4px solid #55431e;
@@ -282,51 +271,72 @@
     outline: 4px solid #324277a8;
   }
 
+  .bg-xeno {
+    background: linear-gradient(to top left,#776832,#c2a84c 50%);
+    outline: 4px solid #957c1e;
+  }
+
+  .bg-boost {
+    background: linear-gradient(353deg, #90beff, #8bc8d13d 50%);
+    outline: 4px solid #eeeeeed4;
+  }
+
+  .bg-trap {
+    background: linear-gradient(353deg, #000000, #ffffff4a 50%);
+    outline: 4px solid #111111;
+  }
+
   /* Race text color */  
+  .beast-race {
+    background-color: #55431e;
+    border: 2px solid #55431e;
+  }
+  
+  .bot-race {
+    background-color: #424242;
+    border: 2px solid #424242;
+  }
+  
+  .dwarf-race {
+    background-color: #774b32;
+    border: 2px solid #774b32;
+  }
+  
+  .elf-race {
+    background-color: #726b7a;
+    border: 2px solid #726b7a;
+  }
+  
+  .goblin-race {
+    background-color: #327738;
+    border: 2px solid #327738;
+  }
+  
+  .human-race {
+    background-color: #324277;
+    border: 2px solid #324277;
+  }
+  
   .xeno-race {
     background-color: #8e7419;
     border: 2px solid #8e7419;
   }
 
-  .beast-race {
-    background-color: #55431e;
-    border: 2px solid #55431e;
+  .boost-race {
+    background-color: #a0aec8;
+    border: 2px solid #a0aec8;
   }
 
-  .bot-race {
-    background-color: #424242;
-    border: 2px solid #424242;
-  }
-
-  .dwarf-race {
-    background-color: #774b32;
-    border: 2px solid #774b32;
-  }
-
-  .elf-race {
-    background-color: #726b7a;
-    border: 2px solid #726b7a;
-  }
-
-  .goblin-race {
-    background-color: #327738;
-    border: 2px solid #327738;
-  }
-
-  .human-race {
-    background-color: #324277;
-    border: 2px solid #324277;
+  .trap-race {
+    background-color: #111;
+    border: 2px solid #3e3e3e12;
   }
 
   /* race title color */
-  .xeno-title {
-    background-color: #8e74195e;
-  }
-
   .beast-title {
     background-color: #55431e5e;
   }
-
+  
   .bot-title {
     background-color: #4242425e;
   }
@@ -342,9 +352,20 @@
   .goblin-title {
     background-color: #3277385e;
   }
-
+  
   .human-title {
     background-color: #3242775e;
   }
+  
+  .xeno-title {
+    background-color: #8e74195e;
+  }
 
+  .boost-title {
+    background-color: #ffffff5e;
+  }
+
+  .trap-title {
+    background-color: #0000005e;
+  }
 </style>

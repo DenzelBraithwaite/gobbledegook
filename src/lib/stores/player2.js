@@ -25,6 +25,12 @@ const player2 = writable({
   startingHand: [],
   cardsDrawn: [],
   discards: [],
+  boosts: [],
+  traps: [],
+  chargeDrawnTurns: [],
+  infectDrawnTurns: [],
+  chargePoints: 0,
+  infectPoints: 0,
   warpStalkerPointValue: 0,
   voidRunnerPointValue: 0
 });
