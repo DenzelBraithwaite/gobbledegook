@@ -19,5 +19,5 @@ export {
   elfDeck,
   goblinDeck,
   humanDeck,
-  // xenoDeck
+  xenoDeck
 }

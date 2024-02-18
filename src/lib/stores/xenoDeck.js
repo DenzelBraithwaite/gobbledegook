@@ -1,9 +1,9 @@
 import { writable } from 'svelte/store';
 
 const xenoDeck = writable([
-  'xenoguard',
-  'xenoguard',
-  'xenoguard',
+  'xenoGuard',
+  'xenoGuard',
+  'xenoGuard',
   'abyssolarian',
   'abyssolarian',
   'abyssolarian',

@@ -1,5 +1,3 @@
-// TODO: Limit to 2 users
-
 import { dirname } from 'path';
 import { fileURLToPath } from 'url';
 import express from 'express';

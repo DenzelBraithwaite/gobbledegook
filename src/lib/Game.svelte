@@ -2,6 +2,9 @@
   // Hooks
   import { onMount } from 'svelte';
 
+  // Transitions
+  import { fade } from 'svelte/transition';
+
   // Stores
   import { player1, player2, cardDetails, xenoDeck, beastDeck, botDeck, dwarfDeck, elfDeck, goblinDeck, humanDeck } from './stores';
 
@@ -30,7 +33,7 @@
     elves: [...$elfDeck], 
     goblins: [...$goblinDeck],
     humans: [...$humanDeck],
-    // xenos: [...$xenoDeck]
+    xenos: [...$xenoDeck]
   };
   // array for each deck, humans, goblins, elves and dwarves
   let deckTypes = Object.keys(fullDeck);
@@ -66,12 +69,14 @@
       // Update player hands
       player1.update(store => {
         store.hand = data.player1.hand;
+        store.startingHand = data.player1.hand;
         store.turn = data.player1.turn;
         return store;
       });
 
       player2.update(store => {
         store.hand = data.player2.hand;
+        store.startingHand = data.player2.hand;
         store.turn = data.player2.turn;
         return store;
       });
@@ -154,7 +159,7 @@
       store.points.elves = 0;
       store.points.goblins = 0;
       store.points.humans = 0;
-      // store.points.xenos = 0;
+      store.points.xenos = 0;
       store.discards = [];
       store.justWon = false;
       return store;
@@ -169,7 +174,7 @@
       store.points.elves = 0;
       store.points.goblins = 0;
       store.points.humans = 0;
-      // store.points.xenos = 0;
+      store.points.xenos = 0;
       store.discards = [];
       store.justWon = false;
       return store;
@@ -182,7 +187,7 @@
     fullDeck['dwarves'] = [...$dwarfDeck];
     fullDeck['bots'] = [...$botDeck];
     fullDeck['beasts'] = [...$beastDeck];
-    // fullDeck['xenos'] = [...$xenoDeck];
+    fullDeck['xenos'] = [...$xenoDeck];
 
     // General resets
     turnCount = 0;
@@ -226,9 +231,8 @@
     const elfCardsLeft = fullDeck['elves'].length || 0;
     const goblinCardsLeft = fullDeck['goblins'].length || 0;
     const humanCardsLeft = fullDeck['humans'].length || 0;
-    // const xenoCardsLeft = fullDeck['xenos'].length || 0;
+    const xenoCardsLeft = fullDeck['xenos'].length || 0;
 
-    // TODO: add xeno log
     if (allDecks) {
       console.log(`Cards remaining per deck:\n
       Humans: ${humanCardsLeft}\n
@@ -236,9 +240,10 @@
       Elves: ${elfCardsLeft}\n
       Dwarves: ${dwarfCardsLeft}\n)
       Bots: ${botCardsLeft}\n)
+      Xenos: ${xenoCardsLeft}\n)
       Beasts: ${beastCardsLeft}\n`);
     } else {
-      const cardsLeft = humanCardsLeft + goblinCardsLeft + elfCardsLeft + dwarfCardsLeft + botCardsLeft + beastCardsLeft;
+      const cardsLeft = humanCardsLeft + goblinCardsLeft + elfCardsLeft + dwarfCardsLeft + botCardsLeft + beastCardsLeft + xenoCardsLeft;
       console.log(`Cards remaining in deck: ${cardsLeft}`);
     }
   }
@@ -293,11 +298,13 @@
     if ($player1.hand === playerHand) {
       player1.update(store => {
         store.hand = playerHand;
+        store.startingHand = playerHand;
         return store;
       });
     } else {
       player2.update(store => {
         store.hand = playerHand;
+        store.startingHand = playerHand;
         return store;
       });
     }
@@ -319,14 +326,14 @@
     // If player has longbeard leader, next card is a dwarf
     if (player.dwarfNextTurn) {
       player.dwarfNextTurn = false;
-    if (fullDeck['dwarves'].length !== 0) {
-      currentDeck = 'dwarves';
+      if (fullDeck['dwarves'].length !== 0) {
+        currentDeck = 'dwarves';
+      } else {
+        // If no remaining dwarves, random deck 
+        randomNum = Math.floor(Math.random() * deckTypes.length);
+        currentDeck = deckTypes[randomNum];
+      }
     } else {
-      // If no remaining dwarves, random deck 
-      randomNum = Math.floor(Math.random() * deckTypes.length);
-      currentDeck = deckTypes[randomNum];
-    }
-  } else {
       // Grab random deck 
       randomNum = Math.floor(Math.random() * deckTypes.length);
       currentDeck = deckTypes[randomNum];
@@ -335,9 +342,7 @@
     // When the last card is drawn, currentDeck becomes undefined. This will catch that
     if (deckTypes.length === 0 && currentDeck === undefined) {
       console.log("No more cards!");
-
-      // TODO: emit end game to server
-      endGame();
+      socket.emit('end-game');
       return;
     };
 
@@ -363,28 +368,33 @@
 
       // If it's the goblin lord's mark, the next card will be the goblin lord
       if (cardDrawn === 'goblinLordsMark') player.goblinLordMarked = true;
-    }
 
-    // When a smaller race deck runs out, it will be removed here. Placed below the cardDrawn logic to ensure the card is actually drawn (think goblin lord's mark)
-    if (fullDeck[currentDeck].length <= 1) {
-      // Remove deck from main deck
-      const index = deckTypes.indexOf(currentDeck);
-      deckTypes.splice(index, 1);
+      // If it's the warpstalker, generate point value for card between 8-12 inclusive.
+      // if (cardDrawn === 'warpstalker') $cardDetails[cardDrawn].points = Math.ceil(Math.random() * 5) + 7;
     }
 
     // Remove card from deck
     const removedCardIndex = fullDeck[currentDeck].indexOf(cardDrawn);
     fullDeck[currentDeck].splice(removedCardIndex, 1);
 
+    // When a smaller race deck runs out, it will be removed here. Placed below the cardDrawn logic to ensure the card is actually drawn (think goblin lord's mark)
+    if (fullDeck[currentDeck].length === 0) {
+      // Remove deck from main deck
+      const index = deckTypes.indexOf(currentDeck);
+      deckTypes.splice(index, 1);
+    }
+
     // Checks if player is player 1 or 2, then adds card to hand
     if (player.title === 'Player 1') {
       player1.update(store => {
         store.hand = [...store.hand, cardDrawn];
+        store.cardsDrawn = [cardDrawn, ...player.cardsDrawn];
         return store;
       });
     } else {
       player2.update(store => {
         store.hand = [...store.hand, cardDrawn];
+        store.cardsDrawn = [cardDrawn, ...player.cardsDrawn];
         return store;
       });
     }
@@ -526,8 +536,10 @@
           player.points.humans += $cardDetails[card].points;
         break;
 
-        // case 'xeno':
-        //   player.points.xenos += $cardDetails[card].points;
+        case 'xeno':
+          player.points.xenos += $cardDetails[card].points;
+        break;
+
         default:
           console.log("Didn't match a race???");
       }
@@ -538,8 +550,8 @@
         player.points.dwarves,
         player.points.elves,
         player.points.goblins,
-        player.points.humans
-        // player.points.xenos,
+        player.points.humans,
+        player.points.xenos
       );
     });
   }
@@ -548,11 +560,15 @@
   function calculateTotalPoints(player, enemy) {
     calculateBasePoints(player);
 
+    // Because calculateTotalPoints() is run back to back, firtst with p1 as player, p2 might calculate bot points even when "hacked" by crusher.
+    if (enemy.hand.includes('crusher541A57')) player.points.bots = 0;
+
     // Special cards)
     if (player.hand.includes('commander')) calculateCommander(player); // Must be before emperor since emperor multiplies final points.
     if (player.hand.includes('emperor')) calculateEmperor(player);
     if (player.hand.includes('goblinLord')) calculateGoblinLord(player, enemy);
     if (player.hand.includes('elfKing')) calculateElfKing(player, enemy);
+    if (player.hand.includes('dreamDestroyer')) calculateDreamDestroyer(player);
     if (player.hand.includes('dreamDestroyer')) calculateDreamDestroyer(player);
     if (player.hand.includes('crusher541A57')) calculateCrusher(player, enemy);
     if (player.hand.includes('ai')) calculateAI(player, enemy); // Must be after crusher since crusher resets bot points.
@@ -568,7 +584,7 @@
       player.points.elves,
       player.points.goblins,
       player.points.humans,
-      // player.points.xenos
+      player.points.xenos
     );
 
     console.log({
@@ -580,7 +596,7 @@
       elfPoints: player.points.elves,
       goblinPoints: player.points.goblins,
       humanPoints: player.points.humans,
-      // xenoPoints: player.points.xenos
+      xenoPoints: player.points.xenos
     });
   }
 
@@ -589,7 +605,7 @@
     player.points.humans *= 2;
 
     player.hand.forEach(card => {
-      if ($cardDetails[card].race !== 'human' && $cardDetails[card].title !== 'hobbit') player.points.humans += $cardDetails[card].points;
+      if ($cardDetails[card].race !== 'human' && $cardDetails[card].race !== 'xeno' && $cardDetails[card].title !== 'hobbit') player.points.humans += $cardDetails[card].points;
     });
   }
 
@@ -723,47 +739,152 @@
     <Button customClasses="btn__green_disabled w-25">Game in progress...</Button>
   {/if}
 
-  <div class="game-end-wrapper">
-    {#if winMessage}
-      <div class="game-results">
-        <p>{winMessage}</p>
-        <p>{loseMessage}</p>
-        <br>
-        <p>Player 1 stats: Wins: {$player1.wins}, Losses: {$player1.losses}, Draws: {$player1.draws}</p>
-        <p>Player 2 stats: Wins: {$player2.wins}, Losses: {$player2.losses}, Draws: {$player2.draws}</p>
-        <div class="lg-discard-wrapper">
-          <div class="discard-wrapper">
-            <h4>Player 1 cards discarded:</h4>
-            <ul class="discarded-cards">
-              {#each $player1.discards as card}
-                <GGCard
-                displayTitle={$cardDetails[card].displayTitle}
-                title={$cardDetails[card].title}
-                img={$cardDetails[card].image}
-                race={$cardDetails[card].race}
-                rarity={$cardDetails[card].rarity}
-                points={$cardDetails[card].points} />
-              {/each}
-            </ul>
-          </div>
-          <div class="discard-wrapper">
-            <h4>Player 2 cards discarded:</h4>
-            <ul class="discarded-cards">
-              {#each $player2.discards as card}
-                <GGCard
-                displayTitle={$cardDetails[card].displayTitle}
-                title={$cardDetails[card].title}
-                img={$cardDetails[card].image}
-                race={$cardDetails[card].race}
-                rarity={$cardDetails[card].rarity}
-                points={$cardDetails[card].points} />
-              {/each}
-            </ul>
-          </div>
+  {#if winMessage}
+    <div class="results-screen" transition:fade>
+      <div class="results-messages-flex-wrapper">
+        <div>
+          <p>{winMessage}</p>
+          <p>{loseMessage}</p>
+          <h2 class="results-player-floating-header results-player-float-left">Player 1</h2>
+        </div>
+        <div>
+          <p>Player 1 Win/Lose/Draw: {$player1.wins}/{$player1.losses}/{$player1.draws}</p>
+          <p>Player 2 Win/Lose/Draw: {$player2.wins}/{$player2.losses}/{$player2.draws}</p>
+          <h2 class="results-player-floating-header results-player-float-right">Player 2</h2>
         </div>
       </div>
-    {/if}
 
+      <div class="player-history-wrapper">
+        <!-- Cards Drawn -->
+        <div class="history__cards-drawn">
+          <!-- Starting hand, placed here so it's at the beginning, left side of parent -->
+          <p class="history__small-header">Starting Hand:</p>
+          {#each $player1.startingHand as card}
+            <div class="history__card-wrapper">
+              <GGCard
+              displayTitle={$cardDetails[card].displayTitle}
+              title={$cardDetails[card].title}
+              img={$cardDetails[card].image}
+              race={$cardDetails[card].race}
+              rarity={$cardDetails[card].rarity}
+              points={$cardDetails[card].points}
+              />
+            </div>
+          {/each}
+
+          <p class="history__small-header">Cards drawn:</p>
+          {#each $player1.cardsDrawn as card}
+          <div class="history__card-wrapper">
+            <GGCard
+             displayTitle={$cardDetails[card].displayTitle}
+             title={$cardDetails[card].title}
+             img={$cardDetails[card].image}
+             race={$cardDetails[card].race}
+             rarity={$cardDetails[card].rarity}
+             points={$cardDetails[card].points}
+            />
+          </div>
+          {/each}
+        </div>
+        <div class="history__cards-discarded">
+          <!-- Final hand, placed here so it's at the beginning, right side of parent -->
+          <p class="history__small-header">Final Hand:</p>
+          {#each $player1.hand as card}
+            <div class="history__card-wrapper">
+              <GGCard
+                displayTitle={$cardDetails[card].displayTitle}
+                title={$cardDetails[card].title}
+                img={$cardDetails[card].image}
+                race={$cardDetails[card].race}
+                rarity={$cardDetails[card].rarity}
+                points={$cardDetails[card].points}
+              />
+            </div>
+          {/each}
+
+          <!-- Cards Discarded -->
+          <p class="history__small-header">Cards discarded:</p>
+          {#each $player1.discards as card}
+            <div class="history__card-wrapper">
+              <GGCard
+               displayTitle={$cardDetails[card].displayTitle}
+               title={$cardDetails[card].title}
+               img={$cardDetails[card].image}
+               race={$cardDetails[card].race}
+               rarity={$cardDetails[card].rarity}
+               points={$cardDetails[card].points}
+              />
+            </div>
+          {/each}
+        </div>
+      </div>
+
+      <div class="player-history-wrapper">
+        <!-- Cards Drawn -->
+        <div class="history__cards-drawn">
+          <!-- Starting hand, placed here so it's at the beginning, left side of parent -->
+          <p class="history__small-header">Starting Hand:</p>
+          {#each $player2.startingHand as card}
+            <div class="history__card-wrapper">
+              <GGCard
+              displayTitle={$cardDetails[card].displayTitle}
+              title={$cardDetails[card].title}
+              img={$cardDetails[card].image}
+              race={$cardDetails[card].race}
+              rarity={$cardDetails[card].rarity}
+              points={$cardDetails[card].points}
+              />
+            </div>
+          {/each}
+
+          <p class="history__small-header">Cards drawn:</p>
+          {#each $player2.cardsDrawn as card}
+          <div class="history__card-wrapper">
+            <GGCard
+             displayTitle={$cardDetails[card].displayTitle}
+             title={$cardDetails[card].title}
+             img={$cardDetails[card].image}
+             race={$cardDetails[card].race}
+             rarity={$cardDetails[card].rarity}
+             points={$cardDetails[card].points}
+            />
+          </div>
+          {/each}
+        </div>
+        <div class="history__cards-discarded">
+          <!-- Final hand, placed here so it's at the beginning, right side of parent -->
+          <p class="history__small-header">Final Hand:</p>
+          {#each $player2.hand as card}
+            <div class="history__card-wrapper">
+              <GGCard
+                displayTitle={$cardDetails[card].displayTitle}
+                title={$cardDetails[card].title}
+                img={$cardDetails[card].image}
+                race={$cardDetails[card].race}
+                rarity={$cardDetails[card].rarity}
+                points={$cardDetails[card].points}
+              />
+            </div>
+          {/each}
+
+          <!-- Cards Discarded -->
+          <p class="history__small-header">Cards discarded:</p>
+          {#each $player2.discards as card}
+            <div class="history__card-wrapper">
+              <GGCard
+               displayTitle={$cardDetails[card].displayTitle}
+               title={$cardDetails[card].title}
+               img={$cardDetails[card].image}
+               race={$cardDetails[card].race}
+               rarity={$cardDetails[card].rarity}
+               points={$cardDetails[card].points}
+              />
+            </div>
+          {/each}
+        </div>
+      </div>
+    </div>
+  {:else}
     <div class="game-board {gobbledegookDeclared ? 'gobble-declared' : ''}">
       <div class="card-section card-section__ally {$player1.turn || $player1.justWon ? "section-active" : ""}">
         <p class="p1-name {$player1.turn ? "turn-active" : ""}">Player 1</p>
@@ -814,49 +935,98 @@
         <p class="turn-text">{$player1.turn ? "Player 1" : "Player 2"}<span>'s turn</span></p>
       {/if}
     </div>
-  </div>
+  {/if}
 </main>
 
 
 <style>
-  .game-end-wrapper {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    padding: 1rem;
-    gap: 1rem;
-  }
-
-  .game-results {
-    font-size: 1.5rem;
-    background-color: #200f009d;
-    box-shadow: 0 4px 20px #000000;
-    border: 10px double #e29836;
-    color: #fff;
-    border-radius: 0.5rem;
-    padding: 1rem;
-    flex-basis: 40%;
-    line-height: 1.5;
-    z-index: 100;
+  /* Game End */
+  .results-screen {
+    z-index: 1;
+    width: 95%;
     height: 85dvh;
+    font-size: 1.25rem;
+    padding: 1rem;
+    color: #fff;
+    background: linear-gradient(214deg, #ddceee50, #855a2a50, #69c0ad50, #78c06950, #c0736950, #c2a84c50);
+    box-shadow: 0 4px 20px #000000;
+    border: 10px double #976f39bd;
+    border-radius: 0.5rem;
+    margin: 1rem auto 0.25rem;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.1;
     overflow-y: scroll;
 
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
   }
 
-  .game-results::-webkit-scrollbar {
+  .results-screen::-webkit-scrollbar {
     appearance: none;
   }
 
-  .lg-discard-wrapper {
-    margin-top: 3rem;
+  .results-messages-flex-wrapper {
+    padding: 1rem;
+    background-color: #000000d1;
+    box-shadow: 0 4px 8px #00000082;
+    border-radius: 0.5rem;
+    border: 2px solid #deffbf36;
+    z-index: 5; /* To be above card hover */
+
+    grid-column: 1 / -1;
+    grid-row: 1 / 2;
+    margin-bottom: 3rem;
+
     display: flex;
+    justify-content: space-evenly;
+
+    position: sticky;
+    top: 0;
+  }
+  
+  .results-player-floating-header {
+    background-color: #000000a6;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    border-left: 2px solid #deffbf36;
+    border-right: 2px solid #deffbf36;
+    border-bottom: 2px solid #deffbf36;
+    
+    position: absolute;
+    bottom: -3.3rem; /* To blend with message border */
   }
 
-  .discarded-cards {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
+  .results-player-float-left {
+    left: 25%;
+    transform: translateX(-25%);
   }
+
+  .results-player-float-right {
+    right: 25%;
+    transform: translateX(25%);
+  }
+
+  .player-history-wrapper {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin-top: 2rem;
+  }
+
+  .history__card-wrapper {
+    margin-bottom: 2rem;
+  }
+
+  .history__small-header {
+    text-shadow: 4px 2px 6px #000000c9;
+    font-size: 1.5rem;
+    color: #ccff9c;
+    font-weight: bold;
+    margin-bottom: 2rem;
+  }
+
+  /* Game board */
 
   .game-board {
     position: relative;

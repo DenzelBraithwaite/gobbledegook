@@ -9,8 +9,8 @@ const cardDetails = writable({
     points: 10,
     amount: 1,
     rarity: 'legendary',
-    trait: 'Human points are doubled and all cards in your hand will count towards your final score, regardless of race.',
-    traitTitle: 'No Discrimination',
+    trait: "Human points are doubled and all races in your hand except xenos will count towards your final score.",
+    traitTitle: 'Unity Pact',
     description: 'The leader of the human race.',
     race: 'human',
     image: '/humans/emperor.gif'
@@ -107,7 +107,7 @@ const cardDetails = writable({
     points: 0,
     amount: 1,
     rarity: 'epic',
-    trait: 'Draw the goblin lord next turn.',
+    trait: 'Draw the goblin lord next turn, only applies if this card is drawn. If no goblin lord, draw a goblin.',
     traitTitle: "Death's Mark",
     description: 'A sign that the goblin lord is near.',
     race: 'goblin-ish',
@@ -231,7 +231,7 @@ const cardDetails = writable({
     rarity: 'amazing',
     trait: '',
     traitTitle: '',
-    description: "An elf in tuned with nature, they're quite strong..",
+    description: "An elf in tune with nature, they're quite strong..",
     race: 'elf',
     image: '/elves/forest-dweller.png'
   },
@@ -303,7 +303,7 @@ const cardDetails = writable({
     points: 10,
     amount: 1,
     rarity: 'legendary',
-    trait: 'At the end of the game, if there are more discarded dwarves than remaining(or equal) dwarves in the deck, dwarves receive 50 bonus points. Additionally, the next card drawn will be a dwarf.',
+    trait: 'At the end of the game, if there are more discarded dwarves than remaining(or equal) dwarves in the deck, dwarves receive 50 bonus points. Additionally, if drawn, the next card drawn will be a dwarf.',
     traitTitle: 'Drunken rage',
     description: 'The bravest and most feared amongst the dwarves.',
     race: 'dwarf',
@@ -315,7 +315,7 @@ const cardDetails = writable({
     points: 8,
     amount: 2,
     rarity: 'epic',
-    trait: 'The next card will be a dwarf. Has no effect if there are no remaining dwarves.',
+    trait: 'If drawn, the next card will be a dwarf. Has no effect if there are no remaining dwarves.',
     traitTitle: 'Recruit',
     description: 'Right hand man to the longbeard leader himself.',
     race: 'dwarf',
@@ -513,7 +513,7 @@ const cardDetails = writable({
     amount: 1,
     rarity: 'legendary',
     trait: 'All of your beasts are worth 12 points.',
-    traitTitle: 'Roid Rage',
+    traitTitle: '🤬Roid Rage🤬',
     description: 'The fiercest creature in the animal kingdom.',
     race: 'beast',
     image: '/beasts/dream-destroyer.gif'
@@ -604,78 +604,78 @@ const cardDetails = writable({
   },
 
   // Xenos (Aliens)
-  // xenoGuard: { 
-  //   title: 'xenoGuard',
-  //   displayTitle: 'Xeno Guard',
-  //   points: 11,
-  //   amount: 3,
-  //   rarity: 'epic',
-  //   trait: '',
-  //   traitTitle: '',
-  //   description: 'The xenoGuard is a highly intelligent and powerful creature, feared by many. It is the most feared creature in the xeno army, tasked with the safety of the xeno overlord.',
-  //   race: 'xeno',
-  //   image: '/alien/xeno_guard.png'
-  // },
-  // abyssolarian: { 
-  //   title: 'abyssolarian',
-  //   displayTitle: 'Abyssolarian',
-  //   points: 10,
-  //   amount: 3,
-  //   rarity: 'epic',
-  //   trait: '',
-  //   traitTitle: '',
-  //   description: 'The abyssolarians are born in the darkest and deepest depths of Xenopp, home of xenos. They produce light to lure in prey and are among the more feral xenos.',
-  //   race: 'xeno',
-  //   image: '/alien/abyssolarian.png'
-  // },
-  // warpstalker: { 
-  //   title: 'warpstalker',
-  //   displayTitle: 'Warpstalker',
-  //   points: 0, // random between 9-12
-  //   amount: 3,
-  //   rarity: 'epic',
-  //   trait: 'When drawn, gets a random point value between 9-12 inclusive.',
-  //   traitTitle: 'Xenigma',
-  //   description: 'A xeno capable of riftwalking, similar to teleporting over short distances. Sometimes riftwalks to the wrong place.',
-  //   race: 'xeno',
-  //   image: '/alien/warpstalker.png'
-  // },
-  // voidRunner: { 
-  //   title: 'voidRunner',
-  //   displayTitle: 'Void Runner',
-  //   points: 6, // increases by 1 per turn
-  //   amount: 3,
-  //   rarity: 'epic',
-  //   trait: 'Increases points by +1 every turn.',
-  //   traitTitle: 'Void Run',
-  //   description: "A non sentient xeno who's only purpose is to run. If it ever stops it will die.",
-  //   race: 'xeno',
-  //   image: '/alien/voidRunner.png'
-  // },
-  // nebulite: { 
-  //   title: 'nebulite',
-  //   displayTitle: 'Nebulite',
-  //   points: 0,
-  //   amount: 3,
-  //   rarity: 'epic',
-  //   trait: 'Buffs all xenos by +4, does not apply to self and does not stack with other Nebulites.',
-  //   traitTitle: 'Xenobloom',
-  //   description: 'The only xenos incapable of speech, nebulites are genetically modified to enhance nearby xenos but are very weak on their own.',
-  //   race: 'xeno',
-  //   image: '/alien/nebulite.png'
-  // },
-  // celenial: { 
-  //   title: 'celenial',
-  //   displayTitle: 'Celenial',
-  //   points: 8,
-  //   amount: 3,
-  //   rarity: 'amazing',
-  //   trait: '',
-  //   traitTitle: '',
-  //   description: 'The omega of the xenos, often mistreated and ignored. Excluding the nebulites, celenials are the weakest of the xenos. They are often used as bait for the abyssolarians.',
-  //   race: 'xeno',
-  //   image: '/alien/celenial.png'
-  // }
+  xenoGuard: { 
+    title: 'xenoGuard',
+    displayTitle: 'Xeno Guard',
+    points: 11,
+    amount: 3,
+    rarity: 'epic',
+    trait: '',
+    traitTitle: '',
+    description: 'The xenoGuard is a highly intelligent and powerful creature, feared by many. It is the most feared creature in the xeno army, tasked with the safety of the xeno overlord.',
+    race: 'xeno',
+    image: '/xenos/xeno_guard.png'
+  },
+  abyssolarian: { 
+    title: 'abyssolarian',
+    displayTitle: 'Abyssolarian',
+    points: 10,
+    amount: 3,
+    rarity: 'epic',
+    trait: '',
+    traitTitle: '',
+    description: 'A feral xeno born in the darkest depths of Xenopp. Produces light to lure prey.',
+    race: 'xeno',
+    image: '/xenos/xeno_placeholder.png'
+  },
+  warpstalker: { 
+    title: 'warpstalker',
+    displayTitle: 'Warpstalker',
+    points: Math.ceil(Math.random() * 5) + 7, // random between 8-12
+    amount: 3,
+    rarity: 'epic',
+    trait: 'When drawn, gets a random point value between 9-12 inclusive.',
+    traitTitle: 'Xenigma',
+    description: 'A xeno capable of riftwalking, similar to teleporting over short distances. Sometimes riftwalks to the wrong place.',
+    race: 'xeno',
+    image: '/xenos/xeno_placeholder.png'
+  },
+  voidRunner: { 
+    title: 'voidRunner',
+    displayTitle: 'Void Runner',
+    points: 6, // increases by 1 per turn
+    amount: 3,
+    rarity: 'epic',
+    trait: 'Increases points by +1 every turn.',
+    traitTitle: 'Void Run',
+    description: "A non sentient xeno who's only purpose is to run. If it ever stops it will die.",
+    race: 'xeno',
+    image: '/xenos/xeno_placeholder.png'
+  },
+  nebulite: { 
+    title: 'nebulite',
+    displayTitle: 'Nebulite',
+    points: 0,
+    amount: 3,
+    rarity: 'epic',
+    trait: 'Buffs all xenos by +4, does not apply to self and does not stack with other Nebulites.',
+    traitTitle: 'Xenobloom',
+    description: 'Artificially created xenos incapable of speech.',
+    race: 'xeno',
+    image: '/xenos/xeno_placeholder.png'
+  },
+  celenial: { 
+    title: 'celenial',
+    displayTitle: 'Celenial',
+    points: 8,
+    amount: 3,
+    rarity: 'amazing',
+    trait: '',
+    traitTitle: '',
+    description: 'The omega of the xenos, often mistreated and ignored. Excluding the nebulites, celenials are the weakest of the xenos. They are often used as bait for the abyssolarians.',
+    race: 'xeno',
+    image: '/xenos/xeno_placeholder.png'
+  }
 });
 
 export default cardDetails;

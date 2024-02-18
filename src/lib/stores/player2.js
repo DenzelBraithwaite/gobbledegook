@@ -21,7 +21,9 @@ const player2 = writable({
   dwarfNextTurn: false,
   goblinLordMarked: false,
   turn: false,
+  startingHand: [],
   hand: [],
+  cardsDrawn: [],
   discards: []
 });
 
