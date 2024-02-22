@@ -16,7 +16,6 @@
   import { io } from 'socket.io-client';
   import { emitKeypressEvents } from 'readline';
 
-  $: console.log({p1: $player1, p2: $player2});
   let socket = io('http://192.168.2.10:6912');
   let gobbledegookDeclared = false;
   let gobbledegookDisabled = false;
@@ -69,26 +68,16 @@
       resetGame();
 
       // Update player hands
-      player1.update(store => {
-        store.hand = data.player1.hand;
-        store.startingHand = data.player1.hand;
-        store.turn = data.player1.turn;
-        return store;
-      });
-
-      player2.update(store => {
-        store.hand = data.player2.hand;
-        store.startingHand = data.player2.hand;
-        store.turn = data.player2.turn;
-        return store;
-      });
-
+      player1.set(data.player1);
+      player2.set(data.player2);
       fullDeck = {...data.fullDeck};
     });
 
+    // Counts turns
+    socket.on('add-turn-count', () => turnCount++);
+
     // Handles turn change for all users
     socket.on('turn-changed', data => {
-      turnCount += 0.5;
       player1.update(store => {
         store.turn = !data.player1.turn;
         return store;
@@ -157,6 +146,12 @@
       }
     });
 
+    // Update clients with final points, they need to update the remote player's points (xenos cards)
+    socket.on('update-final-points', data => {
+      if (playingAs() === 'p1') player2.set(data.player2);
+      if (playingAs() === 'p2') player1.set(data.player1);
+    });
+
     // Handles game end for all users
     socket.on('game-ended', data => endGame());
 
@@ -166,7 +161,6 @@
 
   // Ends current round
   function endGame() {
-    turnCount += 0.5;
     gameOver = true;
     startBtnDisabled = false;
     gobbledegookDisabled = true;
@@ -182,6 +176,10 @@
 
     calculateTotalPoints($player1, $player2);
     calculateTotalPoints($player2, $player1);
+
+    // Update all clients
+    socket.emit('update-final-points', {player1: $player1, player2: $player2});
+
     determineWinner();
 
     // Loggs decks to console
@@ -203,6 +201,14 @@
       store.points.xenos = 0;
       store.discards = [];
       store.justWon = false;
+      store.boosts = [];
+      store.traps = [];
+      store.chargeDrawnTurns = [];
+      store.infectDrawnTurns = [];
+      store.chargePoints = 0;
+      store.infectPoints = 0;
+      store.warpStalkerPointValue = 0;
+      store.voidRunnerPointValue = 0;
       return store;
     });
 
@@ -218,6 +224,14 @@
       store.points.xenos = 0;
       store.discards = [];
       store.justWon = false;
+      store.boosts = [];
+      store.traps = [];
+      store.chargeDrawnTurns = [];
+      store.infectDrawnTurns = [];
+      store.chargePoints = 0;
+      store.infectPoints = 0;
+      store.warpStalkerPointValue = 0;
+      store.voidRunnerPointValue = 0;
       return store;
     });
 
@@ -260,12 +274,19 @@
   function decideFirstPlayer() {
     const num = Math.ceil(Math.random() * 2);
     if (num === 1) {
-      $player1.turn = true
+      $player1.playedFirst = true;
+      $player1.turn = true;
       $player2.turn = false;
     } else {
-      $player1.turn = false
+      $player2.playedFirst = true;
+      $player1.turn = false;
       $player2.turn = true;
     }
+  }
+
+  // Counts if 1 full turn has passed
+  function calculateNewTurn() {
+    if (($player1.playedFirst && $player1.turn) || ($player2.playedFirst && $player2.turn)) socket.emit('new-turn');
   }
 
   // Logs how many cards are left in the deck
@@ -360,8 +381,9 @@
   }
 
   // Draws and removes 1 random card from the deck
-  function drawCard(player) {
+  function drawCard(player, newTurn = true) {
     if (gameOver) return;
+    if (newTurn) calculateNewTurn();
     let currentDeck = '';
     let cardDrawn = '';
     let randomNum = 0;
@@ -412,9 +434,27 @@
       // Grab random card from that deck
       randomNum = Math.floor(Math.random() * fullDeck[currentDeck].length);
       cardDrawn = fullDeck[currentDeck][randomNum];
-    
+
+      // If player has chastity but draws the trap card "lost", draw again.
+      if (cardDrawn === 'lost' && player.hand.includes('chastity')) {
+        // Remove card from deck
+        const removedCardIndex = fullDeck[currentDeck].indexOf(cardDrawn);
+        fullDeck[currentDeck].splice(removedCardIndex, 1);
+
+        // Was it the last card in it's race deck? Remove deck.
+        if (fullDeck[currentDeck].length === 0) {
+          // Remove deck from main deck
+          const index = deckTypes.indexOf(currentDeck);
+          deckTypes.splice(index, 1);
+        }
+
+        // Draw new card but doesn't count as new turn
+        drawCard(player, false);
+        return;
+      };
+
       // If it's the longbeard leader, dwarf commander or dwarvenCall, the next card will be dwarf
-      if (cardDrawn === 'longbeardLeader' || cardDrawn === 'dwarfCommander' || cardDrawn === 'dwarvenCall') player.dwarfNextTurn = true;
+      if (cardDrawn === 'longbeardLeader' || cardDrawn === 'dwarfCommander' || (cardDrawn === 'dwarvenCall' && !player.hasCorruption)) player.dwarfNextTurn = true;
 
       // If it's the goblin lord's mark, the next card will be the goblin lord
       if (cardDrawn === 'goblinLordsMark') player.goblinLordMarked = true;
@@ -444,13 +484,13 @@
     if (player.title === 'Player 1') {
       player1.update(store => {
         store.hand = [...store.hand, cardDrawn];
-        store.cardsDrawn = [cardDrawn, ...player.cardsDrawn];
+        store.cardsDrawn = [...player.cardsDrawn, cardDrawn];
         return store;
       });
     } else {
       player2.update(store => {
         store.hand = [...store.hand, cardDrawn];
-        store.cardsDrawn = [cardDrawn, ...player.cardsDrawn];
+        store.cardsDrawn = [...player.cardsDrawn, cardDrawn];
         return store;
       });
     }
@@ -808,7 +848,7 @@
 
     // If it's the voidRunner, set points equal to amount of turns passed
     if (card === 'voidRunner') {
-      $cardDetails[card].points = Math.ceil(turnCount);
+      $cardDetails[card].points = turnCount;
       player.voidRunnerPointValue = $cardDetails[card].points;
     }
 
@@ -838,14 +878,17 @@
   function addBoostCard(player, card) {
     player.boosts = [card, ...player.boosts];
 
-    if (card === 'charge') player.chargeDrawnTurns = [...player.chargeDrawnTurns, Math.ceil(turnCount)];
+    if (card === 'charge') player.chargeDrawnTurns = [...player.chargeDrawnTurns, turnCount];
   }
 
   // Handles boost cards at the end of the game
   function endGameBoostHandler(player) {
+    // Corruption card blocks all boosts
+    if (player.hand.includes('xenoguard') || player.hand.includes('corruption') || player.discards.includes('corruption')) return;
+
     // Handles charge boost
     for (let i = 0; i < player.chargeDrawnTurns.length; i++) {
-      player.chargePoints += (Math.ceil(turnCount) - player.chargeDrawnTurns[i]);
+      player.chargePoints += (turnCount - player.chargeDrawnTurns[i]);
     }
     player.points.bots += player.chargePoints;
     player.points.humans += player.chargePoints;
@@ -862,14 +905,17 @@
   function addTrapCard(player, card) {
     player.traps = [card, ...player.traps];
 
-    if (card === 'infect') player.infectDrawnTurns = [...player.infectDrawnTurns, Math.ceil(turnCount)];
+    if (card === 'infect') player.infectDrawnTurns = [...player.infectDrawnTurns, turnCount];
   }
 
   // Handles trap cards at the end of the game
   function endGameTrapHandler(player) {
+    // Corruption card blocks all boosts, also checks for rhino in hand at end
+    if (player.hand.includes('rhino') || player.hand.includes('chastity') || player.discards.includes('chastity')) return;
+
     // Handles infect trap
     for (let i = 0; i < player.infectDrawnTurns.length; i++) {
-      player.infectPoints += (Math.ceil(turnCount) - player.infectDrawnTurns[i]);
+      player.infectPoints += (turnCount - player.infectDrawnTurns[i]);
     }
     if (player.points.bots !== player.highestPoints) player.highestPoints -= player.infectPoints;
 
@@ -897,13 +943,14 @@
           <p class="margin-bottom-sm">{loseMessage}</p>
 
           <p>Player1 Boosts: </p>
-          <p>Charge points: {$player1.chargePoints}</p>
+          <p>Charge boost points: {$player1.chargePoints}</p>
           {#each $player1.boosts as boost}
             <span>{boost} &nbsp;</span>
           {/each}
-          <br>
+          <br class="margin-bottom-sm">
           <p>Player1 Traps: </p>
-          <p>Infect penalty: {$player1.infectPoints}</p>
+          <p>Infect trap penalty: {$player1.infectPoints}</p>
+          <span>Trap cards: </span>
           {#each $player1.traps as trap}
             <span>{trap} &nbsp;</span>
           {/each}
@@ -915,20 +962,20 @@
 
 
           <p>Player2 Boosts: </p>
-          <p>Charge bonus points: {$player2.chargePoints}</p>
+          <p>Charge boost points: {$player2.chargePoints}</p>
           <span>Boost cards: </span>
           {#each $player2.boosts as boost}
             <span>{boost} &nbsp;</span>
           {/each}
-          <br>
+          <br class="margin-bottom-sm">
           <p>Player2 Traps: </p>
-          <p>Infect penalty: {$player2.infectPoints}</p>
+          <p>Infect trap penalty: {$player2.infectPoints}</p>
           <span>Trap cards: </span>
           {#each $player2.traps as trap}
             <span>{trap} &nbsp;</span>
           {/each}
           <h2 class="results-player-floating-header results-player-float-right">Player 2</h2>
-          <h2 class="results-player-floating-header results-player-float-middle">Turn count: {Math.ceil(turnCount)}</h2>
+          <h2 class="results-player-floating-header results-turn-count-float-middle">Turn count: {turnCount}</h2>
         </div>
       </div>
 
@@ -1102,7 +1149,7 @@
       </div>
 
       <div class="game-buttons">
-        <h1 class="turn-count">Turn {Math.ceil(turnCount)}</h1>
+        <h1 class="turn-count">Turn {turnCount}</h1>
         <GGCard on:click={deckClickHandler} faceUp={false} />
         {#if gobbledegookDisabled || turnCount < 3}
           <Button round={true} customClasses="btn__orange_disabled">Gobbledegook!</Button>
@@ -1118,7 +1165,7 @@
 </main>
 
 
-<style>
+<style lang="scss">
   /* Game End */
   .results-screen {
     z-index: 1;
@@ -1139,12 +1186,11 @@
 
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-  }
 
-  .results-screen::-webkit-scrollbar {
+    &::-webkit-scrollbar {
     appearance: none;
   }
-
+  }
   .results-messages-flex-wrapper {
     padding: 1rem;
     background-color: #000000d1;
@@ -1186,8 +1232,9 @@
     transform: translateX(25%);
   }
 
-  .results-player-float-middle {
-    transform: translateX(-14rem); /* roughly centers between p1 and p2 */
+  .results-turn-count-float-middle {
+    left: 50%;
+    transform: translateX(-50%);
   }
 
   .player-history-wrapper {
@@ -1268,10 +1315,10 @@
     right: 1rem;
     font-size: 1.75rem;
     color: #af4819;
-  }
 
-  .turn-text > span {
-    color: #CAB097;
+    span {
+      color: #CAB097;
+    }
   }
 
   .turn-count {

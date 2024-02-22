@@ -1,6 +1,7 @@
 import { writable } from 'svelte/store';
 
 const boostDeck = writable([
+  'chastity',
   'rejuvenate',
   'rejuvenate',
   'charge',

@@ -72,6 +72,9 @@ io.on('connection', socket => {
   // Start game
   socket.on('start-game', data => socket.broadcast.emit('game-started', data));
 
+  // Count turns
+  socket.on('new-turn', () => io.emit('add-turn-count'));
+
   // Change turns
   socket.on('change-turns', data => io.emit('turn-changed', data));
 
@@ -83,6 +86,9 @@ io.on('connection', socket => {
 
   // Gobbledegook declared
   socket.on('gdg-declared', () => socket.broadcast.emit('gdg-declared'));
+
+  // Update final points
+  socket.on('update-final-points', data => socket.broadcast.emit('final-points-updated', data));
 
   // Game ended
   socket.on('end-game', data => io.emit('game-ended', data));

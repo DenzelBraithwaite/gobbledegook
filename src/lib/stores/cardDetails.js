@@ -506,7 +506,7 @@ const cardDetails = writable({
   },
 
   // Beasts
-  dreamDestroyer: { 
+  dreamDestroyer: {
     title: 'dreamDestroyer',
     displayTitle: 'Dream Destroyer',
     points: 12,
@@ -524,7 +524,7 @@ const cardDetails = writable({
     points: 8,
     amount: 3,
     rarity: 'amazing',
-    trait: 'Blocks trap cards. (not yet implemented)',
+    trait: 'Blocks all endgame trap cards.',
     traitTitle: 'Thick skin',
     description: 'A feared beast at the top of the food chain.',
     race: 'beast',
@@ -604,22 +604,22 @@ const cardDetails = writable({
   },
 
   // Xenos (Alien hive colony)
-  xenoGuard: { 
+  xenoGuard: {
     title: 'xenoGuard',
     displayTitle: 'Xeno Guard',
-    points: 10,
+    points: 20,
     amount: 3,
     rarity: 'epic',
-    trait: '',
-    traitTitle: '',
+    trait: 'Blocks all ALLY end game boost cards.',
+    traitTitle: 'Antibodies',
     description: 'The xenoGuard is a highly intelligent and powerful creature, feared by many. It is the most feared creature in the xeno hive, tasked with the safety of the xeno overlord.',
     race: 'xeno',
     image: '/xenos/xeno_guard.png'
   },
-  abyssolarian: { 
+  abyssolarian: {
     title: 'abyssolarian',
     displayTitle: 'Abyssolarian',
-    points: 9,
+    points: 10,
     amount: 3,
     rarity: 'epic',
     trait: '',
@@ -628,7 +628,7 @@ const cardDetails = writable({
     race: 'xeno',
     image: '/xenos/abyssolarian.png'
   },
-  warpstalker: { 
+  warpstalker: {
     title: 'warpstalker',
     displayTitle: 'Warpstalker',
     points: 0, // random between 7-13
@@ -640,7 +640,7 @@ const cardDetails = writable({
     race: 'xeno',
     image: '/xenos/xeno_placeholder.png'
   },
-  voidRunner: { 
+  voidRunner: {
     title: 'voidRunner',
     displayTitle: 'Void Runner',
     points: 0, // increases by 1 per turn passed
@@ -652,7 +652,7 @@ const cardDetails = writable({
     race: 'xeno',
     image: '/xenos/xeno_placeholder.png'
   },
-  nebulite: { 
+  nebulite: {
     title: 'nebulite',
     displayTitle: 'Nebulite',
     points: 0,
@@ -664,7 +664,7 @@ const cardDetails = writable({
     race: 'xeno',
     image: '/xenos/xeno_placeholder.png'
   },
-  celenial: { 
+  celenial: {
     title: 'celenial',
     displayTitle: 'Celenial',
     points: 5,
@@ -678,7 +678,19 @@ const cardDetails = writable({
   },
 
   // Boosts Cards:
-  rejuvenate: { 
+  chastity: {
+    title: 'chastity',
+    displayTitle: 'Chastity',
+    points: 0,
+    amount: 1,
+    rarity: '',
+    trait: 'Active immediately even if discarded. Blocks all trap cards except Corruption, only one exists in deck.',
+    traitTitle: 'Purity',
+    description: '',
+    race: 'boost',
+    image: '/boosts/rainbow_boost.png'
+  },
+  rejuvenate: {
     title: 'rejuvenate',
     displayTitle: 'Rejuvenate',
     points: 0,
@@ -690,7 +702,7 @@ const cardDetails = writable({
     race: 'boost',
     image: '/boosts/blue_boost.png'
   },
-  dwarvenCall: { 
+  dwarvenCall: {
     title: 'dwarvenCall',
     displayTitle: 'Dwarven Call',
     points: 0,
@@ -702,7 +714,7 @@ const cardDetails = writable({
     race: 'boost',
     image: '/boosts/ale.png'
   },
-  charge: { 
+  charge: {
     title: 'charge',
     displayTitle: 'Charge',
     points: 0,
@@ -716,7 +728,19 @@ const cardDetails = writable({
   },
 
   // Trap Cards
-  sap: { 
+  corruption: {
+    title: 'corruption',
+    displayTitle: 'Corruption',
+    points: 0,
+    amount: 1,
+    rarity: '',
+    trait: 'Active immediately even if discarded. Blocks all boost cards except Chastity, only one exists in deck.',
+    traitTitle: 'Impurity',
+    description: '',
+    race: 'trap',
+    image: '/boosts/rainbow_boost.png'
+  },
+  sap: {
     title: 'sap',
     displayTitle: 'Sap',
     points: 0,
@@ -728,7 +752,7 @@ const cardDetails = writable({
     race: 'trap',
     image: '/traps/red_trap.png'
   },
-  dissociation: { 
+  dissociation: {
     title: 'dissociation',
     displayTitle: 'Dissociation',
     points: 0,
@@ -740,7 +764,7 @@ const cardDetails = writable({
     race: 'trap',
     image: '/traps/xeno_trap.png'
   },
-  infect: { 
+  infect: {
     title: 'infect',
     displayTitle: 'Infect',
     points: 0,
@@ -751,6 +775,18 @@ const cardDetails = writable({
     description: '',
     race: 'trap',
     image: '/traps/green_trap.png'
+  },
+  lost: {
+    title: 'lost',
+    displayTitle: 'Lost',
+    points: 0,
+    amount: 2,
+    rarity: '',
+    trait: 'If drawn, lose a turn because this card is useless.',
+    traitTitle: 'Lost',
+    description: '',
+    race: 'trap',
+    image: '/traps/white_trap.png'
   },
 });
 
