@@ -58,7 +58,7 @@
 </div>
 {/if}
 
-<style>
+<style lang="scss">
   .card {
     z-index: 0;
     cursor: pointer;
@@ -73,12 +73,12 @@
     flex-direction: column;
     align-items: center;
     justify-content: space-evenly;
-  }
 
-  .card:hover {
-    scale: 1.4;
-    z-index: 2;
-    box-shadow: 0 4px 12px #000000a8;
+    &:hover {
+      scale: 1.4;
+      z-index: 2;
+      box-shadow: 0 4px 12px #000000a8;
+    }
   }
 
   .card-bottom-section {
@@ -193,15 +193,15 @@
     background-repeat: no-repeat;
     background-position: center;
     background-size: cover;
-  }
+   
+    &:hover {
+      scale: 1.05;
+      transform: translate(0, -0.4rem);
+    }
 
-  .facedown:hover {
-    scale: 1.05;
-    transform: translate(0, -0.4rem);
-  }
-
-  .facedown:active {
-    scale: 1;
+    &:active {
+      scale: 1;
+    }
   }
 
   /* Utility classes */

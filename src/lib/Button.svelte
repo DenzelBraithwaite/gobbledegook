@@ -9,25 +9,17 @@
 
   // For forms
   export let btnSubmit = false;
-
-  // For links (anchors)
-  export let btnLink = false;
-  export let path = '';
 </script>
 
 {#if btnSubmit}
   <button on:click type="submit" class="{customClasses} {bgColor}"><slot /></button>
-{:else if btnLink}
-  <Link to="{path}">
-    <button on:click class="{customClasses} {bgColor}"><slot /></button>
-  </Link>
 {:else if round}
   <button on:click class="round {customClasses}"><slot /></button>
 {:else}
   <button on:click class="{customClasses} {bgColor}"><slot /></button>
 {/if}
 
-<style>
+<style lang="scss">
   button {
     padding: 0.75rem;
     border: none;
