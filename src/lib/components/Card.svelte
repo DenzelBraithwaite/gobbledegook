@@ -63,10 +63,10 @@
     z-index: 0;
     cursor: pointer;
     position: relative;
-    width: 10.5rem;
-    height: 14.5rem;
+    width: 9.5rem;
+    height: 14rem;
     border-radius: 0.25rem;
-    box-shadow: 0 4px 12px #00000063;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3882352941);
     transition: all 0.3s ease-out;
 
     display: flex;
@@ -100,21 +100,20 @@
   .card-title {
     color: #ddd;
     width: 100%;
-    height: 4rem;
+    height: 3rem;
     text-shadow: 0 2px 8px #000000a8;
     font-size: 1.25rem;
     font-weight: bold;
     text-align: center;
     z-index: 10;
     white-space: nowrap;
-    font-size: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
   }
 
   .card-img {
-    height: 55%;
+    height: 45%;
     width: 100%;
     object-fit: contain;
     object-position: center;
@@ -145,6 +144,7 @@
     font-size: 0.8rem;
     letter-spacing: 1px;
     height: 1.5rem;
+    max-height: 100%;
     border-radius: 1rem;
     padding: 0.25rem;
     width: 3.75rem;
@@ -286,6 +286,11 @@
     outline: 4px solid #111111;
   }
 
+  .bg-neutral {
+    background: linear-gradient(353deg,#31273e,rgb(147 60 233 / 16%) 50%);
+    outline: 4px solid #3d1f5a;
+}
+
   /* Race text color */  
   .beast-race {
     background-color: #55431e;
@@ -332,6 +337,11 @@
     border: 2px solid #3e3e3e12;
   }
 
+  .neutral-race {
+    background-color: #462e59;
+    border: 2px solid rgb(59 59 59 / 7%);
+  }
+
   /* race title color */
   .beast-title {
     background-color: #55431e5e;
@@ -367,5 +377,97 @@
 
   .trap-title {
     background-color: #0000005e;
+  }
+
+  .neutral-title {
+    background-color: #3b1d4e5e;
+  }
+
+  @media only screen and (max-width: 1100px) {
+    .card {
+      width: 6.5rem;
+      min-width: 6.5rem;
+      height: 9rem;
+      min-height: 9rem;
+    }
+
+    .card-title {
+      height: 1.5rem;
+      font-size: 0.75rem;
+    }
+
+  .bottom-section-wrapper::-webkit-scrollbar,
+    .card-bottom-section::-webkit-scrollbar {
+      background: transparent;
+      width: 0;
+    }
+
+    .bottom-section-wrapper {
+      padding-bottom: 0.9rem;
+      font-size: 0.5rem;
+      padding-top: 0.125rem;
+    }
+
+    .race {
+      font-size: 0.4rem;
+      height: 1rem;
+      padding: 0.125rem;
+      width: 2.1srem;
+
+      bottom: -0.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .points {
+      font-size: 0.4rem;
+      height: 0.9rem;
+      width: 0.9rem;
+      border-radius: 0 0 0.4rem 0;
+    }
+  }
+
+  @media only screen and (max-width: 800px) {
+    .card {
+      width: 3.75rem;
+      min-width: 3.75rem;
+      height: 5.5rem;
+      min-height: 5.5rem;
+    }
+
+    .card-title {
+      height: 1.5rem;
+      font-size: 0.75rem;
+    }
+
+  .bottom-section-wrapper::-webkit-scrollbar,
+    .card-bottom-section::-webkit-scrollbar {
+      background: transparent;
+      width: 0;
+    }
+
+    .bottom-section-wrapper {
+      padding-bottom: 0.9rem;
+      font-size: 0.5rem;
+      padding-top: 0.125rem;
+    }
+
+    .race {
+      font-size: 0.4rem;
+      height: 1rem;
+      padding: 0.125rem;
+      width: 2.1srem;
+
+      bottom: -0.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .points {
+      font-size: 0.4rem;
+      height: 0.9rem;
+      width: 0.9rem;
+      border-radius: 0 0 0.4rem 0;
+    }
   }
 </style>

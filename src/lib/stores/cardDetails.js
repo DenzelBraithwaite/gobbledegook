@@ -9,8 +9,8 @@ const cardDetails = writable({
     points: 10,
     amount: 1,
     rarity: 'legendary',
-    trait: "Human points are doubled and all races in your hand except xenos will count towards your final score.",
     traitTitle: 'Unity Pact',
+    trait: "Human points are doubled and all races in your hand except xenos will count towards your final score.",
     description: 'The leader of the human race.',
     race: 'human',
     image: '/humans/emperor.gif'
@@ -21,8 +21,8 @@ const cardDetails = writable({
     points: 8,
     amount: 2,
     rarity: 'epic',
-    trait: 'When the commander is in your hand, all humans you have will receive +1 point, including commanders. This effect also stacks with the emperor.',
     traitTitle: 'Rally',
+    trait: 'When the commander is in your hand, all humans you have will receive +1 point, including commanders. This effect also stacks with the emperor.',
     description: 'Powerful warrior second only to the emperor.',
     race: 'human',
     image: '/humans/commander.png'
@@ -33,8 +33,8 @@ const cardDetails = writable({
     points: 6,
     amount: 3,
     rarity: 'amazing',
-    trait: '',
     traitTitle: '',
+    trait: '',
     description: 'A highly skilled professional killer.',
     race: 'human',
     image: '/humans/assassin.png'
@@ -45,8 +45,8 @@ const cardDetails = writable({
     points: 4,
     amount: 4,
     rarity: 'uncommon',
-    trait: '',
     traitTitle: '',
+    trait: '',
     description: 'A middle ranked warrior.',
     race: 'human',
     image: '/humans/knight.png'
@@ -57,8 +57,8 @@ const cardDetails = writable({
     points: 3,
     amount: 4,
     rarity: 'uncommon',
-    trait: '',
     traitTitle: '',
+    trait: '',
     description: 'A low ranked warrior.',
     race: 'human',
     image: '/humans/soldier.png'
@@ -69,8 +69,8 @@ const cardDetails = writable({
     points: 2 ,
     amount: 5,
     rarity: 'common',
-    trait: '',
     traitTitle: '',
+    trait: '',
     description: 'The lowest ranked in the human army.',
     race: 'human',
     image: '/humans/scout.png'
@@ -81,8 +81,8 @@ const cardDetails = writable({
     points: 1,
     amount: 6,
     rarity: 'common',
-    trait: '',
     traitTitle: '',
+    trait: '',
     description: 'An innocent villager.',
     race: 'human',
     image: '/humans/villager.png'
@@ -95,8 +95,8 @@ const cardDetails = writable({
     points: 10,
     amount: 1,
     rarity: 'legendary',
-    trait: "If your hand contains only goblins, you receive an insane amount of bonus points, doesn't count goblin lord's mark. Beware, the elf king can block this trait, resulting in a draw.",
     traitTitle: 'Gobbledegook',
+    trait: "If your hand contains only goblins, you receive an insane amount of bonus points, doesn't count goblin lord's mark. Beware, the elf king can block this trait, resulting in a draw.",
     description: 'The leader of the goblins.',
     race: 'goblin',
     image: '/goblins/goblin-lord.gif'
@@ -107,8 +107,8 @@ const cardDetails = writable({
     points: 0,
     amount: 1,
     rarity: 'epic',
-    trait: 'Draw the goblin lord next turn, only applies if this card is drawn. If no goblin lord, draw a goblin.',
     traitTitle: "Death's Mark",
+    trait: 'Draw the goblin lord next turn, only applies if this card is drawn. If no goblin lord, draw a goblin.',
     description: 'A sign that the goblin lord is near.',
     race: 'goblin-ish',
     image: '/goblins/goblin-lord_mark.png'
@@ -119,8 +119,8 @@ const cardDetails = writable({
     points: 8,
     amount: 2,
     rarity: 'epic',
-    trait: '',
     traitTitle: '',
+    trait: '',
     description: 'The strongest weapons of the goblin lord.',
     race: 'goblin',
     image: '/goblins/giant.png'
@@ -131,8 +131,8 @@ const cardDetails = writable({
     points: 6,
     amount: 3,
     rarity: 'amazing',
-    trait: '',
     traitTitle: '',
+    trait: '',
     description: 'Loyal high ranked soldier in the goblin army.',
     race: 'goblin',
     image: '/goblins/troll.png'
@@ -143,8 +143,8 @@ const cardDetails = writable({
     points: 5,
     amount: 4,
     rarity: 'rare',
-    trait: '',
     traitTitle: '',
+    trait: '',
     description: 'A magic wielding goblin.',
     race: 'goblin',
     image: '/goblins/shaman.png'
@@ -155,8 +155,8 @@ const cardDetails = writable({
     points: 3,
     amount: 4,
     rarity: 'uncommon',
-    trait: '',
     traitTitle: '',
+    trait: '',
     description: 'A quick, elusive but weak goblin.',
     race: 'goblin',
     image: '/goblins/thief.png'
@@ -167,8 +167,8 @@ const cardDetails = writable({
     points: 2,
     amount: 4,
     rarity: 'uncommon',
-    trait: '',
     traitTitle: '',
+    trait: '',
     description: 'A low ranked goblin.',
     race: 'goblin',
     image: '/goblins/hobgoblin.png'
@@ -179,8 +179,8 @@ const cardDetails = writable({
     points: 1,
     amount: 6,
     rarity: 'common',
-    trait: '',
     traitTitle: '',
+    trait: '',
     description: 'The weakest of goblins.',
     race: 'goblin',
     image: '/goblins/bokoblin.png'
@@ -193,8 +193,8 @@ const cardDetails = writable({
     points: 10,
     amount: 1,
     rarity: 'legendary',
-    trait: "If your hand contains only elves, they will have their points trippled, otherwise doubled! The elf king also prevents the enemy from using the goblin lord's special trait.",
     traitTitle: 'Superior Race',
+    trait: "If your hand contains only elves, they will have their points trippled, otherwise doubled! The elf king also prevents the enemy from using the goblin lord's special trait.",
     description: 'The purest, most powerful and respected leader of the elves.',
     race: 'elf',
     image: '/elves/elf-king.gif'
@@ -205,8 +205,8 @@ const cardDetails = writable({
     points: 8,
     amount: 2,
     rarity: 'epic',
-    trait: '',
     traitTitle: '',
+    trait: '',
     description: 'Elf king guard candidate.',
     race: 'elf',
     image: '/elves/champion.png'
@@ -217,8 +217,8 @@ const cardDetails = writable({
     points: 6,
     amount: 3,
     rarity: 'amazing',
-    trait: '',
     traitTitle: '',
+    trait: '',
     description: 'High ranked powerful elf.',
     race: 'elf',
     image: '/elves/dark-elf.png'
@@ -229,8 +229,8 @@ const cardDetails = writable({
     points: 5,
     amount: 3,
     rarity: 'amazing',
-    trait: '',
     traitTitle: '',
+    trait: '',
     description: "An elf in tune with nature, they're quite strong..",
     race: 'elf',
     image: '/elves/forest-dweller.png'
@@ -241,8 +241,8 @@ const cardDetails = writable({
     points: 4,
     amount: 1,
     rarity: 'rare',
-    trait: 'If both Nelladan and Nadallen are in your hand, they both receive +5 bonus points. This effect does not stack with itself or the elf king.',
     traitTitle: 'Twin Power',
+    trait: 'If both Nelladan and Nadallen are in your hand, they both receive +5 bonus points. This effect does not stack with itself or the elf king.',
     description: 'The stronger half of the rare elvan twins.',
     race: 'elf',
     image: '/elves/nadallen.png'
@@ -253,8 +253,8 @@ const cardDetails = writable({
     points: 2,
     amount: 4,
     rarity: 'uncommon',
-    trait: 'If both Nelladan and Nadallen are in your hand, they both receive +5 bonus points. This effect does not stack with itself or the elf king.',
     traitTitle: 'Twin Power',
+    trait: 'If both Nelladan and Nadallen are in your hand, they both receive +5 bonus points. This effect does not stack with itself or the elf king.',
     description: 'A rare elvan twin.',
     race: 'elf',
     image: '/elves/nelladan.png'
@@ -265,8 +265,8 @@ const cardDetails = writable({
     points: 3,
     amount: 4,
     rarity: 'uncommon',
-    trait: '',
     traitTitle: '',
+    trait: '',
     description: 'An elf who aspires to be a forest dwelling elf.',
     race: 'elf',
     image: '/elves/wood-elf.png'
@@ -277,8 +277,8 @@ const cardDetails = writable({
     points: 2,
     amount: 4,
     rarity: 'uncommon',
-    trait: '',
     traitTitle: '',
+    trait: '',
     description: 'An elf with no social status.',
     race: 'elf',
     image: '/elves/wild-elf.png'
@@ -289,8 +289,8 @@ const cardDetails = writable({
     points: 1,
     amount: 4,
     rarity: 'common',
-    trait: '',
     traitTitle: '',
+    trait: '',
     description: 'A weak musician.',
     race: 'elf',
     image: '/elves/bard.png'
@@ -303,8 +303,8 @@ const cardDetails = writable({
     points: 10,
     amount: 1,
     rarity: 'legendary',
-    trait: 'At the end of the game, if there are more discarded dwarves than remaining(or equal) dwarves in the deck, dwarves receive 50 bonus points. Additionally, if drawn, the next card drawn will be a dwarf.',
     traitTitle: 'Drunken rage',
+    trait: 'At the end of the game, if there are more discarded dwarves than remaining(or equal) dwarves in the deck, dwarves receive 50 bonus points. Additionally, if drawn, the next card drawn will be a dwarf.',
     description: 'The bravest and most feared amongst the dwarves.',
     race: 'dwarf',
     image: '/dwarves/longbeard-leader.gif'
@@ -315,8 +315,8 @@ const cardDetails = writable({
     points: 8,
     amount: 2,
     rarity: 'epic',
-    trait: 'If drawn, the next card will be a dwarf. Has no effect if there are no remaining dwarves.',
     traitTitle: 'Recruit',
+    trait: 'If drawn, the next card will be a dwarf. Has no effect if there are no remaining dwarves.',
     description: 'Right hand man to the longbeard leader himself.',
     race: 'dwarf',
     image: '/dwarves/dwarf-commander.png'
@@ -327,8 +327,8 @@ const cardDetails = writable({
     points: 6,
     amount: 2,
     rarity: 'amazing',
-    trait: '',
     traitTitle: '',
+    trait: '',
     description: 'A dwarven warrior wielding science as magic.',
     race: 'dwarf',
     image: '/dwarves/alchemist.png'
@@ -339,8 +339,8 @@ const cardDetails = writable({
     points: 5,
     amount: 3,
     rarity: 'amazing',
-    trait: '',
     traitTitle: '',
+    trait: '',
     description: 'A strong and reliable dwarven warrior.',
     race: 'dwarf',
     image: '/dwarves/warrior.png'
@@ -351,8 +351,8 @@ const cardDetails = writable({
     points: 4,
     amount: 3,
     rarity: 'rare',
-    trait: '',
     traitTitle: '',
+    trait: '',
     description: 'A strong and capable hunter.',
     race: 'dwarf',
     image: '/dwarves/hunter.png'
@@ -363,8 +363,8 @@ const cardDetails = writable({
     points: 3,
     amount: 4,
     rarity: 'uncommon',
-    trait: '',
     traitTitle: '',
+    trait: '',
     description: 'An adventurous but feeble dwarf.',
     race: 'dwarf',
     image: '/dwarves/traveller.png'
@@ -375,8 +375,8 @@ const cardDetails = writable({
     points: 2,
     amount: 3,
     rarity: 'uncommon',
-    trait: '',
     traitTitle: '',
+    trait: '',
     description: 'An average miner, not great in a fight.',
     race: 'dwarf',
     image: '/dwarves/miner.png'
@@ -387,8 +387,8 @@ const cardDetails = writable({
     points: 2,
     amount: 3,
     rarity: 'uncommon',
-    trait: '',
     traitTitle: '',
+    trait: '',
     description: 'A typical blacksmith, not very strong.',
     race: 'dwarf',
     image: '/dwarves/blacksmith.png'
@@ -399,8 +399,8 @@ const cardDetails = writable({
     points: 1,
     amount: 4,
     rarity: 'uncommon',
-    trait: 'Half and half.',
-    traitTitle: 'Hobbit points count towards both dwarves and humans.',
+    traitTitle: 'Half and half.',
+    trait: 'Hobbit points count towards both dwarves and humans.',
     description: "Half dwarf, half human. Although rare and different, they're generally accepted by all dwarves.",
     race: 'dwarf',
     image: '/dwarves/hobbit.png'
@@ -411,8 +411,8 @@ const cardDetails = writable({
     points: 1,
     amount: 4,
     rarity: 'common',
-    trait: '',
     traitTitle: '',
+    trait: '',
     description: 'A popular dwarf at the local pub, a serious drinker even amongst dwarves..',
     race: 'dwarf',
     image: '/dwarves/bartender.png'
@@ -426,8 +426,8 @@ const cardDetails = writable({
     points: 10,
     amount: 1,
     rarity: 'legendary',
-    trait: 'ALL bots will receive +2 points. Additionally, Crusher will hack all bots and steal their points.',
     traitTitle: 'Binary Manipulator',
+    trait: 'ALL bots will receive +2 points. Additionally, Crusher will hack all bots and steal their points.',
     description: 'The most advanced battle and hacking unit known to man.',
     race: 'bot',
     image: '/bots/crusher-5A1A-57.gif'
@@ -438,8 +438,8 @@ const cardDetails = writable({
     points: 8,
     amount: 2,
     rarity: 'epic',
-    trait: 'Converts viruses into helpful programs, setting their point value to 6. A.I. will also receive +1 point for every cleansed virus.',
     traitTitle: 'Antivirus',
+    trait: 'Converts viruses into helpful programs, setting their point value to 6. A.I. will also receive +1 point for every cleansed virus.',
     description: 'The core of the modern bot society.',
     race: 'bot',
     image: '/bots/ai.png'
@@ -450,8 +450,8 @@ const cardDetails = writable({
     points: 6,
     amount: 3,
     rarity: 'amazing',
-    trait: '',
     traitTitle: '',
+    trait: '',
     description: 'A bot created as a gift to the elves as a peace treaty.',
     race: 'bot',
     image: '/bots/fae-bot.png'
@@ -462,8 +462,8 @@ const cardDetails = writable({
     points: 4,
     amount: 4,
     rarity: 'rare',
-    trait: '',
     traitTitle: '',
+    trait: '',
     description: 'A bot designed to kill, beware.',
     race: 'bot',
     image: '/bots/saw-bot-3000.png'
@@ -474,8 +474,8 @@ const cardDetails = writable({
     points: 3,
     amount: 4,
     rarity: 'rare',
-    trait: '',
     traitTitle: '',
+    trait: '',
     description: 'An angry aggressive bot, known to attack on sight.',
     race: 'bot',
     image: '/bots/inferno-bot.png'
@@ -486,8 +486,8 @@ const cardDetails = writable({
     points: 2,
     amount: 5,
     rarity: 'uncommon',
-    trait: '',
     traitTitle: '',
+    trait: '',
     description: 'A weak mother bot used to raise young infants.',
     race: 'bot',
     image: '/bots/incubator.png'
@@ -498,8 +498,8 @@ const cardDetails = writable({
     points: -2,
     amount: 7,
     rarity: 'common',
-    trait: '',
     traitTitle: '',
+    trait: '',
     description: 'A common computer virus.',
     race: 'bot',
     image: '/bots/virus.png'
@@ -512,8 +512,8 @@ const cardDetails = writable({
     points: 12,
     amount: 1,
     rarity: 'legendary',
-    trait: 'All of your beasts are worth 12 points.',
     traitTitle: '🤬Roid Rage🤬',
+    trait: 'All of your beasts are worth 12 points.',
     description: 'The fiercest creature in the animal kingdom.',
     race: 'beast',
     image: '/beasts/dream-destroyer.gif'
@@ -524,8 +524,8 @@ const cardDetails = writable({
     points: 8,
     amount: 3,
     rarity: 'amazing',
-    trait: 'Blocks all endgame trap cards.',
     traitTitle: 'Thick skin',
+    trait: 'Blocks all endgame trap cards.',
     description: 'A feared beast at the top of the food chain.',
     race: 'beast',
     image: '/beasts/rhino.png'
@@ -536,20 +536,20 @@ const cardDetails = writable({
     points: 7,
     amount: 3,
     rarity: 'amazing',
-    trait: '',
     traitTitle: '',
+    trait: '',
     description: 'A powerful top level beast, matched by few.',
     race: 'beast',
     image: '/beasts/bear.png'
   },
   lion: {
     title: 'lion',
-    displayTitle: 'Savannah Goldenmane',
+    displayTitle: 'Goldenmane',
     points: 6,
     amount: 4,
     rarity: 'rare',
-    trait: '',
     traitTitle: '',
+    trait: '',
     description: 'The original kings of the jungle.',
     race: 'beast',
     image: '/beasts/lion.png'
@@ -560,8 +560,8 @@ const cardDetails = writable({
     points: 5,
     amount: 4,
     rarity: 'rare',
-    trait: '',
     traitTitle: '',
+    trait: '',
     description: "A quick and efficient beast, known to stalk it's prey before pouncing.",
     race: 'beast',
     image: '/beasts/panther.png'
@@ -572,8 +572,8 @@ const cardDetails = writable({
     points: 4,
     amount: 4,
     rarity: 'rare',
-    trait: '',
     traitTitle: '',
+    trait: '',
     description: 'A lone wolf with the strength of a pack.',
     race: 'beast',
     image: '/beasts/wolf.png'
@@ -584,8 +584,8 @@ const cardDetails = writable({
     points: 3,
     amount: 4,
     rarity: 'uncommon',
-    trait: '',
     traitTitle: '',
+    trait: '',
     description: 'A fox on steroids.',
     race: 'beast',
     image: '/beasts/fox.png'
@@ -596,8 +596,8 @@ const cardDetails = writable({
     points: 2,
     amount: 4,
     rarity: 'uncommon',
-    trait: '',
     traitTitle: '',
+    trait: '',
     description: 'More bark than bite, recognized as the weakest beast.',
     race: 'beast',
     image: '/beasts/dog.png'
@@ -607,11 +607,11 @@ const cardDetails = writable({
   xenoGuard: {
     title: 'xenoGuard',
     displayTitle: 'Xeno Guard',
-    points: 20,
+    points: 15,
     amount: 3,
     rarity: 'epic',
-    trait: 'Blocks all ALLY end game boost cards.',
     traitTitle: 'Antibodies',
+    trait: 'Blocks all ALLY end game boost cards.',
     description: 'The xenoGuard is a highly intelligent and powerful creature, feared by many. It is the most feared creature in the xeno hive, tasked with the safety of the xeno overlord.',
     race: 'xeno',
     image: '/xenos/xeno_guard.png'
@@ -622,8 +622,8 @@ const cardDetails = writable({
     points: 10,
     amount: 3,
     rarity: 'epic',
-    trait: '',
     traitTitle: '',
+    trait: '',
     description: 'A feral xeno born in the darkest depths of Xenopp. Produces light to lure prey.',
     race: 'xeno',
     image: '/xenos/abyssolarian.png'
@@ -634,8 +634,8 @@ const cardDetails = writable({
     points: 0, // random between 7-13
     amount: 3,
     rarity: 'epic',
-    trait: 'When drawn, a random point value (7-13 inclusive) will be chosen, then applied to ALL ally warpstalkers.',
     traitTitle: 'Hive Resonance',
+    trait: 'When drawn, a random point value (7-13 inclusive) will be chosen, then applied to ALL ally warpstalkers.',
     description: 'A xeno capable of riftwalking, similar to teleporting over short distances. Sometimes riftwalks to the wrong place.',
     race: 'xeno',
     image: '/xenos/xeno_placeholder.png'
@@ -646,8 +646,8 @@ const cardDetails = writable({
     points: 0, // increases by 1 per turn passed
     amount: 3,
     rarity: 'epic',
-    trait: "When drawn, ALL ally void Runners' points are set to the number of turns passed.",
     traitTitle: 'Hive Unity',
+    trait: "When drawn, ALL ally void Runners' points are set to the number of turns passed.",
     description: "A non sentient xeno who's only purpose is to run and grow stronger. If it ever stops it will die.",
     race: 'xeno',
     image: '/xenos/xeno_placeholder.png'
@@ -658,8 +658,8 @@ const cardDetails = writable({
     points: 0,
     amount: 3,
     rarity: 'epic',
-    trait: 'Buffs all xenos by +4, does not apply to self and does not stack with other Nebulites.',
     traitTitle: 'Hive Blossom',
+    trait: 'Buffs all xenos by +4, does not apply to self and does not stack with other Nebulites.',
     description: 'Artificially created xenos incapable of speech.',
     race: 'xeno',
     image: '/xenos/xeno_placeholder.png'
@@ -670,8 +670,8 @@ const cardDetails = writable({
     points: 5,
     amount: 3,
     rarity: 'amazing',
-    trait: '',
     traitTitle: '',
+    trait: '',
     description: 'The lowest of the xenos, often mistreated. Excluding the nebulites, celenials are the weakest of the xenos, often used as bait for the abyssolarians.',
     race: 'xeno',
     image: '/xenos/xeno_placeholder.png'
@@ -684,8 +684,8 @@ const cardDetails = writable({
     points: 0,
     amount: 1,
     rarity: '',
-    trait: 'Active immediately even if discarded. Blocks all trap cards except Corruption, only one exists in deck.',
     traitTitle: 'Purity',
+    trait: 'Active immediately even if discarded. Blocks all trap cards except Corruption, only one exists in deck.',
     description: '',
     race: 'boost',
     image: '/boosts/rainbow_boost.png'
@@ -696,8 +696,8 @@ const cardDetails = writable({
     points: 0,
     amount: 2,
     rarity: '',
-    trait: 'If drawn, player gains 10 points at the end of the game even after this card is discarded',
     traitTitle: 'Rejuvenation',
+    trait: 'If drawn, player gains 10 points at the end of the game even after this card is discarded',
     description: '',
     race: 'boost',
     image: '/boosts/blue_boost.png'
@@ -708,8 +708,8 @@ const cardDetails = writable({
     points: 0,
     amount: 2,
     rarity: '',
-    trait: 'If drawn, next card drawn is a dwarf. If no dwarves are left, draw random card.',
     traitTitle: 'Last Call',
+    trait: 'If drawn, next card drawn is a dwarf. If no dwarves are left, draw random card.',
     description: '',
     race: 'boost',
     image: '/boosts/ale.png'
@@ -720,8 +720,8 @@ const cardDetails = writable({
     points: 0,
     amount: 2,
     rarity: '',
-    trait: 'Only affects bots and humans. If drawn, at the end of the game, gain points equal to (amount of turns - turns passed since drawn * charge cards) even if discarded.',
     traitTitle: 'Recharge',
+    trait: 'Only affects bots and humans. If drawn, at the end of the game, gain points equal to (amount of turns - turns passed since drawn * charge cards) even if discarded.',
     description: '',
     race: 'boost',
     image: '/boosts/charge.png'
@@ -734,8 +734,8 @@ const cardDetails = writable({
     points: 0,
     amount: 1,
     rarity: '',
-    trait: 'Active immediately even if discarded. Blocks all boost cards except Chastity, only one exists in deck.',
     traitTitle: 'Impurity',
+    trait: 'Active immediately even if discarded. Blocks all boost cards except Chastity, only one exists in deck.',
     description: '',
     race: 'trap',
     image: '/boosts/rainbow_boost.png'
@@ -746,20 +746,20 @@ const cardDetails = writable({
     points: 0,
     amount: 2,
     rarity: '',
-    trait: 'If drawn, player loses 10 points at the end of the game even after this card is discarded.',
     traitTitle: 'Sapped',
+    trait: 'If drawn, player loses 10 points at the end of the game even after this card is discarded.',
     description: '',
     race: 'trap',
     image: '/traps/red_trap.png'
   },
-  dissociation: {
-    title: 'dissociation',
-    displayTitle: 'Dissociation',
+  xenophobia: {
+    title: 'xenophobia',
+    displayTitle: 'Xenophobia',
     points: 0,
     amount: 1,
     rarity: '',
-    trait: 'If drawn, xenos lose 10 points at the end of the game even after this card is discarded.',
     traitTitle: 'Dissociate',
+    trait: 'If drawn, xenos lose 10 points at the end of the game even after this card is discarded.',
     description: '',
     race: 'trap',
     image: '/traps/xeno_trap.png'
@@ -770,8 +770,8 @@ const cardDetails = writable({
     points: 0,
     amount: 2,
     rarity: '',
-    trait: 'Does not affect bots. If drawn, at the end of the game, lose points equal to (amount of turns - turns passed since drawn * infect cards) even if discarded.',
     traitTitle: 'Infection',
+    trait: 'Does not affect bots. If drawn, at the end of the game, lose points equal to (amount of turns - turns passed since drawn * infect cards) even if discarded.',
     description: '',
     race: 'trap',
     image: '/traps/green_trap.png'
@@ -782,11 +782,61 @@ const cardDetails = writable({
     points: 0,
     amount: 2,
     rarity: '',
-    trait: 'If drawn, lose a turn because this card is useless.',
     traitTitle: 'Lost',
+    trait: 'If drawn, lose a turn because this card is useless.',
     description: '',
     race: 'trap',
     image: '/traps/white_trap.png'
+  },
+
+  // Neutrals
+  switcharoo: {
+    title: 'switcharoo',
+    displayTitle: 'Switcharoo',
+    points: 0,
+    amount: 2,
+    rarity: '',
+    traitTitle: 'Swap Swap',
+    trait: "When discarded, players will swap hands unless player has over 6 cards. For special xeno cards(e.g. Void Runner) they will receive the new player's point value for that card, not the previous value.",
+    description: '',
+    race: 'neutral',
+    image: '/neutrals/switcharoo.png'
+  },
+  echo: {
+    title: 'echo',
+    displayTitle: 'Echo',
+    points: 0,
+    amount: 3,
+    rarity: '',
+    traitTitle: 'Echo Echo',
+    trait: "If drawn, player can draw until they have 8 cards. Discarding echos prolongs this, when you discard a non echo card, you will need to continue discarding down to 5 cards.",
+    description: '',
+    race: 'neutral',
+    image: '/neutrals/echo.png'
+  },
+  ticktock: {
+    title: 'ticktock',
+    displayTitle: 'Ticktock',
+    points: 0,
+    amount: 2,
+    rarity: '',
+    traitTitle: 'Chrono Charge',
+    trait: "If drawn, adds 3 turns.",
+    description: '',
+    race: 'neutral',
+    image: '/neutrals/ticktock.png'
+  },
+  vision: {
+    title: 'vision',
+    displayTitle: 'Vision',
+    points: 0,
+    amount: 3,
+    rarity: '',
+    traitTitle: 'Envision',
+    trait: "If drawn, see the opponents cards for 1 turn.",
+    description: '',
+    race: 'neutral',
+    image: '/neutrals/vision.png'
   },
 });
 

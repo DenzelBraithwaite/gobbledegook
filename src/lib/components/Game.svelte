@@ -6,17 +6,18 @@
   import { fade } from 'svelte/transition';
 
   // Stores
-  import { player1, player2, cardDetails, beastDeck, botDeck, dwarfDeck, elfDeck, goblinDeck, humanDeck, xenoDeck, boostDeck,  trapDeck } from './stores';
+  import { player1, player2, cardDetails, beastDeck, botDeck, dwarfDeck, elfDeck, goblinDeck, humanDeck, xenoDeck, boostDeck,  trapDeck, neutralDeck } from '../stores';
 
   // Custom components
-  import { Button } from './index';
-  import GGCard from '../lib/Card.svelte';
+  import { Button, Spinner } from './index';
+  import GGCard from './Card.svelte';
 
   // Websocket
   import { io } from 'socket.io-client';
-  import { emitKeypressEvents } from 'readline';
+  // import { emitKeypressEvents } from 'readline';
 
-  let socket = io('http://192.168.2.10:6912');
+  // let socket = io('http://192.168.2.10:6912'); // Thanos
+  let socket = io('http://192.168.2.21:6912'); // MacBook
   let gobbledegookDeclared = false;
   let gobbledegookDisabled = false;
   let startBtnDisabled = false;
@@ -24,6 +25,8 @@
   let winMessage = '';
   let loseMessage = '';
   let turnCount = 0;
+  let showSpinner = false;
+  let remoteCardDetails = {...$cardDetails}; // This is because deckDetails will differ between client and remote, e.g. voidRunner.
   // Deck players draw from, includes all race decks
   let fullDeck = {
     beasts: [...$beastDeck],
@@ -34,7 +37,8 @@
     humans: [...$humanDeck],
     xenos: [...$xenoDeck],
     boosts: [...$boostDeck],
-    traps: [...$trapDeck]
+    traps: [...$trapDeck],
+    neutrals: [...$neutralDeck]
   };
   // array for each deck, humans, goblins, elves and dwarves
   let deckTypes = Object.keys(fullDeck);
@@ -80,14 +84,21 @@
     socket.on('turn-changed', data => {
       player1.update(store => {
         store.turn = !data.player1.turn;
+        store.playingTwice = false;
+        store.hasVision = false;
         return store;
       });
 
       player2.update(store => {
         store.turn = !data.player2.turn;
+        store.playingTwice = false;
+        store.hasVision = false;
         return store;
       });
     });
+
+    // Increase turn count
+    socket.on('turn-count-increased', () => turnCount += 3);
 
     // Handles card draw for all users
     socket.on('card-drawn', data => {
@@ -95,6 +106,12 @@
       deckTypes = data.deckTypes;
 
       // Make sure player's (hands) are consistent.
+      player1.set(data.player1);
+      player2.set(data.player2);
+    });
+
+    // Handles cards that make players swap hands
+    socket.on('hands-swapped', data => {
       player1.set(data.player1);
       player2.set(data.player2);
     });
@@ -109,47 +126,36 @@
     socket.on('gdg-declared', () => gobbledegookDeclared = true);
 
     // Handles first server reply for xeno updates (like 3 way handshake pt 1)
-    socket.on('xeno-points-update-started', data => {
+    socket.on('end-game-sync-started', data => {
       // The goal is to update the remote player's xeno points (since they will differ)
-      if (playingAs() === 'p1') {
-        player2.update(store => {
-          store.warpStalkerPointValue = data.warpStalkerPointValue;
-          store.voidRunnerPointValue = data.voidRunnerPointValue;
-          return store;
-        });
-      } else {
-        player1.update(store => {
-          store.warpStalkerPointValue = data.warpStalkerPointValue;
-          store.voidRunnerPointValue = data.voidRunnerPointValue;
-          return store;
-        });
-      }
+      if (playingAs() === 'p1') player2.set(data.player2);
+      if (playingAs() === 'p2') player1.set(data.player1);
+
+      // Update remote client's remote deck, then send their deck to the client that started the handshake so they can update their remote deck
+      remoteCardDetails = {...data.cardDetails};
+
+      // For guests TODO: test later
+      // if (!['p1', 'p2'].includes(playingAs())) {
+      //   player1.set(data.player1);
+      //   player2.set(data.player2);
+      // }
 
       // Make sure client who initiated the update gets their data updated as well.
-      socket.emit('finish-xeno-points-update', playingAs() === 'p1' ? $player1 : $player2);
+      socket.emit('finish-end-game-sync', {player1: $player1, player2: $player2, cardDetails: $cardDetails});
     });
 
     // Handles last server reply for xeno updates (like 3 way handshake pt 2)
-    socket.on('xeno-points-update-started', data => {
-      if (playingAs() === 'p1') {
-        player2.update(store => {
-          store.warpStalkerPointValue = data.warpStalkerPointValue;
-          store.voidRunnerPointValue = data.voidRunnerPointValue;
-          return store;
-        });
-      } else {
-        player1.update(store => {
-          store.warpStalkerPointValue = data.warpStalkerPointValue;
-          store.voidRunnerPointValue = data.voidRunnerPointValue;
-          return store;
-        });
-      }
-    });
+    socket.on('end-game-sync-finished', data => {
+      // The goal is to update the remote player's xeno points (since they will differ)
+      player1.set(data.player1);
+      player2.set(data.player2);
+      remoteCardDetails = {...data.cardDetails};
 
-    // Update clients with final points, they need to update the remote player's points (xenos cards)
-    socket.on('update-final-points', data => {
-      if (playingAs() === 'p1') player2.set(data.player2);
-      if (playingAs() === 'p2') player1.set(data.player1);
+      // For guests TODO: test later
+      // if (!['p1', 'p2'].includes(playingAs())) {
+      //   player1.set(data.player1);
+      //   player2.set(data.player2);
+      // }
     });
 
     // Handles game end for all users
@@ -176,15 +182,13 @@
 
     calculateTotalPoints($player1, $player2);
     calculateTotalPoints($player2, $player1);
-
-    // Update all clients
-    socket.emit('update-final-points', {player1: $player1, player2: $player2});
-
+    console.log({p1: $player1, p2: $player2});
     determineWinner();
 
     // Loggs decks to console
     showDeck();
     showDeck(true);
+    console.log($player1, $player2);
   }
 
   // Resets values to restart the game.
@@ -203,12 +207,11 @@
       store.justWon = false;
       store.boosts = [];
       store.traps = [];
+      store.neutrals = [];
       store.chargeDrawnTurns = [];
       store.infectDrawnTurns = [];
       store.chargePoints = 0;
       store.infectPoints = 0;
-      store.warpStalkerPointValue = 0;
-      store.voidRunnerPointValue = 0;
       return store;
     });
 
@@ -226,12 +229,11 @@
       store.justWon = false;
       store.boosts = [];
       store.traps = [];
+      store.neutrals = [];
       store.chargeDrawnTurns = [];
       store.infectDrawnTurns = [];
       store.chargePoints = 0;
       store.infectPoints = 0;
-      store.warpStalkerPointValue = 0;
-      store.voidRunnerPointValue = 0;
       return store;
     });
 
@@ -245,6 +247,7 @@
     fullDeck['xenos'] = [...$xenoDeck];
     fullDeck['boosts'] = [...$boostDeck];
     fullDeck['traps'] = [...$trapDeck];
+    fullDeck['neutrals'] = [...$neutralDeck];
     $cardDetails['warpstalker'].points = 0;
     $cardDetails['voidRunner'].points = 0;
 
@@ -262,8 +265,8 @@
     resetGame();
     
     // Start
-    dealCards($player1.hand);
-    dealCards($player2.hand);
+    dealCards($player1);
+    dealCards($player2);
     decideFirstPlayer();
 
     // Send data to websocket server
@@ -285,7 +288,10 @@
   }
 
   // Counts if 1 full turn has passed
-  function calculateNewTurn() {
+  function calculateNewTurn(player) {
+    // Not a new turn if player got echo and is drawing/discarding more cards. Must wait for actual turn change.
+    if (player.playingTwice) return;
+    if (player.hand.length >= 6) return;
     if (($player1.playedFirst && $player1.turn) || ($player2.playedFirst && $player2.turn)) socket.emit('new-turn');
   }
 
@@ -300,9 +306,11 @@
     const xenoCardsLeft = fullDeck['xenos'].length || 0;
     const boostCardsLeft = fullDeck['boosts'].length || 0;
     const trapCardsLeft = fullDeck['traps'].length || 0;
+    const neutralCardsLeft = fullDeck['neutrals'].length || 0;
 
     if (allDecks) {
       console.log(`Cards remaining per deck:\n
+      Beasts: ${beastCardsLeft}\n
       Humans: ${humanCardsLeft}\n
       Goblins: ${goblinCardsLeft}\n
       Elves: ${elfCardsLeft}\n
@@ -311,9 +319,9 @@
       Xenos: ${xenoCardsLeft}\n)
       Boosts: ${boostCardsLeft}\n)
       Traps: ${trapCardsLeft}\n)
-      Beasts: ${beastCardsLeft}\n`);
+      Neutrals: ${neutralCardsLeft}\n`);
     } else {
-      const cardsLeft = humanCardsLeft + goblinCardsLeft + elfCardsLeft + dwarfCardsLeft + botCardsLeft + beastCardsLeft + xenoCardsLeft + boostCardsLeft + trapCardsLeft;
+      const cardsLeft = humanCardsLeft + goblinCardsLeft + elfCardsLeft + dwarfCardsLeft + botCardsLeft + beastCardsLeft + xenoCardsLeft + boostCardsLeft + trapCardsLeft + neutralCardsLeft;
       console.log(`Cards remaining in deck: ${cardsLeft}`);
     }
   }
@@ -338,6 +346,8 @@
     if (playingAs() === 'guest') return true;
     if (playingAs() === 'p1' && playerSide === 'p1') return true;
     if (playingAs() === 'p2' && playerSide === 'p2') return true;
+
+    // player has vision?
     return false;
   }
 
@@ -347,7 +357,7 @@
   }
 
   // Deals 5 cards to each player at the start of the round
-  function dealCards(playerHand) {
+  function dealCards(player) {
     for(let counter = 1; counter <= 5; counter++) {
       // Grab random deck 
       let randomNum = Math.floor(Math.random() * deckTypes.length);
@@ -361,20 +371,29 @@
       fullDeck[currentDeck].splice(removedCardIndex, 1);
 
       // Add to player's hand
-      playerHand.push(cardDrawn);
+      player.hand.push(cardDrawn);
+
+      // If the card is a trap that triggers even without being drawn, handle it.
+      if (['corruption'].includes(cardDrawn)) addTrapCard(player, cardDrawn);
+
+      // If the card is a boost that triggers even without being drawn, handle it.
+      if (['chastity'].includes(cardDrawn)) addBoostCard(player, cardDrawn);
+
+      // If the card is a neutral that triggers even without being drawn, handle it.
+      if (['switcharoo'].includes(cardDrawn)) addneutralCard(player, cardDrawn);
     }
 
     // Need to reassign for svelte to be reactive
-    if ($player1.hand === playerHand) {
+    if ($player1 === player) {
       player1.update(store => {
-        store.hand = playerHand;
-        store.startingHand = playerHand;
+        store.hand = player.hand;
+        store.startingHand = player.hand;
         return store;
       });
     } else {
       player2.update(store => {
-        store.hand = playerHand;
-        store.startingHand = playerHand;
+        store.hand = player.hand;
+        store.startingHand = player.hand;
         return store;
       });
     }
@@ -383,7 +402,7 @@
   // Draws and removes 1 random card from the deck
   function drawCard(player, newTurn = true) {
     if (gameOver) return;
-    if (newTurn) calculateNewTurn();
+    if (newTurn) calculateNewTurn(player);
     let currentDeck = '';
     let cardDrawn = '';
     let randomNum = 0;
@@ -391,8 +410,8 @@
     // Player can't declare gobbledegook if they drew that turn
     gobbledegookDisabled = true;
 
-    // Player can't draw when he has 6 cards
-    if (player.hand.length > 5) return;
+    // Player can't draw when he has more than 5 cards unless due to echo. Player can't draw more than 8 cards (echo + 2)
+    if ((player.hand.length > 5 && !player.playingTwice) || player.hand.length >= 8) return;
     
     // If player has longbeard leader, next card is a dwarf
     if (player.dwarfNextTurn) {
@@ -413,8 +432,13 @@
     // When the last card is drawn, currentDeck becomes undefined. This will catch that
     if (deckTypes.length === 0 && currentDeck === undefined) {
       console.log("No more cards!");
-      socket.emit('start-xeno-points-update', playingAs() === 'p1' ? $player1 : $player2);
-      socket.emit('end-game');
+      showSpinner = true;
+      socket.emit('start-end-game-sync', {player1: $player1, player2: $player2, cardDetails: $cardDetails});
+      setTimeout(() => {
+        socket.emit('end-game');
+        showSpinner = false;
+      }, 1500);
+      
       return;
     };
 
@@ -467,6 +491,9 @@
 
       // If the card is a boost, handle it.
       if ($cardDetails[cardDrawn].race === 'boost') addBoostCard(player, cardDrawn);
+
+      // If the card is a neutral, handle it.
+      if ($cardDetails[cardDrawn].race === 'neutral') addneutralCard(player, cardDrawn);
     }
 
     // Remove card from deck
@@ -511,16 +538,18 @@
   function discard(card) {
     if (!isPlayerTurn()) return;
 
-    if (isPlayerTurn() && $player1.turn) {
+    // Who's playing?
+    const player = playingAs() === 'p1' ? $player1 : $player2;
+
+    // Using store update methods instead of player var ^
+    if ($player1.turn) {
       const index = $player1.hand.indexOf(card);
       player1.update(store => {
         store.hand.splice(index, 1);
         store.discards = [...store.discards, card];
         return store;
       });
-    }
-    
-    if (isPlayerTurn() && $player2.turn) {
+    } else if ($player2.turn) {
       const index = $player2.hand.indexOf(card);
       player2.update(store => {
         store.hand.splice(index, 1);
@@ -532,14 +561,46 @@
     // Emits to server that a card was discarded
     socket.emit('discard-card', {player1: $player1, player2: $player2});
 
+    // Check if card discarded is switcharoo, if so, swap hands, but don't swap if they have echo in effect (too many cards)
+    if (card === 'switcharoo' && player.hand.length === 5) swapHands();
+
+    // If player is playing twice, let them draw again.
+    if (player.playingTwice) {
+      if (card !== 'echo') player.playingTwice = false;
+    };
+
+    // Don't change turns until player only has 5 cards
+    if (player.hand.length > 5) return;
+
     if (gobbledegookDeclared) {
-      socket.emit('start-xeno-points-update', playingAs() === 'p1' ? $player1 : $player2);
-      socket.emit('end-game');
+      showSpinner = true;
+      socket.emit('start-end-game-sync', {player1: $player1, player2: $player2, cardDetails: $cardDetails});
+      setTimeout(() => {
+        socket.emit('end-game');
+        showSpinner = false;
+      }, 1500);
+      
     } else {
       changeTurns();
       gobbledegookDisabled = false;
     }
   };
+
+  function swapHands() {
+      let tempHand = [...$player2.hand];
+
+      player2.update(store => {
+        store.hand = [...$player1.hand];
+        return store;
+      });
+      player1.update(store => {
+        store.hand = [...tempHand];
+        return store;
+      });
+
+    // Let clients know hands swapped
+    socket.emit('swap-hands', {player1: $player1, player2: $player2});
+  }
   
   // Handles player click on card
   function selectCard(event, playerHand) {
@@ -558,8 +619,13 @@
     if (gameOver) return;
 
     if (gobbledegookDeclared) {
-      socket.emit('start-xeno-points-update', playingAs() === 'p1' ? $player1 : $player2);
-      socket.emit('end-game');
+      showSpinner = true;
+      socket.emit('start-end-game-sync', {player1: $player1, player2: $player2, cardDetails: $cardDetails});
+      setTimeout(() => {
+        socket.emit('end-game');
+        showSpinner = false;
+      }, 1500);
+      
     } else {
       console.log('Gobbledegook declared!!');
       changeTurns();
@@ -571,32 +637,56 @@
   // Display game results
   function determineWinner() {
     if($player1.highestPoints > $player2.highestPoints) {
-      $player1.justWon = true;
-      $player1.wins += 1;
-      $player2.losses += 1;
+      player1.update(store => {
+        store.justWon = true;
+        store.wins += 1;
+        return store;
+      });
+      player2.update(store => {
+        store.losses += 1;
+        return store;
+      });
 
       winMessage = `Player 1 is the winner with ${$player1.highestPoints} points!🎊🥳🍾`;
       loseMessage = `Player 2 loses with ${$player2.highestPoints} points...${$player2.highestPoints <= 0 ? '💩💩💩' : '💩'}`;
     } else if($player2.highestPoints > $player1.highestPoints) {
-      $player2.justWon = true;
-      $player2.wins += 1;
-      $player1.losses += 1;
+      player1.update(store => {
+        store.losses += 1;
+        return store;
+      });
+      player2.update(store => {
+        store.justWon = true;
+        store.wins += 1;
+        return store;
+      });
 
       winMessage = `Player 2 is the winner with ${$player2.highestPoints} points!🎊🥳🍾`;
       loseMessage = `Player 1 loses with ${$player1.highestPoints} points...${$player1.highestPoints <= 0 ? '💩💩💩' : '💩'}`;
     } else if ($player1.highestPoints === 500_000 && $player2.highestPoints === 500_000) {
-      $player1.justWon = true;
-      $player2.justWon = true;
-      $player2.draws += 1;
-      $player1.draws += 1;
+      player1.update(store => {
+        store.justWon = true;
+        store.draws += 1;
+        return store;
+      });
+      player2.update(store => {
+        store.justWon = true;
+        store.draws += 1;
+        return store;
+      });
 
       winMessage = `It seems neither the goblins nor the elves want to go to war with each other while their leaders are on the field...`;
       loseMessage = " it's a draw!😓😓😓"
     } else {
-      $player1.justWon = true;
-      $player2.justWon = true;
-      $player2.draws += 1;
-      $player1.draws += 1;
+      player1.update(store => {
+        store.justWon = true;
+        store.draws += 1;
+        return store;
+      });
+      player2.update(store => {
+        store.justWon = true;
+        store.draws += 1;
+        return store;
+      });
 
       winMessage = `Player 1 had ${$player1.highestPoints} points and player 2 had ${$player2.highestPoints} points...`;
       loseMessage = " it's a draw!😓"
@@ -634,12 +724,13 @@
           player.points.humans += $cardDetails[card].points;
         break;
 
+        // Points may vary between clients with Xenos, handle this.
         case 'xeno':
-          player.points.xenos += $cardDetails[card].points;
+          player.points.xenos += ((playingAs() === 'p1' && player === $player1) || (playingAs() === 'p2' && player === $player2)) ? $cardDetails[card].points : remoteCardDetails[card].points;
         break;
 
         default:
-          console.log("Didn't match a race???");
+          console.log(`Didn't match a race? This was the race of the card: ${race}`);
       }
 
       player.highestPoints = Math.max(
@@ -693,18 +784,6 @@
 
     // Handles end game trap cards
     endGameTrapHandler(player);
-
-    console.log({
-      player: player.title,
-      highestPoints: player.highestPoints,
-      beastPoints: player.points.beasts,
-      botPoints: player.points.bots,
-      dwarfPoints: player.points.dwarves,
-      elfPoints: player.points.elves,
-      goblinPoints: player.points.goblins,
-      humanPoints: player.points.humans,
-      xenoPoints: player.points.xenos
-    });
   }
 
   // Adds all card points in hand, regardless of race. Humans worth double
@@ -840,16 +919,14 @@
 
   // Calculates special xeno card points
   function calculateSpecialXenoCard(player, card) {
-    // If it's the warpstalker, generate point value for card between 8-12 inclusive.
+    // If card drawn is warpstalker, generate point value for card between 7-13 inclusive.
     if (card === 'warpstalker') {
       $cardDetails[card].points = Math.ceil(Math.random() * 7) + 6;
-      player.warpStalkerPointValue = $cardDetails[card].points;
     }
 
-    // If it's the voidRunner, set points equal to amount of turns passed
+    // If card drwan is voidRunner, set points equal to amount of turns passed
     if (card === 'voidRunner') {
       $cardDetails[card].points = turnCount;
-      player.voidRunnerPointValue = $cardDetails[card].points;
     }
 
     // Nebulites buff xenos by 4 points
@@ -865,18 +942,18 @@
     // Return regular points if it's not special xeno card
     if (!['warpstalker', 'voidRunner'].includes(cardTitle)) return $cardDetails[cardTitle].points;
     
-    if (player === 'p1') {
-      if (cardTitle === 'warpstalker') return $player1.warpStalkerPointValue;
-      if (cardTitle === 'voidRunner') return $player1.voidRunnerPointValue;
-    } else if (player === 'p2') {
-      if (cardTitle === 'warpstalker') return $player2.warpStalkerPointValue;
-      if (cardTitle === 'voidRunner') return $player2.voidRunnerPointValue;
+    if (playingAs() === player) {
+      if (cardTitle === 'warpstalker') return $cardDetails['warpstalker'].points;
+      if (cardTitle === 'voidRunner') return $cardDetails['voidRunner'].points;
+    } else {
+      if (cardTitle === 'warpstalker') return remoteCardDetails['warpstalker'].points;
+      if (cardTitle === 'voidRunner') return remoteCardDetails['voidRunner'].points;
     } 
   }
 
   // Adds boost card to players boosts array
   function addBoostCard(player, card) {
-    player.boosts = [card, ...player.boosts];
+    player.boosts = [...player.boosts, card];
 
     if (card === 'charge') player.chargeDrawnTurns = [...player.chargeDrawnTurns, turnCount];
   }
@@ -903,7 +980,7 @@
 
   // Adds trap card to players traps array
   function addTrapCard(player, card) {
-    player.traps = [card, ...player.traps];
+    player.traps = [...player.traps, card];
 
     if (card === 'infect') player.infectDrawnTurns = [...player.infectDrawnTurns, turnCount];
   }
@@ -922,19 +999,32 @@
     // Handles other traps
     player.traps.forEach(trap => {
       if (trap === 'sap') player.highestPoints -= 10;
-      if (trap === 'dissociation') player.points.xenos -= 10;
-      if (trap === 'dissociation' && player.points.xenos === player.highestPoints) player.highestPoints -= 10;
+      if (trap === 'xenophobia') player.points.xenos -= 10;
+      if (trap === 'xenophobia' && player.points.xenos === player.highestPoints) player.highestPoints -= 10;
     });
+  }
+
+  // Adds neutral card to players neutrals array
+  function addneutralCard(player, card) {
+    player.neutrals = [...player.neutrals, card];
+
+    // If Echo card, player draws and plays twice
+    if (card === 'echo') player.playingTwice = true;
+
+    // If vision card, player sees enemy's hand for one turn
+    if (card === 'vision') player.hasVision = true;
+
+    // Add turn to turnCount if card is Ticktock
+    if (card === 'ticktock') socket.emit('increase-turn-count');
   }
 </script>
 
 <main>
   {#if !startBtnDisabled}
     <Button on:click={startGame} customClasses="btn__green w-25">Start game</Button>
-  {:else}
-    <Button customClasses="btn__green_disabled w-25">Game in progress...</Button>
   {/if}
 
+  <!-- Eng game view -->
   {#if winMessage}
     <div class="results-screen" transition:fade>
       <div class="results-messages-flex-wrapper">
@@ -948,11 +1038,18 @@
             <span>{boost} &nbsp;</span>
           {/each}
           <br class="margin-bottom-sm">
+
           <p>Player1 Traps: </p>
           <p>Infect trap penalty: {$player1.infectPoints}</p>
           <span>Trap cards: </span>
           {#each $player1.traps as trap}
             <span>{trap} &nbsp;</span>
+          {/each}
+          <br class="margin-bottom-sm">
+
+          <span>Neutral cards: </span>
+          {#each $player1.neutrals as neutral}
+            <span>{neutral} &nbsp;</span>
           {/each}
           <h2 class="results-player-floating-header results-player-float-left">Player 1</h2>
         </div>
@@ -968,11 +1065,18 @@
             <span>{boost} &nbsp;</span>
           {/each}
           <br class="margin-bottom-sm">
+
           <p>Player2 Traps: </p>
           <p>Infect trap penalty: {$player2.infectPoints}</p>
           <span>Trap cards: </span>
           {#each $player2.traps as trap}
             <span>{trap} &nbsp;</span>
+          {/each}
+          <br class="margin-bottom-sm">
+
+          <span>Neutral cards: </span>
+          {#each $player1.neutrals as neutral}
+            <span>{neutral} &nbsp;</span>
           {/each}
           <h2 class="results-player-floating-header results-player-float-right">Player 2</h2>
           <h2 class="results-player-floating-header results-turn-count-float-middle">Turn count: {turnCount}</h2>
@@ -990,6 +1094,8 @@
               displayTitle={$cardDetails[card].displayTitle}
               title={$cardDetails[card].title}
               img={$cardDetails[card].image}
+              trait={$cardDetails[card].trait}
+              traitTitle={$cardDetails[card].traitTitle}
               race={$cardDetails[card].race}
               rarity={$cardDetails[card].rarity}
               points={endGameXenoPointHandler(card, 'p1')}
@@ -1004,6 +1110,8 @@
              displayTitle={$cardDetails[card].displayTitle}
              title={$cardDetails[card].title}
              img={$cardDetails[card].image}
+              trait={$cardDetails[card].trait}
+              traitTitle={$cardDetails[card].traitTitle}
              race={$cardDetails[card].race}
              rarity={$cardDetails[card].rarity}
              points={endGameXenoPointHandler(card, 'p1')}
@@ -1020,6 +1128,8 @@
                 displayTitle={$cardDetails[card].displayTitle}
                 title={$cardDetails[card].title}
                 img={$cardDetails[card].image}
+                trait={$cardDetails[card].trait}
+                traitTitle={$cardDetails[card].traitTitle}
                 race={$cardDetails[card].race}
                 rarity={$cardDetails[card].rarity}
                 points={endGameXenoPointHandler(card, 'p1')}
@@ -1035,6 +1145,8 @@
                displayTitle={$cardDetails[card].displayTitle}
                title={$cardDetails[card].title}
                img={$cardDetails[card].image}
+               trait={$cardDetails[card].trait}
+               traitTitle={$cardDetails[card].traitTitle}
                race={$cardDetails[card].race}
                rarity={$cardDetails[card].rarity}
                points={endGameXenoPointHandler(card, 'p1')}
@@ -1052,12 +1164,14 @@
           {#each $player2.startingHand as card}
             <div class="history__card-wrapper">
               <GGCard
-              displayTitle={$cardDetails[card].displayTitle}
-              title={$cardDetails[card].title}
-              img={$cardDetails[card].image}
-              race={$cardDetails[card].race}
-              rarity={$cardDetails[card].rarity}
-              points={endGameXenoPointHandler(card, 'p2')}
+               displayTitle={$cardDetails[card].displayTitle}
+               title={$cardDetails[card].title}
+               img={$cardDetails[card].image}
+               trait={$cardDetails[card].trait}
+               traitTitle={$cardDetails[card].traitTitle}
+               race={$cardDetails[card].race}
+               rarity={$cardDetails[card].rarity}
+               points={endGameXenoPointHandler(card, 'p2')}
               />
             </div>
           {/each}
@@ -1069,6 +1183,8 @@
              displayTitle={$cardDetails[card].displayTitle}
              title={$cardDetails[card].title}
              img={$cardDetails[card].image}
+             trait={$cardDetails[card].trait}
+             traitTitle={$cardDetails[card].traitTitle}
              race={$cardDetails[card].race}
              rarity={$cardDetails[card].rarity}
              points={endGameXenoPointHandler(card, 'p2')}
@@ -1082,12 +1198,14 @@
           {#each $player2.hand as card}
             <div class="history__card-wrapper">
               <GGCard
-                displayTitle={$cardDetails[card].displayTitle}
-                title={$cardDetails[card].title}
-                img={$cardDetails[card].image}
-                race={$cardDetails[card].race}
-                rarity={$cardDetails[card].rarity}
-                points={endGameXenoPointHandler(card, 'p2')}
+               displayTitle={$cardDetails[card].displayTitle}
+               title={$cardDetails[card].title}
+               img={$cardDetails[card].image}
+               trait={$cardDetails[card].trait}
+               traitTitle={$cardDetails[card].traitTitle}
+               race={$cardDetails[card].race}
+               rarity={$cardDetails[card].rarity}
+               points={endGameXenoPointHandler(card, 'p2')}
               />
             </div>
           {/each}
@@ -1100,6 +1218,8 @@
                displayTitle={$cardDetails[card].displayTitle}
                title={$cardDetails[card].title}
                img={$cardDetails[card].image}
+               trait={$cardDetails[card].trait}
+               traitTitle={$cardDetails[card].traitTitle}
                race={$cardDetails[card].race}
                rarity={$cardDetails[card].rarity}
                points={endGameXenoPointHandler(card, 'p2')}
@@ -1109,14 +1229,21 @@
         </div>
       </div>
     </div>
+  
+  <!-- Game / Board view -->
   {:else}
+    <!-- Loading screen -->
+    {#if showSpinner}
+      <Spinner />
+    {/if}
+
     <div class="game-board {gobbledegookDeclared ? 'gobble-declared' : ''}">
       <div class="card-section card-section__ally {$player1.turn || $player1.justWon ? "section-active" : ""}">
         <p class="p1-name {$player1.turn ? "turn-active" : ""}">Player 1</p>
         {#each $player1.hand as card}
           <GGCard
             on:cardClick={(event) => selectCard(event, $player1.hand)}
-            faceUp={isCardVisible('p1') || gameOver}
+            faceUp={isCardVisible('p1') || $player2.hasVision}
             displayTitle={$cardDetails[card].displayTitle}
             title={$cardDetails[card].title}
             img={$cardDetails[card].image}
@@ -1134,7 +1261,7 @@
         {#each $player2.hand as card}
           <GGCard
             on:cardClick={(event) => selectCard(event, $player2.hand)}
-            faceUp={isCardVisible('p2') || gameOver}
+            faceUp={isCardVisible('p2') || $player1.hasVision}
             displayTitle={$cardDetails[card].displayTitle}
             title={$cardDetails[card].title}
             img={$cardDetails[card].image}
@@ -1151,7 +1278,7 @@
       <div class="game-buttons">
         <h1 class="turn-count">Turn {turnCount}</h1>
         <GGCard on:click={deckClickHandler} faceUp={false} />
-        {#if gobbledegookDisabled || turnCount < 3}
+        {#if gobbledegookDisabled || turnCount < 5}
           <Button round={true} customClasses="btn__orange_disabled">Gobbledegook!</Button>
         {:else}
           <Button on:click={gobbledegook} round={true} customClasses="btn__orange">Gobbledegook!</Button>
@@ -1260,15 +1387,15 @@
 
   .game-board {
     position: relative;
-    height: 85dvh;
-    width: 90%;
+    height: 90dvh;
+    width: 90dvw;
     padding: 0.5rem;
     max-width: 1500px;
     margin: 1rem auto;
     border-radius: 1rem;
     background-color: #200f009d;
     box-shadow: 0 4px 20px #000000;
-    border: 2px solid #e4802e3f;
+    border: 8px double #6d380d4f;
 
     display: flex;
     justify-content: center;
@@ -1283,29 +1410,31 @@
   .card-section {
     width: 85%;
     padding: 1rem;
-    background-color: #e4c82e1f;
     height: 32%;
-
     display: flex;
     justify-content: center;
     align-items: center;
     gap: 1.5rem;
+    box-shadow: inset 0 0 8px #0006;
   }
 
   .card-section__ally {
+    background: linear-gradient(180deg, #ffb45540, #371c00);
     border-radius: 1rem 1rem 0 0;
     position: absolute;
     bottom: 0;
   }
   
   .card-section__enemy {
+    background: linear-gradient(0deg, #ffb45540, #371c00);
     border-radius: 0 0 1rem 1rem;
     position: absolute;
     top: 0;
   }
 
   .section-active {
-    background-color: #7abe8b75;
+    background: linear-gradient(275deg, #d4ffd540, #19391f);
+    border: 2px solid #6fff9340;
   }
 
   .turn-text {
@@ -1322,22 +1451,27 @@
   }
 
   .turn-count {
-    color: #af4819;
     font-size: 1.25rem;
+    font-weight: bold;
+    color: #b77a5e;
   }
 
   .p1-name {
-    position: absolute;
     font-size: 1.5rem;
-    color: #af4819;
-    bottom: 17.5rem;
+    font-weight: bold;
+    color: #b77a5e;
+    
+    position: absolute;
+    bottom: 16.5rem;
     right: 0;
   }
 
   .p2-name {
-    position: absolute;
     font-size: 1.5rem;
-    color: #af4819;
+    font-weight: bold;
+    color: #b77a5e;
+    
+    position: absolute;
     top: 17.5rem;
     left: 0;
   }
@@ -1360,4 +1494,152 @@
   .margin-bottom-sm {
     margin-bottom: 1rem;
   }
+
+  /* For smaller devices */
+  @media only screen and (max-width: 1100px) {
+    .results-screen {
+      width: 95%;
+      height: 85dvh;
+      font-size: 0.75rem;
+      padding: 0.75rem;
+      border: 8px double #976f39bd;
+      border-radius: 0.25rem;
+    }
+
+    .results-messages-flex-wrapper {
+      padding: 0.75rem;
+      border-radius: 0.25rem;
+    }
+    
+    .results-player-floating-header {
+      border-radius: 0.25rem;
+    }
+
+    .player-history-wrapper {
+      gap: 1.5rem;
+      margin-top: 1.5rem;
+    }
+
+    .history__card-wrapper {
+      margin-bottom: 1.5rem;
+    }
+
+    .history__small-header {
+      font-size: 1.125rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .game-board {
+      height: 95dvh;
+      width: 95dvw;
+      max-width: 1000px;
+      border-radius: 0.75rem;
+    }
+
+    .card-section {
+      width: 85%;
+      padding: 0.5rem;
+      gap: 1rem;
+    }
+
+    .card-section__ally {
+      border-radius: 0.75rem 0.75rem 0 0;
+    }
+    
+    .card-section__enemy {
+      border-radius: 0 0 0.75rem 0.75rem;
+    }
+
+    .turn-text {
+      font-size: 1rem;
+    }
+
+    .turn-count {
+      font-size: 0.9rem;
+    }
+
+    .p1-name {
+      font-size: 1rem;
+    }
+
+    .p2-name {
+      font-size: 1rem;
+    }
+
+    .turn-active {
+      font-size: 1.125rem;
+    }
+
+    .game-buttons {
+      gap: 1.5rem;
+    }
+  }
+
+  @media only screen and (max-width: 800px) {
+    .results-screen {
+      font-size: 0.5rem;
+      padding: 0.5rem;
+    }
+
+    .results-messages-flex-wrapper {
+      padding: 0.5rem;
+      border-radius: 0.125rem;
+    }
+    
+    .results-player-floating-header {
+      border-radius: 0.125rem;
+    }
+
+    .player-history-wrapper {
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .history__card-wrapper {
+      margin-bottom: 1rem;
+    }
+
+    .history__small-header {
+      font-size: 1rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .game-board {
+      height: 95dvh;
+      width: 95dvw;
+      max-width: 1000px;
+      border-radius: 0.75rem;
+    }
+
+    .card-section {
+      width: 85%;
+      padding: 0.25rem;
+      gap: 1rem;
+    }
+
+    .turn-text {
+      font-size: 0.75rem;
+    }
+
+    .turn-count {
+      font-size: 0.6rem;
+    }
+
+    .p1-name {
+      font-size: 0.75rem;
+    }
+
+    .p2-name {
+      font-size: 0.75rem;
+    }
+
+    .turn-active {
+      font-size: 0.9rem;
+    }
+
+    .game-buttons {
+      gap: 1rem;
+    }
+  }
+  
 </style>

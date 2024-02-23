@@ -3,7 +3,7 @@
     import { createEventDispatcher } from 'svelte';
 
     // Custom components
-    import Button from '../lib/Button.svelte';
+    import Button from './Button.svelte';
 
     
     const createEvent = createEventDispatcher();

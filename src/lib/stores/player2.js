@@ -19,6 +19,7 @@ const player2 = writable({
   losses: 0,
   draws: 0,
   playedFirst: false,
+  playingTwice: false,
   turn: false,
   dwarfNextTurn: false,
   goblinLordMarked: false,
@@ -28,14 +29,14 @@ const player2 = writable({
   discards: [],
   boosts: [],
   traps: [],
+  neutrals: [],
   hasChastity: false,
   hasCorruption: false,
+  hasVision: false,
   chargeDrawnTurns: [],
   infectDrawnTurns: [],
   chargePoints: 0,
   infectPoints: 0,
-  warpStalkerPointValue: 0,
-  voidRunnerPointValue: 0
 });
 
 export default player2;

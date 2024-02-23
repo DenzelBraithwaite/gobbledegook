@@ -62,7 +62,7 @@
 
   /* background colors */                
   .btn__green {
-    background-color: #31a744;
+    background-color: #217f30;
     color: #fff;
     box-shadow: 0 8px 0 #1a5f25;
     border: 2px solid #1a5f25;
@@ -147,5 +147,21 @@
   .btn__brown:active {
     transform: translate(0, 8px);
     box-shadow: 0 0 0 #613922;
+  }
+
+  /* For mobile devices */
+  @media only screen and (max-width: 1100px) {
+    button {
+      padding: 0.5rem;
+      font-size: 0.4rem;
+      border-radius: 0.125rem;
+      margin: 0.25rem 0;
+    }
+
+    .round {
+      font-size: 0.5rem;
+      height: 5rem;
+      width: 5rem;
+    } 
   }
 </style>

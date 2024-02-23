@@ -3,7 +3,7 @@
   import { Router, Route} from 'svelte-routing';
 
   // Pages/Routes
-  import Home from '../src/routes/home.svelte';
+  import Home from './routes/home.svelte';
 </script>
 
 <Router>

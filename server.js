@@ -81,23 +81,26 @@ io.on('connection', socket => {
   // Card drawn
   socket.on('draw-card', data => socket.broadcast.emit('card-drawn', data));
 
+  // Swap hand
+  socket.on('swap-hands', data => socket.broadcast.emit('hands-swapped', data));
+
+  // Increase turn count
+  socket.on('increase-turn-count', () => io.emit('turn-count-increased'));
+
   // Card discarded
   socket.on('discard-card', data => socket.broadcast.emit('card-discarded', data));
 
   // Gobbledegook declared
   socket.on('gdg-declared', () => socket.broadcast.emit('gdg-declared'));
 
-  // Update final points
-  socket.on('update-final-points', data => socket.broadcast.emit('final-points-updated', data));
-
   // Game ended
   socket.on('end-game', data => io.emit('game-ended', data));
 
   // Start updating xeno points, like 3 way handshake part 1
-  socket.on('start-xeno-points-update', data => socket.broadcast.emit('xeno-points-update-started', data));
+  socket.on('start-end-game-sync', data => socket.broadcast.emit('end-game-sync-started', data));
 
   // Finish updating xeno points
-  socket.on('finish-xeno-points-update', data => socket.broadcast.emit('xeno-points-update-finish', data)); 
+  socket.on('finish-end-game-sync', data => socket.broadcast.emit('end-game-sync-finished', data)); 
 
   // Log connected users in the server console.
   logUsers();

@@ -10,6 +10,7 @@ import humanDeck from "./humanDeck.js";
 import xenoDeck from "./xenoDeck.js";
 import boostDeck from "./boostDeck.js";
 import trapDeck from "./trapDeck.js";
+import neutralDeck from "./neutralDeck.js";
 
 export {
   player1,
@@ -23,5 +24,6 @@ export {
   humanDeck,
   xenoDeck,
   boostDeck,
-  trapDeck
+  trapDeck,
+  neutralDeck
 }
