@@ -296,7 +296,7 @@ const cardDetails = writable({
     image: '/elves/bard.png'
   },
 
-  // Dwarves
+  // DwarvesTODO: longbeard leaner gains 5 points per discarded dwarf.
   longbeardLeader: {
     title: 'longbeardLeader',
     displayTitle: 'Longbeard Leader',
