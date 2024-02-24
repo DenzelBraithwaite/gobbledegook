@@ -21,8 +21,8 @@ const humanDeck = writable([
   'scout',
   'villager',
   'villager',
-  'villager',
-  'villager'
+  'villager2',
+  'villager2'
 ]);
 
 export default humanDeck;

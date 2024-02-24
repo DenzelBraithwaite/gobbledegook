@@ -2,8 +2,7 @@ import { writable } from 'svelte/store';
 
 const goblinDeck = writable([
   'goblinLord',
-  'giant',
-  'giant',
+  'warchief',
   'troll',
   'troll',
   'troll',

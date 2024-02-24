@@ -13,17 +13,17 @@ const cardDetails = writable({
     trait: "Human points are doubled and all races in your hand except xenos will count towards your final score.",
     description: 'The leader of the human race.',
     race: 'human',
-    image: '/humans/emperor.gif'
+    image: '/humans/emperor.png'
   },
   commander: {
     title: 'commander',
     displayTitle: 'Commander',
-    points: 8,
+    points: 7,
     amount: 2,
     rarity: 'epic',
     traitTitle: 'Rally',
     trait: 'When the commander is in your hand, all humans you have will receive +1 point, including commanders. This effect also stacks with the emperor.',
-    description: 'Powerful warrior second only to the emperor.',
+    description: 'Powerful soldier second only to the emperor.',
     race: 'human',
     image: '/humans/commander.png'
   },
@@ -42,32 +42,32 @@ const cardDetails = writable({
   knight: {
     title: 'knight',
     displayTitle: 'Knight',
-    points: 4,
+    points: 5,
     amount: 4,
     rarity: 'uncommon',
     traitTitle: '',
     trait: '',
-    description: 'A middle ranked warrior.',
+    description: 'A middle ranked soldier.',
     race: 'human',
     image: '/humans/knight.png'
   },
   soldier: {
     title: 'soldier',
     displayTitle: 'Soldier',
-    points: 3,
+    points: 4,
     amount: 4,
     rarity: 'uncommon',
     traitTitle: '',
     trait: '',
-    description: 'A low ranked warrior.',
+    description: 'A low ranked soldier.',
     race: 'human',
     image: '/humans/soldier.png'
   },
   scout: {
     title: 'scout',
     displayTitle: 'Scout',
-    points: 2 ,
-    amount: 5,
+    points: 3,
+    amount: 4,
     rarity: 'common',
     traitTitle: '',
     trait: '',
@@ -79,7 +79,7 @@ const cardDetails = writable({
     title: 'villager',
     displayTitle: 'Villager',
     points: 1,
-    amount: 6,
+    amount: 2,
     rarity: 'common',
     traitTitle: '',
     trait: '',
@@ -87,12 +87,24 @@ const cardDetails = writable({
     race: 'human',
     image: '/humans/villager.png'
   },
+  villager2: {
+    title: 'villager2',
+    displayTitle: 'Villager',
+    points: 1,
+    amount: 2,
+    rarity: 'common',
+    traitTitle: '',
+    trait: '',
+    description: 'An innocent villager.',
+    race: 'human',
+    image: '/humans/villager2.png'
+  },
 
   // Goblins
   goblinLord: {
     title: 'goblinLord',
     displayTitle: 'Goblin Lord',
-    points: 10,
+    points: 11,
     amount: 1,
     rarity: 'legendary',
     traitTitle: 'Gobbledegook',
@@ -113,22 +125,22 @@ const cardDetails = writable({
     race: 'goblin-ish',
     image: '/goblins/goblin-lord_mark.png'
   },
-  giant: {
-    title: 'giant',
-    displayTitle: 'Giant',
+  warchief: {
+    title: 'warchief',
+    displayTitle: 'Warchief',
     points: 8,
-    amount: 2,
+    amount: 1,
     rarity: 'epic',
-    traitTitle: '',
-    trait: '',
-    description: 'The strongest weapons of the goblin lord.',
+    traitTitle: "Chieftain's call",
+    trait: "The next card drawn will be the goblin lord's mark, if it's still in the deck.",
+    description: 'Born in battle, this brutal war hungry goblin is second only to the goblin lord himself.',
     race: 'goblin',
-    image: '/goblins/giant.png'
+    image: '/goblins/warchief.png'
   },
   troll: {
     title: 'troll',
     displayTitle: 'Troll',
-    points: 6,
+    points: 7,
     amount: 3,
     rarity: 'amazing',
     traitTitle: '',
@@ -140,8 +152,8 @@ const cardDetails = writable({
   shaman: {
     title: 'shaman',
     displayTitle: 'Shaman',
-    points: 5,
-    amount: 4,
+    points: 6,
+    amount: 3,
     rarity: 'rare',
     traitTitle: '',
     trait: '',
@@ -152,8 +164,8 @@ const cardDetails = writable({
   thief: {
     title: 'thief',
     displayTitle: 'Thief',
-    points: 3,
-    amount: 4,
+    points: 4,
+    amount: 3,
     rarity: 'uncommon',
     traitTitle: '',
     trait: '',
@@ -164,8 +176,8 @@ const cardDetails = writable({
   hobgoblin: {
     title: 'hobgoblin',
     displayTitle: 'Hobgoblin',
-    points: 2,
-    amount: 4,
+    points: 3,
+    amount: 3,
     rarity: 'uncommon',
     traitTitle: '',
     trait: '',
@@ -176,8 +188,8 @@ const cardDetails = writable({
   bokoblin: {
     title: 'bokoblin',
     displayTitle: 'Bokoblin',
-    points: 1,
-    amount: 6,
+    points: 2,
+    amount: 3,
     rarity: 'common',
     traitTitle: '',
     trait: '',
@@ -190,55 +202,55 @@ const cardDetails = writable({
   elfKing: {
     title: 'elfKing',
     displayTitle: 'Elf King',
-    points: 10,
+    points: 12,
     amount: 1,
     rarity: 'legendary',
     traitTitle: 'Superior Race',
     trait: "If your hand contains only elves, they will have their points trippled, otherwise doubled! The elf king also prevents the enemy from using the goblin lord's special trait.",
     description: 'The purest, most powerful and respected leader of the elves.',
     race: 'elf',
-    image: '/elves/elf-king.gif'
+    image: '/elves/elf_king.png'
   },
   elfChampion: {
     title: 'elfChampion',
     displayTitle: 'Elf Champion',
-    points: 8,
-    amount: 2,
+    points: 10,
+    amount: 1,
     rarity: 'epic',
-    traitTitle: '',
-    trait: '',
-    description: 'Elf king guard candidate.',
+    traitTitle: 'Stand Guard',
+    trait: 'The elf champion is always the first elf drawn.',
+    description: 'Destined to be the next elf king, this elf champion lost an arm in battle and came back even more fierce.',
     race: 'elf',
-    image: '/elves/champion.png'
+    image: '/elves/elf_champion.png'
   },
   darkElf: {
     title: 'darkElf',
     displayTitle: 'Dark Elf',
-    points: 6,
+    points: 7,
     amount: 3,
     rarity: 'amazing',
     traitTitle: '',
     trait: '',
     description: 'High ranked powerful elf.',
     race: 'elf',
-    image: '/elves/dark-elf.png'
+    image: '/elves/dark_elf.png'
   },
-  forestDweller: {
-    title: 'forestDweller',
-    displayTitle: 'Forest Dweller',
-    points: 5,
+  highElf: {
+    title: 'highElf',
+    displayTitle: 'High Elf',
+    points: 6,
     amount: 3,
     rarity: 'amazing',
     traitTitle: '',
     trait: '',
     description: "An elf in tune with nature, they're quite strong..",
     race: 'elf',
-    image: '/elves/forest-dweller.png'
+    image: '/elves/high_elf.png'
   },
   nadallen: {
     title: 'nadallen',
     displayTitle: 'Nadallen',
-    points: 4,
+    points: 5,
     amount: 1,
     rarity: 'rare',
     traitTitle: 'Twin Power',
@@ -262,32 +274,32 @@ const cardDetails = writable({
   woodElf: {
     title: 'woodElf',
     displayTitle: 'Wood Elf',
-    points: 3,
+    points: 4,
     amount: 4,
     rarity: 'uncommon',
     traitTitle: '',
     trait: '',
     description: 'An elf who aspires to be a forest dwelling elf.',
     race: 'elf',
-    image: '/elves/wood-elf.png'
+    image: '/elves/wood_elf.png'
   },
-  wildElf: {
-    title: 'wildElf',
+  forestDweller: {
+    title: 'forestDweller',
     displayTitle: 'Wild Elf',
-    points: 2,
-    amount: 4,
+    points: 3,
+    amount: 3,
     rarity: 'uncommon',
     traitTitle: '',
     trait: '',
     description: 'An elf with no social status.',
     race: 'elf',
-    image: '/elves/wild-elf.png'
+    image: '/elves/forest_dweller.png'
   },
   bard: {
     title: 'bard',
     displayTitle: 'Bard',
     points: 1,
-    amount: 4,
+    amount: 3,
     rarity: 'common',
     traitTitle: '',
     trait: '',
@@ -296,15 +308,15 @@ const cardDetails = writable({
     image: '/elves/bard.png'
   },
 
-  // DwarvesTODO: longbeard leaner gains 5 points per discarded dwarf.
+  // Dwarves
   longbeardLeader: {
     title: 'longbeardLeader',
     displayTitle: 'Longbeard Leader',
-    points: 10,
+    points: 11,
     amount: 1,
     rarity: 'legendary',
-    traitTitle: 'Drunken rage',
-    trait: 'At the end of the game, if there are more discarded dwarves than remaining(or equal) dwarves in the deck, dwarves receive 50 bonus points. Additionally, if drawn, the next card drawn will be a dwarf.',
+    traitTitle: 'Drunken revenge',
+    trait: 'If drawn, the next card will be a dwarf. Additionally, gain 5 points for every discarded dwarf.',
     description: 'The bravest and most feared amongst the dwarves.',
     race: 'dwarf',
     image: '/dwarves/longbeard-leader.gif'
@@ -324,7 +336,7 @@ const cardDetails = writable({
   alchemist: {
     title: 'alchemist',
     displayTitle: 'Alchemist',
-    points: 6,
+    points: 7,
     amount: 2,
     rarity: 'amazing',
     traitTitle: '',
@@ -336,8 +348,8 @@ const cardDetails = writable({
   dwarfWarrior: {
     title: 'dwarfWarrior',
     displayTitle: 'Dwarf Warrior',
-    points: 5,
-    amount: 3,
+    points: 6,
+    amount: 2,
     rarity: 'amazing',
     traitTitle: '',
     trait: '',
@@ -348,7 +360,7 @@ const cardDetails = writable({
   hunter: {
     title: 'hunter',
     displayTitle: 'Hunter',
-    points: 4,
+    points: 5,
     amount: 3,
     rarity: 'rare',
     traitTitle: '',
@@ -360,8 +372,8 @@ const cardDetails = writable({
   traveller: {
     title: 'traveller',
     displayTitle: 'Traveller',
-    points: 3,
-    amount: 4,
+    points: 4,
+    amount: 2,
     rarity: 'uncommon',
     traitTitle: '',
     trait: '',
@@ -372,7 +384,7 @@ const cardDetails = writable({
   miner: {
     title: 'miner',
     displayTitle: 'Miner',
-    points: 2,
+    points: 3,
     amount: 3,
     rarity: 'uncommon',
     traitTitle: '',
@@ -384,8 +396,8 @@ const cardDetails = writable({
   blacksmith: {
     title: 'blacksmith',
     displayTitle: 'Blacksmith',
-    points: 2,
-    amount: 3,
+    points: 3,
+    amount: 2,
     rarity: 'uncommon',
     traitTitle: '',
     trait: '',
@@ -396,8 +408,8 @@ const cardDetails = writable({
   hobbit: {
     title: 'hobbit',
     displayTitle: 'Hobbit',
-    points: 1,
-    amount: 4,
+    points: 2,
+    amount: 3,
     rarity: 'uncommon',
     traitTitle: 'Half and half.',
     trait: 'Hobbit points count towards both dwarves and humans.',
@@ -409,7 +421,7 @@ const cardDetails = writable({
     title: 'bartender',
     displayTitle: 'Bartender',
     points: 1,
-    amount: 4,
+    amount: 2,
     rarity: 'common',
     traitTitle: '',
     trait: '',
@@ -420,29 +432,41 @@ const cardDetails = writable({
 
 
   // Bots
-  crusher541A57: {
-    title: 'crusher541A57',
-    displayTitle: 'Crusher 541-A-57',
-    points: 10,
-    amount: 1,
-    rarity: 'legendary',
-    traitTitle: 'Binary Manipulator',
-    trait: 'ALL bots will receive +2 points. Additionally, Crusher will hack all bots and steal their points.',
-    description: 'The most advanced battle and hacking unit known to man.',
-    race: 'bot',
-    image: '/bots/crusher-5A1A-57.gif'
-  },
   ai: {
     title: 'ai',
     displayTitle: 'A.I.',
-    points: 8,
+    points: 11,
+    amount: 1,
+    rarity: 'legendary',
+    traitTitle: 'Binary Manipulator',
+    trait: 'ALL bots will receive +2 points, effectively quarantining viruses. Additionally, A.I. will hack all bots and steal their points.',
+    description: 'The core of the modern bot society, excels in probability computation and hacking.',
+    race: 'bot',
+    image: '/bots/ai.png'
+  },
+  protectron: {
+    title: 'protectron',
+    displayTitle: 'Protectron',
+    points: 9,
     amount: 2,
     rarity: 'epic',
     traitTitle: 'Antivirus',
-    trait: 'Converts viruses into helpful programs, setting their point value to 6. A.I. will also receive +1 point for every cleansed virus.',
-    description: 'The core of the modern bot society.',
+    trait: 'Reprograms viruses into helpful programs, setting their point value to 6. Protectron will also receive +1 point for every reprogrammed virus.',
+    description: 'The most advanced battle bot and previous leader of the bots until A.I. took over, now second in command.',
     race: 'bot',
-    image: '/bots/ai.png'
+    image: '/bots/protectron.png'
+  },
+  sawBot: {
+    title: 'sawBot',
+    displayTitle: 'Sawbot-3000',
+    points: 7,
+    amount: 4,
+    rarity: 'rare',
+    traitTitle: '',
+    trait: '',
+    description: 'A bot designed to kill humans and trees, but mostly humans, beware.',
+    race: 'bot',
+    image: '/bots/saw-bot.png'
   },
   faeBot: {
     title: 'faeBot',
@@ -456,51 +480,39 @@ const cardDetails = writable({
     race: 'bot',
     image: '/bots/fae-bot.png'
   },
-  sawBot3000: {
-    title: 'sawBot3000',
-    displayTitle: 'Sawbot-3000',
-    points: 4,
+  killBot: {
+    title: 'killBot',
+    displayTitle: 'Kill Bot',
+    points: 5,
     amount: 4,
     rarity: 'rare',
     traitTitle: '',
     trait: '',
-    description: 'A bot designed to kill, beware.',
+    description: 'An aggressive bot, known to attack on sight.',
     race: 'bot',
-    image: '/bots/saw-bot-3000.png'
+    image: '/bots/kill-bot.png'
   },
-  infernoBot: {
-    title: 'infernoBot',
-    displayTitle: 'Inferno Bot',
-    points: 3,
-    amount: 4,
-    rarity: 'rare',
-    traitTitle: '',
-    trait: '',
-    description: 'An angry aggressive bot, known to attack on sight.',
-    race: 'bot',
-    image: '/bots/inferno-bot.png'
-  },
-  incubator: {
-    title: 'incubator',
-    displayTitle: 'Incubator',
+  incuBot: {
+    title: 'incuBot',
+    displayTitle: 'Incu Bot',
     points: 2,
-    amount: 5,
+    amount: 4,
     rarity: 'uncommon',
     traitTitle: '',
     trait: '',
-    description: 'A weak mother bot used to raise young infants.',
+    description: 'A weak incubator bot used to repair small bots.',
     race: 'bot',
-    image: '/bots/incubator.png'
+    image: '/bots/incu-bot.png'
   },
   virus: {
     title: 'virus',
     displayTitle: 'Virus',
     points: -2,
-    amount: 7,
+    amount: 6,
     rarity: 'common',
     traitTitle: '',
     trait: '',
-    description: 'A common computer virus.',
+    description: 'A common computer virus, can be reprogrammed by protectron or quarantined A.I.',
     race: 'bot',
     image: '/bots/virus.png'
   },
@@ -521,7 +533,7 @@ const cardDetails = writable({
   rhino: {
     title: 'rhino',
     displayTitle: 'Rhinestone',
-    points: 8,
+    points: 10,
     amount: 3,
     rarity: 'amazing',
     traitTitle: 'Thick skin',
@@ -533,7 +545,7 @@ const cardDetails = writable({
   bear: {
     title: 'bear',
     displayTitle: 'Theodore Thunderpaws',
-    points: 7,
+    points: 9,
     amount: 3,
     rarity: 'amazing',
     traitTitle: '',
@@ -545,8 +557,8 @@ const cardDetails = writable({
   lion: {
     title: 'lion',
     displayTitle: 'Goldenmane',
-    points: 6,
-    amount: 4,
+    points: 8,
+    amount: 3,
     rarity: 'rare',
     traitTitle: '',
     trait: '',
@@ -557,8 +569,8 @@ const cardDetails = writable({
   panther: {
     title: 'panther',
     displayTitle: 'Panthera Nocturna',
-    points: 5,
-    amount: 4,
+    points: 7,
+    amount: 3,
     rarity: 'rare',
     traitTitle: '',
     trait: '',
@@ -569,8 +581,8 @@ const cardDetails = writable({
   wolf: {
     title: 'wolf',
     displayTitle: 'Alpha Wolfbane',
-    points: 4,
-    amount: 4,
+    points: 6,
+    amount: 3,
     rarity: 'rare',
     traitTitle: '',
     trait: '',
@@ -581,8 +593,8 @@ const cardDetails = writable({
   fox: {
     title: 'fox',
     displayTitle: 'Finn Foxglove',
-    points: 3,
-    amount: 4,
+    points: 5,
+    amount: 3,
     rarity: 'uncommon',
     traitTitle: '',
     trait: '',
@@ -593,8 +605,8 @@ const cardDetails = writable({
   dog: {
     title: 'dog',
     displayTitle: 'Pawl Barkington',
-    points: 2,
-    amount: 4,
+    points: 4,
+    amount: 3,
     rarity: 'uncommon',
     traitTitle: '',
     trait: '',

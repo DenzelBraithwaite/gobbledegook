@@ -16,8 +16,8 @@
   import { io } from 'socket.io-client';
   // import { emitKeypressEvents } from 'readline';
 
-  // let socket = io('http://192.168.2.10:6912'); // Thanos
-  let socket = io('http://192.168.2.21:6912'); // MacBook
+  let socket = io('http://192.168.2.10:6912'); // Thanos
+  // let socket = io('http://192.168.2.21:6912'); // MacBook
   let gobbledegookDeclared = false;
   let gobbledegookDisabled = false;
   let startBtnDisabled = false;
@@ -29,16 +29,16 @@
   let remoteCardDetails = {...$cardDetails}; // This is because deckDetails will differ between client and remote, e.g. voidRunner.
   // Deck players draw from, includes all race decks
   let fullDeck = {
-    beasts: [...$beastDeck],
+    // beasts: [...$beastDeck],
     bots: [...$botDeck],
-    dwarves: [...$dwarfDeck],
+    // dwarves: [...$dwarfDeck],
     elves: [...$elfDeck],
-    goblins: [...$goblinDeck],
-    humans: [...$humanDeck],
-    xenos: [...$xenoDeck],
-    boosts: [...$boostDeck],
-    traps: [...$trapDeck],
-    neutrals: [...$neutralDeck]
+    // goblins: [...$goblinDeck],
+    // humans: [...$humanDeck],
+    // xenos: [...$xenoDeck],
+    // boosts: [...$boostDeck],
+    // traps: [...$trapDeck],
+    // neutrals: [...$neutralDeck]
   };
   // array for each deck, humans, goblins, elves and dwarves
   let deckTypes = Object.keys(fullDeck);
@@ -413,18 +413,11 @@
     // Player can't draw when he has more than 5 cards unless due to echo. Player can't draw more than 8 cards (echo + 2)
     if ((player.hand.length > 5 && !player.playingTwice) || player.hand.length >= 8) return;
     
-    // If player has longbeard leader, next card is a dwarf
+    // Determines if the next card will be a dwarf or just a random deck.
     if (player.dwarfNextTurn) {
-      player.dwarfNextTurn = false;
-      if (fullDeck['dwarves'].length !== 0) {
-        currentDeck = 'dwarves';
-      } else {
-        // If no remaining dwarves, random deck 
-        randomNum = Math.floor(Math.random() * deckTypes.length);
-        currentDeck = deckTypes[randomNum];
-      }
+      currentDeck = isDwarfNext(player);
     } else {
-      // Grab random deck 
+      // If no remaining dwarves, random deck 
       randomNum = Math.floor(Math.random() * deckTypes.length);
       currentDeck = deckTypes[randomNum];
     }
@@ -455,9 +448,20 @@
         cardDrawn = fullDeck[currentDeck][randomNum];
       };
     } else {
-      // Grab random card from that deck
-      randomNum = Math.floor(Math.random() * fullDeck[currentDeck].length);
-      cardDrawn = fullDeck[currentDeck][randomNum];
+      // Grab random card from that deck, if elf deck, look for elf champion.
+      if (currentDeck === 'elves' && fullDeck['elves'].includes('elfChampion')) {
+        cardDrawn = fullDeck['elves'].find(card => card === 'elfChampion');
+      } else {
+        // If the elf champion isn't in deck, grab a random elf
+        randomNum = Math.floor(Math.random() * fullDeck[currentDeck].length);
+        cardDrawn = fullDeck[currentDeck][randomNum];
+      }
+
+      // Change card drawn to goblin lord's mark if player last drew warchief and goblin lord's mark is in deck
+      if (player.drewWarchief && canDrawGoblinLordMark(player)) {
+        currentDeck = 'goblins';
+        cardDrawn = 'goblinLordsMark';
+      }
 
       // If player has chastity but draws the trap card "lost", draw again.
       if (cardDrawn === 'lost' && player.hand.includes('chastity')) {
@@ -479,6 +483,9 @@
 
       // If it's the longbeard leader, dwarf commander or dwarvenCall, the next card will be dwarf
       if (cardDrawn === 'longbeardLeader' || cardDrawn === 'dwarfCommander' || (cardDrawn === 'dwarvenCall' && !player.hasCorruption)) player.dwarfNextTurn = true;
+
+      // If it's the warchief, the next card will be the goblin lord's mark.
+      if (cardDrawn === 'warchief') player.drewWarchief = true;
 
       // If it's the goblin lord's mark, the next card will be the goblin lord
       if (cardDrawn === 'goblinLordsMark') player.goblinLordMarked = true;
@@ -524,6 +531,28 @@
     
     // Emits to server that a card was drawn
     socket.emit('draw-card', {player1: $player1, player2: $player2, deckTypes: deckTypes, fullDeck: fullDeck});
+  }
+
+  // Determines of the next card will be a dwarf.
+  function isDwarfNext(player) {
+    player.dwarfNextTurn = false;
+    let currentDeck = '';
+    let randomNum = 0;
+
+    if (fullDeck['dwarves'] && fullDeck['dwarves'].length !== 0) {
+      currentDeck = 'dwarves';
+    } else {
+      // If no remaining dwarves, random deck 
+      randomNum = Math.floor(Math.random() * deckTypes.length);
+      currentDeck = deckTypes[randomNum];
+    }
+    return currentDeck;
+  }
+
+  // Determines of the next card will be a dwarf.
+  function canDrawGoblinLordMark(player) {
+    player.drewWarchief = false;
+    return (fullDeck['goblins'] && fullDeck['goblins'].includes('goblinLordsMark')) ? true : false;
   }
 
   // Determines who can click on deck
@@ -749,8 +778,8 @@
   function calculateTotalPoints(player, enemy) {
     calculateBasePoints(player);
 
-    // Because calculateTotalPoints() is run back to back, firtst with p1 as player, p2 might calculate bot points even when "hacked" by crusher.
-    if (enemy.hand.includes('crusher541A57')) player.points.bots = 0;
+    // Because calculateTotalPoints() is run back to back, firtst with p1 as player, p2 might calculate bot points even when "hacked" by A.I..
+    if (enemy.hand.includes('ai')) player.points.bots = 0;
 
     // Special cards)
     if (player.hand.includes('commander')) calculateCommander(player); // Must be before emperor since emperor multiplies final points.
@@ -759,8 +788,8 @@
     if (player.hand.includes('elfKing')) calculateElfKing(player, enemy);
     if (player.hand.includes('dreamDestroyer')) calculateDreamDestroyer(player);
     if (player.hand.includes('dreamDestroyer')) calculateDreamDestroyer(player);
-    if (player.hand.includes('crusher541A57')) calculateCrusher(player, enemy);
-    if (player.hand.includes('ai')) calculateAI(player, enemy); // Must be after crusher since crusher resets bot points.
+    if (player.hand.includes('ai')) calculateAi(player, enemy);
+    if (player.hand.includes('protectron')) calculateProtectron(player, enemy); // Must be after A.I. since A.I. resets bot points.
     if (player.hand.includes('longbeardLeader')) calculateLongbeard(player);
 
     // Elf twins bonus 10 points, placed after calculateElfKing() since it does not stack with elf king
@@ -804,25 +833,25 @@
       });
   }
   // Handles human commanders who buff their team
-  function calculateAI(player, enemy) {
-    let numOfAi = player.hand.filter(card => card === 'ai').length;
+  function calculateProtectron(player, enemy) {
+    let numOfProtectrons = player.hand.filter(card => card === 'protectron').length;
     let numOfViruses = player.hand.filter(card => card === 'virus').length;
 
-    // If player also has crusher, steal their bots too
-    if (player.hand.includes('crusher541A57')) {
-      numOfAi += enemy.hand.filter(card => card === 'ai').length;
+    // If player also has A.I. steal their bots too
+    if (player.hand.includes('ai')) {
+      numOfProtectrons += enemy.hand.filter(card => card === 'protectron').length;
       numOfViruses += enemy.hand.filter(card => card === 'virus').length;
     }
       
     player.hand.forEach(card => {
       if (card === 'virus') player.points.bots += 8; // since -2 + 8 = 6
-      if (card === 'ai') player.points.bots += (numOfAi * numOfViruses); // buffed for each virus
+      if (card === 'protectron') player.points.bots += (numOfProtectrons * numOfViruses); // buffed for each virus
     });
 
-    if (player.hand.includes('crusher541A57')) {
+    if (player.hand.includes('ai')) {
       enemy.hand.forEach(card => {
         if (card === 'virus') player.points.bots += 8; // since -2 + 8 = 6
-        if (card === 'ai') player.points.bots += (numOfAi * numOfViruses); // buffed for each virus
+        if (card === 'protectron') player.points.bots += (numOfProtectrons * numOfViruses); // buffed for each virus
       });
     }
   }
@@ -882,7 +911,7 @@
   }
 
   // Adds ALL bot card points on the field to players score, and bots have +2
-  function calculateCrusher(player, enemy) {  
+  function calculateAi(player, enemy) {  
     // Need to reset since bot points are added in calculateBasePoints()
     player.points.bots = 0;
     enemy.points.bots = 0;
@@ -908,13 +937,8 @@
       if ($dwarfDeck.includes(card)) discardedDwarvesCount += 1;
     });
 
-    // Check if there are more discarded dwarves than remaining dwarves in the deck, account for if deck has been removed
-    if (fullDeck['dwarves']) {
-      discardedDwarvesCount >= fullDeck['dwarves'].length ? player.points.dwarves += 50 : player.points.dwarves += 0;
-    } else {
-      // If the deck has been removed, give the bonus points since there are no more dwarves to draw
-      player.points.dwarves += 50
-    }
+    // Longbeard leader gains +5 points per discarded dwarf.
+    player.points.dwarves += (discardedDwarvesCount * 5);
   }
 
   // Calculates special xeno card points
