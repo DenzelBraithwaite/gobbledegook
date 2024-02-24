@@ -591,7 +591,7 @@
     socket.emit('discard-card', {player1: $player1, player2: $player2});
 
     // Check if card discarded is switcharoo, if so, swap hands, but don't swap if they have echo in effect (too many cards)
-    if (card === 'switcharoo' && player.hand.length === 5) swapHands();
+    if (card === 'switcharoo' && player.hand.length === 5 && !gobbledegookDeclared) swapHands();
 
     // If player is playing twice, let them draw again.
     if (player.playingTwice) {

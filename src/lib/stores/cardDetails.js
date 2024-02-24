@@ -544,7 +544,7 @@ const cardDetails = writable({
   },
   bear: {
     title: 'bear',
-    displayTitle: 'Theodore Thunderpaws',
+    displayTitle: 'Theo Thunderpaw',
     points: 9,
     amount: 3,
     rarity: 'amazing',
@@ -568,7 +568,7 @@ const cardDetails = writable({
   },
   panther: {
     title: 'panther',
-    displayTitle: 'Panthera Nocturna',
+    displayTitle: 'Panth Nocturna',
     points: 7,
     amount: 3,
     rarity: 'rare',
@@ -809,7 +809,7 @@ const cardDetails = writable({
     amount: 2,
     rarity: '',
     traitTitle: 'Swap Swap',
-    trait: "When discarded, players will swap hands unless player has over 6 cards. For special xeno cards(e.g. Void Runner) they will receive the new player's point value for that card, not the previous value.",
+    trait: "When discarded, players will swap hands unless player has over 6 cards or gobbledegook declared. For special xeno cards(e.g. Void Runner) they will receive the new player's point value for that card, not the previous value.",
     description: '',
     race: 'neutral',
     image: '/neutrals/switcharoo.png'
