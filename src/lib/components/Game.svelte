@@ -29,16 +29,16 @@
   let remoteCardDetails = {...$cardDetails}; // This is because deckDetails will differ between client and remote, e.g. voidRunner.
   // Deck players draw from, includes all race decks
   let fullDeck = {
-    // beasts: [...$beastDeck],
+    beasts: [...$beastDeck],
     bots: [...$botDeck],
-    // dwarves: [...$dwarfDeck],
+    dwarves: [...$dwarfDeck],
     elves: [...$elfDeck],
-    // goblins: [...$goblinDeck],
-    // humans: [...$humanDeck],
-    // xenos: [...$xenoDeck],
-    // boosts: [...$boostDeck],
-    // traps: [...$trapDeck],
-    // neutrals: [...$neutralDeck]
+    goblins: [...$goblinDeck],
+    humans: [...$humanDeck],
+    xenos: [...$xenoDeck],
+    boosts: [...$boostDeck],
+    traps: [...$trapDeck],
+    neutrals: [...$neutralDeck]
   };
   // array for each deck, humans, goblins, elves and dwarves
   let deckTypes = Object.keys(fullDeck);
