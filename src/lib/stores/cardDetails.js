@@ -339,8 +339,8 @@ const cardDetails = writable({
     points: 7,
     amount: 2,
     rarity: 'amazing',
-    traitTitle: '',
-    trait: '',
+    traitTitle: 'Another Round',
+    trait: '50% chance to draw a dwarf next turn when discarded, does not stack.',
     description: 'A dwarven warrior wielding science as magic.',
     race: 'dwarf',
     image: '/dwarves/alchemist.png'
@@ -697,7 +697,7 @@ const cardDetails = writable({
     amount: 1,
     rarity: '',
     traitTitle: 'Purity',
-    trait: 'Active immediately even if discarded. Blocks all trap cards except Corruption, only one exists in deck.',
+    trait: 'Active immediately even if discarded. Blocks all trap cards except Corruption, only one exists in deck. If acquired by switcharoo, only active while in hand.',
     description: '',
     race: 'boost',
     image: '/boosts/rainbow_boost.png'
@@ -747,7 +747,7 @@ const cardDetails = writable({
     amount: 1,
     rarity: '',
     traitTitle: 'Impurity',
-    trait: 'Active immediately even if discarded. Blocks all boost cards except Chastity, only one exists in deck.',
+    trait: 'Active immediately even if discarded. Blocks all boost cards except Chastity, only one exists in deck. If acquired by switcharoo, only active while in hand.',
     description: '',
     race: 'trap',
     image: '/boosts/rainbow_boost.png'
@@ -800,6 +800,18 @@ const cardDetails = writable({
     race: 'trap',
     image: '/traps/white_trap.png'
   },
+  exposed: {
+    title: 'exposed',
+    displayTitle: 'Exposed',
+    points: 0,
+    amount: 1,
+    rarity: '',
+    traitTitle: 'Expose',
+    trait: 'If drawn, your hand is exposed until your next turn, unless you have a card that blocks traps.',
+    description: '',
+    race: 'trap',
+    image: '/traps/camo_trap.png'
+  },
 
   // Neutrals
   switcharoo: {
@@ -821,7 +833,7 @@ const cardDetails = writable({
     amount: 3,
     rarity: '',
     traitTitle: 'Echo Echo',
-    trait: "If drawn, player can draw until they have 8 cards. Discarding echos prolongs this, when you discard a non echo card, you will need to continue discarding down to 5 cards.",
+    trait: "If drawn, player can draw another card, maximum 7. Discarding echos prolongs this, when you discard a non echo card, you will need to continue discarding down to 5 cards.",
     description: '',
     race: 'neutral',
     image: '/neutrals/echo.png'
@@ -845,10 +857,22 @@ const cardDetails = writable({
     amount: 3,
     rarity: '',
     traitTitle: 'Envision',
-    trait: "If drawn, see the opponents cards for 1 turn.",
+    trait: "If drawn, see the opponents cards for the duration of your turn.",
     description: '',
     race: 'neutral',
     image: '/neutrals/vision.png'
+  },
+  xenoBloom: {
+    title: 'xenoBloom',
+    displayTitle: 'Xeno Bloom',
+    points: 0,
+    amount: 1,
+    rarity: '',
+    traitTitle: 'Bloom',
+    trait: "If drawn, both players receive +15 bonus xeno points at the end of the game.",
+    description: '',
+    race: 'neutral',
+    image: '/neutrals/xeno_bloom.png'
   },
 });
 

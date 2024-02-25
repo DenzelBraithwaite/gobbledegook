@@ -4,11 +4,15 @@ import { writable } from 'svelte/store';
 const neutralDeck = writable([
   'echo',
   'echo',
+  'echo',
+  'switcharoo',
   'switcharoo',
   'ticktock',
   'ticktock',
+  'ticktock',
   'vision',
   'vision',
+  'xenoBloom',
 ]);
 
 export default neutralDeck;

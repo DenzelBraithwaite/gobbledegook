@@ -6,7 +6,7 @@
   import { fade } from 'svelte/transition';
 
   // Stores
-  import { player1, player2, cardDetails, beastDeck, botDeck, dwarfDeck, elfDeck, goblinDeck, humanDeck, xenoDeck, boostDeck,  trapDeck, neutralDeck } from '../stores';
+  import { player1, player1Reset, player2, player2Reset, cardDetails, beastDeck, botDeck, dwarfDeck, elfDeck, goblinDeck, humanDeck, xenoDeck, boostDeck,  trapDeck, neutralDeck } from '../stores';
 
   // Custom components
   import { Button, Spinner } from './index';
@@ -29,13 +29,13 @@
   let remoteCardDetails = {...$cardDetails}; // This is because deckDetails will differ between client and remote, e.g. voidRunner.
   // Deck players draw from, includes all race decks
   let fullDeck = {
-    beasts: [...$beastDeck],
-    bots: [...$botDeck],
+    // beasts: [...$beastDeck],
+    // bots: [...$botDeck],
     dwarves: [...$dwarfDeck],
-    elves: [...$elfDeck],
-    goblins: [...$goblinDeck],
-    humans: [...$humanDeck],
-    xenos: [...$xenoDeck],
+    // elves: [...$elfDeck],
+    // goblins: [...$goblinDeck],
+    // humans: [...$humanDeck],
+    // xenos: [...$xenoDeck],
     boosts: [...$boostDeck],
     traps: [...$trapDeck],
     neutrals: [...$neutralDeck]
@@ -57,11 +57,13 @@
           store.id = users['p1'];
           return store;
         });
+        player1Reset.set({...$player1});
 
         player2.update(store => {
           store.id = users['p2'];
           return store;
         });
+        player2Reset.set({...$player2});
 
         // TODO: Handle guests.
       }); 
@@ -194,62 +196,27 @@
   // Resets values to restart the game.
   function resetGame() {
     // Reset p1
-    player1.update(store => {
-      store.highestPoints = 0;
-      store.points.beasts = 0;
-      store.points.bots = 0;
-      store.points.dwarves = 0;
-      store.points.elves = 0;
-      store.points.goblins = 0;
-      store.points.humans = 0;
-      store.points.xenos = 0;
-      store.discards = [];
-      store.justWon = false;
-      store.boosts = [];
-      store.traps = [];
-      store.neutrals = [];
-      store.chargeDrawnTurns = [];
-      store.infectDrawnTurns = [];
-      store.chargePoints = 0;
-      store.infectPoints = 0;
-      return store;
-    });
-
+    player1.set({...$player1Reset});
     // Reset p2
-    player2.update(store => {
-      store.highestPoints = 0;
-      store.points.beasts = 0;
-      store.points.bots = 0;
-      store.points.dwarves = 0;
-      store.points.elves = 0;
-      store.points.goblins = 0;
-      store.points.humans = 0;
-      store.points.xenos = 0;
-      store.discards = [];
-      store.justWon = false;
-      store.boosts = [];
-      store.traps = [];
-      store.neutrals = [];
-      store.chargeDrawnTurns = [];
-      store.infectDrawnTurns = [];
-      store.chargePoints = 0;
-      store.infectPoints = 0;
-      return store;
-    });
+    player2.set({...$player2Reset});
 
     // Reset Deck
-    fullDeck['humans'] = [...$humanDeck];
-    fullDeck['goblins'] = [...$goblinDeck];
-    fullDeck['elves'] = [...$elfDeck];
-    fullDeck['dwarves'] = [...$dwarfDeck];
-    fullDeck['bots'] = [...$botDeck];
-    fullDeck['beasts'] = [...$beastDeck];
-    fullDeck['xenos'] = [...$xenoDeck];
-    fullDeck['boosts'] = [...$boostDeck];
-    fullDeck['traps'] = [...$trapDeck];
-    fullDeck['neutrals'] = [...$neutralDeck];
+    fullDeck = {
+      // beasts: [...$beastDeck],
+      // bots: [...$botDeck],
+      dwarves: [...$dwarfDeck],
+      // elves: [...$elfDeck],
+      // goblins: [...$goblinDeck],
+      // humans: [...$humanDeck],
+      // xenos: [...$xenoDeck],
+      boosts: [...$boostDeck],
+      traps: [...$trapDeck],
+      neutrals: [...$neutralDeck]
+    };
     $cardDetails['warpstalker'].points = 0;
     $cardDetails['voidRunner'].points = 0;
+    deckTypes = Object.keys(fullDeck);
+    remoteCardDetails = {...$cardDetails};
 
     // General resets
     turnCount = 0;
@@ -297,16 +264,16 @@
 
   // Logs how many cards are left in the deck
   function showDeck(allDecks = false) {
-    const beastCardsLeft = fullDeck['beasts'].length || 0;
-    const botCardsLeft = fullDeck['bots'].length || 0;
-    const dwarfCardsLeft = fullDeck['dwarves'].length || 0;
-    const elfCardsLeft = fullDeck['elves'].length || 0;
-    const goblinCardsLeft = fullDeck['goblins'].length || 0;
-    const humanCardsLeft = fullDeck['humans'].length || 0;
-    const xenoCardsLeft = fullDeck['xenos'].length || 0;
-    const boostCardsLeft = fullDeck['boosts'].length || 0;
-    const trapCardsLeft = fullDeck['traps'].length || 0;
-    const neutralCardsLeft = fullDeck['neutrals'].length || 0;
+    const beastCardsLeft = fullDeck['beasts'] ? fullDeck['beasts'].length : 0;
+    const botCardsLeft = fullDeck['bots'] ? fullDeck['bots'].length : 0;
+    const dwarfCardsLeft = fullDeck['dwarves'] ? fullDeck['dwarves'].length : 0;
+    const elfCardsLeft = fullDeck['elves'] ? fullDeck['elves'].length : 0;
+    const goblinCardsLeft = fullDeck['goblins'] ? fullDeck['goblins'].length : 0;
+    const humanCardsLeft = fullDeck['humans'] ? fullDeck['humans'].length : 0;
+    const xenoCardsLeft = fullDeck['xenos'] ? fullDeck['xenos'].length : 0;
+    const boostCardsLeft = fullDeck['boosts'] ? fullDeck['boosts'].length : 0;
+    const trapCardsLeft = fullDeck['traps'] ? fullDeck['traps'].length : 0;
+    const neutralCardsLeft = fullDeck['neutrals'] ? fullDeck['neutrals'].length : 0;
 
     if (allDecks) {
       console.log(`Cards remaining per deck:\n
@@ -358,6 +325,9 @@
 
   // Deals 5 cards to each player at the start of the round
   function dealCards(player) {
+    // Make sure hand is empty
+    player.hand = [];
+    
     for(let counter = 1; counter <= 5; counter++) {
       // Grab random deck 
       let randomNum = Math.floor(Math.random() * deckTypes.length);
@@ -410,8 +380,11 @@
     // Player can't declare gobbledegook if they drew that turn
     gobbledegookDisabled = true;
 
-    // Player can't draw when he has more than 5 cards unless due to echo. Player can't draw more than 8 cards (echo + 2)
-    if ((player.hand.length > 5 && !player.playingTwice) || player.hand.length >= 8) return;
+    // If new turn and player was recently exposed, remove it, not when use draws echo and keeps drawing.
+    if (newTurn && player.hand.length === 5) player.isExposed = false;
+
+    // Player can't draw when he has more than 5 cards unless due to echo. Player can't draw more than 7 cards (echo + 1)
+    if ((player.hand.length > 5 && !player.playingTwice) || player.hand.length >= 7) return;
     
     // Determines if the next card will be a dwarf or just a random deck.
     if (player.dwarfNextTurn) {
@@ -481,6 +454,7 @@
         return;
       };
 
+      // TODO: break this out into a function
       // If it's the longbeard leader, dwarf commander or dwarvenCall, the next card will be dwarf
       if (cardDrawn === 'longbeardLeader' || cardDrawn === 'dwarfCommander' || (cardDrawn === 'dwarvenCall' && !player.hasCorruption)) player.dwarfNextTurn = true;
 
@@ -515,7 +489,7 @@
     }
 
     // Checks if player is player 1 or 2, then adds card to hand
-    if (player.title === 'Player 1') {
+    if (playingAs() === 'p1') {
       player1.update(store => {
         store.hand = [...store.hand, cardDrawn];
         store.cardsDrawn = [...player.cardsDrawn, cardDrawn];
@@ -594,9 +568,10 @@
     if (card === 'switcharoo' && player.hand.length === 5 && !gobbledegookDeclared) swapHands();
 
     // If player is playing twice, let them draw again.
-    if (player.playingTwice) {
-      if (card !== 'echo') player.playingTwice = false;
-    };
+    if (player.playingTwice && card !== 'echo') player.playingTwice = false;
+
+    // Check if card discarded is dwarf alchemist, if so, calculate 50% chance to draw dwarf next turn.
+    if (card === 'alchemist') player.dwarfNextTurn = Math.random() < 0.5 ? true : false;
 
     // Don't change turns until player only has 5 cards
     if (player.hand.length > 5) return;
@@ -671,7 +646,15 @@
         store.wins += 1;
         return store;
       });
+      player1Reset.update(store => {
+        store.wins += 1;
+        return store;
+      });
       player2.update(store => {
+        store.losses += 1;
+        return store;
+      });
+      player2Reset.update(store => {
         store.losses += 1;
         return store;
       });
@@ -683,8 +666,16 @@
         store.losses += 1;
         return store;
       });
+      player1Reset.update(store => {
+        store.losses += 1;
+        return store;
+      });
       player2.update(store => {
         store.justWon = true;
+        store.wins += 1;
+        return store;
+      });
+      player2Reset.update(store => {
         store.wins += 1;
         return store;
       });
@@ -697,8 +688,16 @@
         store.draws += 1;
         return store;
       });
+      player1Reset.update(store => {
+        store.draws += 1;
+        return store;
+      });
       player2.update(store => {
         store.justWon = true;
+        store.draws += 1;
+        return store;
+      });
+      player2Reset.update(store => {
         store.draws += 1;
         return store;
       });
@@ -711,8 +710,16 @@
         store.draws += 1;
         return store;
       });
+      player1.update(store => {
+        store.draws += 1;
+        return store;
+      });
       player2.update(store => {
         store.justWon = true;
+        store.draws += 1;
+        return store;
+      });
+      player2.update(store => {
         store.draws += 1;
         return store;
       });
@@ -798,6 +805,15 @@
     // Nebulites buff xenos by 4 points
     if (player.hand.includes('nebulite')) calculateSpecialXenoCard(player, 'nebulite');
 
+    // Handles end game boost cards
+    endGameBoostHandler(player);
+
+    // Handles end game trap cards
+    endGameTrapHandler(player);
+
+    // Handles end game neutral cards
+    endGameNeutralHandler(player);
+
     player.highestPoints = Math.max(
       player.points.beasts,
       player.points.bots,
@@ -807,12 +823,6 @@
       player.points.humans,
       player.points.xenos
     );
-
-    // Handles end game boost cards
-    endGameBoostHandler(player);
-
-    // Handles end game trap cards
-    endGameTrapHandler(player);
   }
 
   // Adds all card points in hand, regardless of race. Humans worth double
@@ -979,6 +989,7 @@
   function addBoostCard(player, card) {
     player.boosts = [...player.boosts, card];
 
+    if (card === 'chastity') player.hasChastity = true;
     if (card === 'charge') player.chargeDrawnTurns = [...player.chargeDrawnTurns, turnCount];
   }
 
@@ -988,17 +999,13 @@
     if (player.hand.includes('xenoguard') || player.hand.includes('corruption') || player.discards.includes('corruption')) return;
 
     // Handles charge boost
-    for (let i = 0; i < player.chargeDrawnTurns.length; i++) {
-      player.chargePoints += (turnCount - player.chargeDrawnTurns[i]);
-    }
+    for (let i = 0; i < player.chargeDrawnTurns.length; i++) player.chargePoints += (turnCount - player.chargeDrawnTurns[i]);
     player.points.bots += player.chargePoints;
     player.points.humans += player.chargePoints;
-    if (player.points.bots > player.highestPoints) player.highestPoints = player.points.bots;
-    if (player.points.humans > player.highestPoints) player.highestPoints = player.points.humans;
 
     // Handles other boosts
     player.boosts.forEach(boost => {
-      if (boost === 'rejuvenate') player.highestPoints += 10;
+      if (boost === 'rejuvenate') Object.entries(player.points).forEach(([deck, deckPoints]) => player.points[deck] += 10);
     });
   }
 
@@ -1006,7 +1013,9 @@
   function addTrapCard(player, card) {
     player.traps = [...player.traps, card];
 
+    if (card === 'corruption') player.hasCorruption = true;
     if (card === 'infect') player.infectDrawnTurns = [...player.infectDrawnTurns, turnCount];
+    if (card === 'exposed' && !player.hasChastity && !player.hand.includes('chastity')) player.isExposed = true;
   }
 
   // Handles trap cards at the end of the game
@@ -1015,16 +1024,13 @@
     if (player.hand.includes('rhino') || player.hand.includes('chastity') || player.discards.includes('chastity')) return;
 
     // Handles infect trap
-    for (let i = 0; i < player.infectDrawnTurns.length; i++) {
-      player.infectPoints += (turnCount - player.infectDrawnTurns[i]);
-    }
-    if (player.points.bots !== player.highestPoints) player.highestPoints -= player.infectPoints;
+    for (let i = 0; i < player.infectDrawnTurns.length; i++) player.infectPoints += (turnCount - player.infectDrawnTurns[i]);
+    Object.entries(player.points).forEach(([deck, deckPoints]) => player.points[deck] -= player.infectPoints);
 
     // Handles other traps
     player.traps.forEach(trap => {
-      if (trap === 'sap') player.highestPoints -= 10;
+      if (trap === 'sap') Object.entries(player.points).forEach(([deck, deckPoints]) => player.points[deck] -= 10);
       if (trap === 'xenophobia') player.points.xenos -= 10;
-      if (trap === 'xenophobia' && player.points.xenos === player.highestPoints) player.highestPoints -= 10;
     });
   }
 
@@ -1040,6 +1046,22 @@
 
     // Add turn to turnCount if card is Ticktock
     if (card === 'ticktock') socket.emit('increase-turn-count');
+  }
+
+  // Handles neutral cards at the end of the game
+  function endGameNeutralHandler(player) {
+    player.neutrals.forEach(neutral => {
+      if (neutral === 'xenoBloom') {
+        player1.update(store => {
+          store.points.xenos += 15;
+          return store;
+        })
+        player2.update(store => {
+          store.points.xenos += 15;
+          return store;
+        })
+      }
+    });
   }
 </script>
 
@@ -1267,7 +1289,7 @@
         {#each $player1.hand as card}
           <GGCard
             on:cardClick={(event) => selectCard(event, $player1.hand)}
-            faceUp={isCardVisible('p1') || $player2.hasVision}
+            faceUp={isCardVisible('p1') || $player2.hasVision || $player1.isExposed}
             displayTitle={$cardDetails[card].displayTitle}
             title={$cardDetails[card].title}
             img={$cardDetails[card].image}
@@ -1285,7 +1307,7 @@
         {#each $player2.hand as card}
           <GGCard
             on:cardClick={(event) => selectCard(event, $player2.hand)}
-            faceUp={isCardVisible('p2') || $player1.hasVision}
+            faceUp={isCardVisible('p2') || $player1.hasVision || $player2.isExposed}
             displayTitle={$cardDetails[card].displayTitle}
             title={$cardDetails[card].title}
             img={$cardDetails[card].image}

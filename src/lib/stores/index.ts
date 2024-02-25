@@ -1,5 +1,5 @@
-import player1 from "./player1.js";
-import player2 from "./player2.js";
+import { player1, player1Reset} from "./player1.js";
+import { player2, player2Reset} from "./player2.js";
 import cardDetails from "./cardDetails.js";
 import beastDeck from "./beastDeck.js";
 import botDeck from "./botDeck.js";
@@ -14,7 +14,9 @@ import neutralDeck from "./neutralDeck.js";
 
 export {
   player1,
+  player1Reset,
   player2,
+  player2Reset,
   cardDetails,
   beastDeck,
   botDeck,
