@@ -814,6 +814,18 @@ const cardDetails = writable({
   },
 
   // Neutrals
+  neutralize: {
+    title: 'neutralize',
+    displayTitle: 'Neutralize',
+    points: 0,
+    amount: 1,
+    rarity: '',
+    traitTitle: 'Neutralize',
+    trait: "When drawn, all boosts and traps in effect are neutralized. Only 1 in deck.",
+    description: '',
+    race: 'neutral',
+    image: '/neutrals/neutralize.png'
+  },
   switcharoo: {
     title: 'switcharoo',
     displayTitle: 'Switcharoo',

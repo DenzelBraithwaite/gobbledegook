@@ -26,6 +26,8 @@
   let loseMessage = '';
   let turnCount = 0;
   let showSpinner = false;
+  let eventMessage = '';
+  let showEventMessage = false;
   let remoteCardDetails = {...$cardDetails}; // This is because deckDetails will differ between client and remote, e.g. voidRunner.
   // Deck players draw from, includes all race decks
   let fullDeck = {
@@ -117,6 +119,12 @@
       player1.set(data.player1);
       player2.set(data.player2);
     });
+
+    // Handles neutralize card
+    socket.on('deck-neutralized', () => neutralizeDeck());
+
+    // Handles displaying events
+    socket.on('event-displayed', card => showEvent(card));
 
     // Handles card discard for all users
     socket.on('card-discarded', data => {
@@ -591,6 +599,9 @@
   };
 
   function swapHands() {
+    // Show switcharoo message for both playesr
+    socket.emit('display-event', 'switcharoo');
+
       let tempHand = [...$player2.hand];
 
       player2.update(store => {
@@ -1045,7 +1056,50 @@
     if (card === 'vision') player.hasVision = true;
 
     // Add turn to turnCount if card is Ticktock
-    if (card === 'ticktock') socket.emit('increase-turn-count');
+    if (card === 'ticktock') {
+      socket.emit('increase-turn-count');
+      socket.emit('display-event', 'ticktock');
+    }
+
+    // If card is neutralize, reset boosts and traps
+    if (card === 'neutralize') socket.emit('neutralize-deck');
+
+    // If card is xenoBloom, let both players know they received 15 xeno points
+    if (card === 'xenoBloom') socket.emit('display-event', 'xenoBloom');
+  }
+
+  // Neutralizes deeck (remove boosts / traps in effect)
+  function neutralizeDeck() {
+    socket.emit('display-event', 'neutralize');
+
+      player1.update(store => {
+        store.boosts = [];
+        store.traps = [];
+        store.neutrals = [];
+        store.chargeDrawnTurns = [];
+        store.infectDrawnTurns = [];
+        store.hasChastity = false;
+        store.hasCorruption = false;
+        store.hasVision = false;
+        store.isExposed = false;
+        store.chargePoints = 0;
+        store.infectPoints = 0;
+        return store;
+      });
+      player2.update(store => {
+        store.boosts = [];
+        store.traps = [];
+        store.neutrals = [];
+        store.chargeDrawnTurns = [];
+        store.infectDrawnTurns = [];
+        store.hasChastity = false;
+        store.hasCorruption = false;
+        store.hasVision = false;
+        store.isExposed = false;
+        store.chargePoints = 0;
+        store.infectPoints = 0;
+        return store;
+      });
   }
 
   // Handles neutral cards at the end of the game
@@ -1062,6 +1116,17 @@
         })
       }
     });
+  }
+
+  // Show visual feedback for certain events
+  function showEvent(card) {
+    showEventMessage = true;
+    setTimeout(() => showEventMessage = false, 2000);
+
+    if (card === 'neutralize') eventMessage = "Neutralized!";
+    if (card === 'switcharoo') eventMessage = "Switcharoo!";
+    if (card === 'xenoBloom') eventMessage = "XenoBloom!";
+    if (card === 'ticktock') eventMessage = "Tick Tock!";
   }
 </script>
 
@@ -1283,7 +1348,10 @@
       <Spinner />
     {/if}
 
-    <div class="game-board {gobbledegookDeclared ? 'gobble-declared' : ''}">
+    <div class="game-board {showEventMessage ? 'game-event' : ''} {gobbledegookDeclared ? 'gobble-declared' : ''}">
+      {#if showEventMessage}
+        <p class="game-event-message" in:fade>{eventMessage}</p>
+      {/if}
       <div class="card-section card-section__ally {$player1.turn || $player1.justWon ? "section-active" : ""}">
         <p class="p1-name {$player1.turn ? "turn-active" : ""}">Player 1</p>
         {#each $player1.hand as card}
@@ -1453,6 +1521,26 @@
     border: 10px dotted #e29836;
   }
 
+  .game-event {
+    border: 10px dotted #6fff9340;
+
+    .game-event-message {
+      font-weight: bold;
+      display: block;
+      z-index: 2;
+      position: absolute;
+      bottom: 50%;
+      right: 50%;
+      transform: translate(50%, 50%);
+      font-size: 5rem;
+      color: #6fff93;
+      text-shadow: 2px 2px 4px #000000;
+      background: linear-gradient(214deg, #ddceee50, #855a2a50, #69c0ad50, #78c06950, #c0736950, #c2a84c50);
+      padding: 5rem;
+      border-radius: 100px;
+    }
+  }
+
   .card-section {
     width: 85%;
     padding: 1rem;
@@ -1539,6 +1627,10 @@
   /* Utility */
   .margin-bottom-sm {
     margin-bottom: 1rem;
+  }
+
+  .hide {
+    display: none;
   }
 
   /* For smaller devices */

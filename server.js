@@ -84,6 +84,12 @@ io.on('connection', socket => {
   // Swap hand
   socket.on('swap-hands', data => socket.broadcast.emit('hands-swapped', data));
 
+  // Display event message like switcharoo
+  socket.on('display-event', data => io.emit('event-displayed', data));
+
+  // Neutralize deck
+  socket.on('neutralize-deck', () => io.emit('deck-neutralized'));
+
   // Increase turn count
   socket.on('increase-turn-count', () => io.emit('turn-count-increased'));
 
