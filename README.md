@@ -2,7 +2,6 @@
 ### A fantasy card game.
 
 ![Gobbledegook screenshot, game in progress](./gdg_start.png)
-![Gobbledegook screenshot, game not started](./gdg_board_screenshot.png)
 
 <br>
 <br>
@@ -11,6 +10,8 @@
 
 Gobbledegook is a 2 player card game where players need to collect 5 cards of the same race to win. The rules are nowhere near that simple though, since the main goal is simply to have more points at the end of the game. The game ends whenever one player calls "Gobbledegook"(_hereafter GDG_) by clicking the GDG button in the middle of the board. Different races have different strengths and risks with the Goblins being the most rewarding. The game is currently played on a LAN network, meaning people can play on any device they want (although designed for large screens) as long as they are on the same network. I have no plans on releasing this game to the general public because I do not own a lot of the card art, so it is more of a project intended for me to play with my friends privately. At the time of writing this, there are 6 races; Goblins, Humans, Elves, Dwarves, Beasts and Bots (_with aliens possibly making an appearance one day_).
 
+![Gobbledegook screenshot, game not started](./gdg_board_screenshot.png)
+
 <br>
 
 **What's the gameplay like?**
@@ -18,7 +19,7 @@ Gobbledegook is a 2 player card game where players need to collect 5 cards of th
 Each user takes a turn by first drawing a card and then discarding a card. If the player thinks they have more points than their opponent, they may press the GDG button on their turn, but only after 3 turns to avoid an instant GDG click on a lucky hand. Once the gobbledegook has been declared, the opponent has 1 more turn before the results are announced. It should also be noted that each deck has a leader which significantly buffs their race, players should aim to have at least one leader before calling Gobbledegook.
 
 ![Gobbledegook screenshot](./gdg_end_1.png)
-![Gobbledegook screenshot](./gdg_end_1.png)
+![Gobbledegook screenshot](./gdg_end_2.png)
 
 <br>
 
