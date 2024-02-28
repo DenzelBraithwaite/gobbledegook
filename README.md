@@ -1,7 +1,8 @@
 # Gobbledegook
 ### A fantasy card game.
 
-![Gobbledegook screenshot](./gdg_screenshot.png)
+![Gobbledegook screenshot, game not started](./gdg_screenshot.png)
+![Gobbledegook screenshot, game in progress](./gdg_start.png)
 
 <br>
 <br>
@@ -16,13 +17,17 @@ Gobbledegook is a 2 player card game where players need to collect 5 cards of th
 
 Each user takes a turn by first drawing a card and then discarding a card. If the player thinks they have more points than their opponent, they may press the GDG button on their turn, but only after 3 turns to avoid an instant GDG click on a lucky hand. Once the gobbledegook has been declared, the opponent has 1 more turn before the results are announced. It should also be noted that each deck has a leader which significantly buffs their race, players should aim to have at least one leader before calling Gobbledegook.
 
-![Gobbledegook screenshot](./gdg_online.png)
+![Gobbledegook screenshot](./gdg_end_1.png)
+![Gobbledegook screenshot](./gdg_end_1.png)
 
 <br>
 
 **What about mobile?**
 
 This game is currently not released to the general public and is not optimized for mobile. However, the game can be played on a phone it just looks ugly, I do plan on refining a mobile version but it's lower down on the list of priorities.
+
+![Gobbledegook screenshot](./gdg_mobile.png)
+
 
 <br>
 
