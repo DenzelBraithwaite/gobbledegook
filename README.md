@@ -1,8 +1,8 @@
 # Gobbledegook
 ### A fantasy card game.
 
-![Gobbledegook screenshot, game not started](./gdg_screenshot.png)
 ![Gobbledegook screenshot, game in progress](./gdg_start.png)
+![Gobbledegook screenshot, game not started](./gdg_board_screenshot.png)
 
 <br>
 <br>
