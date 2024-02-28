@@ -27,7 +27,7 @@ Each user takes a turn by first drawing a card and then discarding a card. If th
 
 This game is currently not released to the general public and is not optimized for mobile. However, the game can be played on a phone it just looks ugly, I do plan on refining a mobile version but it's lower down on the list of priorities.
 
-![Gobbledegook screenshot](./gdg_mobile.png)
+![Gobbledegook screenshot](./gdg_mobile_shot.png)
 
 
 <br>
