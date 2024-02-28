@@ -9,7 +9,7 @@
   import { player1, player1Reset, player2, player2Reset, cardDetails, beastDeck, botDeck, dwarfDeck, elfDeck, goblinDeck, humanDeck, xenoDeck, boostDeck,  trapDeck, neutralDeck } from '../stores';
 
   // Custom components
-  import { Button, Spinner } from './index';
+  import { Button, Spinner, RacePoints } from './index';
   import GGCard from './Card.svelte';
 
   // Websocket
@@ -31,13 +31,13 @@
   let remoteCardDetails = {...$cardDetails}; // This is because deckDetails will differ between client and remote, e.g. voidRunner.
   // Deck players draw from, includes all race decks
   let fullDeck = {
-    // beasts: [...$beastDeck],
-    // bots: [...$botDeck],
+    beasts: [...$beastDeck],
+    bots: [...$botDeck],
     dwarves: [...$dwarfDeck],
-    // elves: [...$elfDeck],
-    // goblins: [...$goblinDeck],
-    // humans: [...$humanDeck],
-    // xenos: [...$xenoDeck],
+    elves: [...$elfDeck],
+    goblins: [...$goblinDeck],
+    humans: [...$humanDeck],
+    xenos: [...$xenoDeck],
     boosts: [...$boostDeck],
     traps: [...$trapDeck],
     neutrals: [...$neutralDeck]
@@ -55,15 +55,15 @@
     // Sets users (Beware that p1 might be titled player 2 and vice versa due to server.js)
     socket.on('set-users', users => {
       Object.entries(users).forEach(([username, userId]) => {
-        player1.update(store => {
-          store.id = users['p1'];
-          return store;
+        player1.update($player1 => {
+          $player1.id = users['p1'];
+          return $player1;
         });
         player1Reset.set({...$player1});
 
-        player2.update(store => {
-          store.id = users['p2'];
-          return store;
+        player2.update($player2 => {
+          $player2.id = users['p2'];
+          return $player2;
         });
         player2Reset.set({...$player2});
 
@@ -86,18 +86,18 @@
 
     // Handles turn change for all users
     socket.on('turn-changed', data => {
-      player1.update(store => {
-        store.turn = !data.player1.turn;
-        store.playingTwice = false;
-        store.hasVision = false;
-        return store;
+      player1.update($player1 => {
+        $player1.turn = !data.player1.turn;
+        $player1.playingTwice = false;
+        $player1.hasVision = false;
+        return $player1;
       });
 
-      player2.update(store => {
-        store.turn = !data.player2.turn;
-        store.playingTwice = false;
-        store.hasVision = false;
-        return store;
+      player2.update($player2 => {
+        $player2.turn = !data.player2.turn;
+        $player2.playingTwice = false;
+        $player2.hasVision = false;
+        return $player2;
       });
     });
 
@@ -181,13 +181,13 @@
     startBtnDisabled = false;
     gobbledegookDisabled = true;
     
-    player1.update(store => {
-      store.turn = false;
-      return store;
+    player1.update($player1 => {
+      $player1.turn = false;
+      return $player1;
     });
-    player2.update(store => {
-      store.turn = false;
-      return store;
+    player2.update($player2 => {
+      $player2.turn = false;
+      return $player2;
     });
 
     calculateTotalPoints($player1, $player2);
@@ -210,13 +210,13 @@
 
     // Reset Deck
     fullDeck = {
-      // beasts: [...$beastDeck],
-      // bots: [...$botDeck],
+      beasts: [...$beastDeck],
+      bots: [...$botDeck],
       dwarves: [...$dwarfDeck],
-      // elves: [...$elfDeck],
-      // goblins: [...$goblinDeck],
-      // humans: [...$humanDeck],
-      // xenos: [...$xenoDeck],
+      elves: [...$elfDeck],
+      goblins: [...$goblinDeck],
+      humans: [...$humanDeck],
+      xenos: [...$xenoDeck],
       boosts: [...$boostDeck],
       traps: [...$trapDeck],
       neutrals: [...$neutralDeck]
@@ -363,16 +363,16 @@
 
     // Need to reassign for svelte to be reactive
     if ($player1 === player) {
-      player1.update(store => {
-        store.hand = player.hand;
-        store.startingHand = player.hand;
-        return store;
+      player1.update($player1 => {
+        $player1.hand = player.hand;
+        $player1.startingHand = player.hand;
+        return $player1;
       });
     } else {
-      player2.update(store => {
-        store.hand = player.hand;
-        store.startingHand = player.hand;
-        return store;
+      player2.update($player2 => {
+        $player2.hand = player.hand;
+        $player2.startingHand = player.hand;
+        return $player2;
       });
     }
   }
@@ -498,16 +498,16 @@
 
     // Checks if player is player 1 or 2, then adds card to hand
     if (playingAs() === 'p1') {
-      player1.update(store => {
-        store.hand = [...store.hand, cardDrawn];
-        store.cardsDrawn = [...player.cardsDrawn, cardDrawn];
-        return store;
+      player1.update($player1 => {
+        $player1.hand = [...$player1.hand, cardDrawn];
+        $player1.cardsDrawn = [...player.cardsDrawn, cardDrawn];
+        return $player1;
       });
     } else {
-      player2.update(store => {
-        store.hand = [...store.hand, cardDrawn];
-        store.cardsDrawn = [...player.cardsDrawn, cardDrawn];
-        return store;
+      player2.update($player2 => {
+        $player2.hand = [...$player2.hand, cardDrawn];
+        $player2.cardsDrawn = [...player.cardsDrawn, cardDrawn];
+        return $player2;
       });
     }
     
@@ -555,17 +555,17 @@
     // Using store update methods instead of player var ^
     if ($player1.turn) {
       const index = $player1.hand.indexOf(card);
-      player1.update(store => {
-        store.hand.splice(index, 1);
-        store.discards = [...store.discards, card];
-        return store;
+      player1.update($player1 => {
+        $player1.hand.splice(index, 1);
+        $player1.discards = [...$player1.discards, card];
+        return $player1;
       });
     } else if ($player2.turn) {
       const index = $player2.hand.indexOf(card);
-      player2.update(store => {
-        store.hand.splice(index, 1);
-        store.discards = [...store.discards, card];
-        return store;
+      player2.update($player2 => {
+        $player2.hand.splice(index, 1);
+        $player2.discards = [...$player2.discards, card];
+        return $player2;
       });
    }
 
@@ -604,13 +604,13 @@
 
       let tempHand = [...$player2.hand];
 
-      player2.update(store => {
-        store.hand = [...$player1.hand];
-        return store;
+      player2.update($player2 => {
+        $player2.hand = [...$player1.hand];
+        return $player2;
       });
-      player1.update(store => {
-        store.hand = [...tempHand];
-        return store;
+      player1.update($player1 => {
+        $player1.hand = [...tempHand];
+        return $player1;
       });
 
     // Let clients know hands swapped
@@ -652,87 +652,73 @@
   // Display game results
   function determineWinner() {
     if($player1.highestPoints > $player2.highestPoints) {
-      player1.update(store => {
-        store.justWon = true;
-        store.wins += 1;
-        return store;
+      player1.update($player1 => {
+        $player1.wins += 1;
+        return $player1;
       });
-      player1Reset.update(store => {
-        store.wins += 1;
-        return store;
+      player1Reset.update($player1Reset => {
+        $player1Reset.wins += 1;
+        return $player1Reset;
       });
-      player2.update(store => {
-        store.losses += 1;
-        return store;
+      player2.update($player2 => {
+        $player2.losses += 1;
+        return $player2;
       });
-      player2Reset.update(store => {
-        store.losses += 1;
-        return store;
+      player2Reset.update($player2Reset => {
+        $player2Reset.losses += 1;
+        return $player2Reset;
       });
 
       winMessage = `Player 1 is the winner with ${$player1.highestPoints} points!🎊🥳🍾`;
       loseMessage = `Player 2 loses with ${$player2.highestPoints} points...${$player2.highestPoints <= 0 ? '💩💩💩' : '💩'}`;
     } else if($player2.highestPoints > $player1.highestPoints) {
-      player1.update(store => {
-        store.losses += 1;
-        return store;
+      player1.update($player1 => {
+        $player1.losses += 1;
+        return $player1;
       });
-      player1Reset.update(store => {
-        store.losses += 1;
-        return store;
+      player1Reset.update($player1Reset => {
+        $player1Reset.losses += 1;
+        return $player1Reset;
       });
-      player2.update(store => {
-        store.justWon = true;
-        store.wins += 1;
-        return store;
+      player2.update($player2 => {
+        $player2.wins += 1;
+        return $player2;
       });
-      player2Reset.update(store => {
-        store.wins += 1;
-        return store;
+      player2Reset.update($player2Reset => {
+        $player2Reset.wins += 1;
+        return $player2Reset;
       });
 
       winMessage = `Player 2 is the winner with ${$player2.highestPoints} points!🎊🥳🍾`;
       loseMessage = `Player 1 loses with ${$player1.highestPoints} points...${$player1.highestPoints <= 0 ? '💩💩💩' : '💩'}`;
     } else if ($player1.highestPoints === 500_000 && $player2.highestPoints === 500_000) {
-      player1.update(store => {
-        store.justWon = true;
-        store.draws += 1;
-        return store;
+      player1.update($player1 => {
+        $player1.draws += 1;
+        return $player1;
       });
-      player1Reset.update(store => {
-        store.draws += 1;
-        return store;
+      player1Reset.update($player1Reset => {
+        $player1Reset.draws += 1;
+        return $player1Reset;
       });
-      player2.update(store => {
-        store.justWon = true;
-        store.draws += 1;
-        return store;
+      player2.update($player2 => {
+        $player2.draws += 1;
+        return $player2;
       });
-      player2Reset.update(store => {
-        store.draws += 1;
-        return store;
+      player2Reset.update($player2Reset => {
+        $player2Reset.draws += 1;
+        return $player2Reset;
       });
 
       winMessage = `It seems neither the goblins nor the elves want to go to war with each other while their leaders are on the field...`;
       loseMessage = " it's a draw!😓😓😓"
     } else {
-      player1.update(store => {
-        store.justWon = true;
-        store.draws += 1;
-        return store;
+      player1.update($player1 => {
+        $player1.draws += 1;
+        return $player1;
       });
-      player1.update(store => {
-        store.draws += 1;
-        return store;
-      });
-      player2.update(store => {
-        store.justWon = true;
-        store.draws += 1;
-        return store;
-      });
-      player2.update(store => {
-        store.draws += 1;
-        return store;
+      player2.update($player2 => {
+        $player2.draws += 1;
+        return $player2;
       });
 
       winMessage = `Player 1 had ${$player1.highestPoints} points and player 2 had ${$player2.highestPoints} points...`;
@@ -825,6 +811,7 @@
     // Handles end game neutral cards
     endGameNeutralHandler(player);
 
+    // FIXME: for some reason, after xenobloom, it coints the points but doesn't recognize that xenos are the highest points.
     player.highestPoints = Math.max(
       player.points.beasts,
       player.points.bots,
@@ -1072,33 +1059,33 @@
   function neutralizeDeck() {
     socket.emit('display-event', 'neutralize');
 
-      player1.update(store => {
-        store.boosts = [];
-        store.traps = [];
-        store.neutrals = [];
-        store.chargeDrawnTurns = [];
-        store.infectDrawnTurns = [];
-        store.hasChastity = false;
-        store.hasCorruption = false;
-        store.hasVision = false;
-        store.isExposed = false;
-        store.chargePoints = 0;
-        store.infectPoints = 0;
-        return store;
+      player1.update($player1 => {
+        $player1.boosts = [];
+        $player1.traps = [];
+        $player1.neutrals = [];
+        $player1.chargeDrawnTurns = [];
+        $player1.infectDrawnTurns = [];
+        $player1.hasChastity = false;
+        $player1.hasCorruption = false;
+        $player1.hasVision = false;
+        $player1.isExposed = false;
+        $player1.chargePoints = 0;
+        $player1.infectPoints = 0;
+        return $player1;
       });
-      player2.update(store => {
-        store.boosts = [];
-        store.traps = [];
-        store.neutrals = [];
-        store.chargeDrawnTurns = [];
-        store.infectDrawnTurns = [];
-        store.hasChastity = false;
-        store.hasCorruption = false;
-        store.hasVision = false;
-        store.isExposed = false;
-        store.chargePoints = 0;
-        store.infectPoints = 0;
-        return store;
+      player2.update($player2 => {
+        $player2.boosts = [];
+        $player2.traps = [];
+        $player2.neutrals = [];
+        $player2.chargeDrawnTurns = [];
+        $player2.infectDrawnTurns = [];
+        $player2.hasChastity = false;
+        $player2.hasCorruption = false;
+        $player2.hasVision = false;
+        $player2.isExposed = false;
+        $player2.chargePoints = 0;
+        $player2.infectPoints = 0;
+        return $player2;
       });
   }
 
@@ -1106,13 +1093,13 @@
   function endGameNeutralHandler(player) {
     player.neutrals.forEach(neutral => {
       if (neutral === 'xenoBloom') {
-        player1.update(store => {
-          store.points.xenos += 15;
-          return store;
+        player1.update($player1 => {
+          $player1.points.xenos += 15;
+          return $player1;
         })
-        player2.update(store => {
-          store.points.xenos += 15;
-          return store;
+        player2.update($player2 => {
+          $player2.points.xenos += 15;
+          return $player2;
         })
       }
     });
@@ -1144,24 +1131,26 @@
           <p class="margin-bottom-sm">{loseMessage}</p>
 
           <p>Player1 Boosts: </p>
-          <p>Charge boost points: {$player1.chargePoints}</p>
           {#each $player1.boosts as boost}
-            <span>{boost} &nbsp;</span>
+            <span class="color-blue">{boost} &nbsp;</span>
           {/each}
-          <br class="margin-bottom-sm">
+          <p class="margin-bottom-sm">Charge boost points: <span class="color-blue">{$player1.chargePoints}</span></p>
 
           <p>Player1 Traps: </p>
-          <p>Infect trap penalty: {$player1.infectPoints}</p>
           <span>Trap cards: </span>
           {#each $player1.traps as trap}
-            <span>{trap} &nbsp;</span>
+            <span class="color-red">{trap} &nbsp;</span>
           {/each}
-          <br class="margin-bottom-sm">
+          <p class="margin-bottom-sm">Infect trap penalty: <span class="color-red">{$player1.infectPoints}</span></p>
 
           <span>Neutral cards: </span>
           {#each $player1.neutrals as neutral}
-            <span>{neutral} &nbsp;</span>
+            <span class="color-purple">{neutral} &nbsp;</span>
           {/each}
+
+          <!-- Show all race points -->
+          <RacePoints player={$player1}/>
+
           <h2 class="results-player-floating-header results-player-float-left">Player 1</h2>
         </div>
         <div>
@@ -1170,25 +1159,27 @@
 
 
           <p>Player2 Boosts: </p>
-          <p>Charge boost points: {$player2.chargePoints}</p>
           <span>Boost cards: </span>
           {#each $player2.boosts as boost}
-            <span>{boost} &nbsp;</span>
+            <span class="color-blue">{boost} &nbsp;</span>
           {/each}
-          <br class="margin-bottom-sm">
+          <p class="margin-bottom-sm">Charge boost points: <span class="color-blue">{$player2.chargePoints}</span></p>
 
           <p>Player2 Traps: </p>
-          <p>Infect trap penalty: {$player2.infectPoints}</p>
           <span>Trap cards: </span>
           {#each $player2.traps as trap}
-            <span>{trap} &nbsp;</span>
+            <span class="color-red">{trap} &nbsp;</span>
           {/each}
-          <br class="margin-bottom-sm">
+          <p class="margin-bottom-sm">Infect trap penalty: <span class="color-red">{$player2.infectPoints}</span></p>
 
           <span>Neutral cards: </span>
-          {#each $player1.neutrals as neutral}
-            <span>{neutral} &nbsp;</span>
+          {#each $player2.neutrals as neutral}
+            <span class="color-purple">{neutral} &nbsp;</span>
           {/each}
+
+          <!-- Show all race points -->
+          <RacePoints player={$player2}/>
+
           <h2 class="results-player-floating-header results-player-float-right">Player 2</h2>
           <h2 class="results-player-floating-header results-turn-count-float-middle">Turn count: {turnCount}</h2>
         </div>
@@ -1352,7 +1343,7 @@
       {#if showEventMessage}
         <p class="game-event-message" in:fade>{eventMessage}</p>
       {/if}
-      <div class="card-section card-section__ally {$player1.turn || $player1.justWon ? "section-active" : ""}">
+      <div class="card-section card-section__ally {$player1.turn ? "section-active" : ""}">
         <p class="p1-name {$player1.turn ? "turn-active" : ""}">Player 1</p>
         {#each $player1.hand as card}
           <GGCard
@@ -1370,7 +1361,7 @@
           />
         {/each}
       </div>
-      <div class="card-section card-section__enemy {$player2.turn || $player2.justWon ? "section-active" : ""}">
+      <div class="card-section card-section__enemy {$player2.turn ? "section-active" : ""}">
         <p class="p2-name {$player2.turn ? "turn-active" : ""}">Player 2</p>
         {#each $player2.hand as card}
           <GGCard
@@ -1433,6 +1424,7 @@
   }
   }
   .results-messages-flex-wrapper {
+    position: relative;
     padding: 1rem;
     background-color: #000000d1;
     box-shadow: 0 4px 8px #00000082;
@@ -1446,9 +1438,6 @@
 
     display: flex;
     justify-content: space-evenly;
-
-    position: sticky;
-    top: 0;
   }
   
   .results-player-floating-header {
@@ -1631,6 +1620,46 @@
 
   .hide {
     display: none;
+  }
+
+  .bold {
+    font-weight: bold;
+  }
+
+  .color-red {
+    color: rgb(211, 41, 41);
+  }
+
+  .color-blue {
+    color: #324277;
+  }
+
+  .color-green {
+    color: #327738;
+  }
+
+  .color-brown {
+    color: #55431e;
+  }
+
+  .color-grey {
+    color: #424242;
+  }
+
+  .color-maroon {
+    color: #c07369;
+  }
+
+  .color-purple {
+    color: #462e59;
+  }
+
+  .color-silver {
+    color: #ddceee;
+  }
+
+  .color-yellow {
+    color: #8e7419;
   }
 
   /* For smaller devices */
