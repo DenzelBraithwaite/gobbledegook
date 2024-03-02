@@ -33,9 +33,9 @@
 
   .round {
     font-weight: bold;
-    font-size: 1.25rem;
-    height: 10rem;
-    width: 10rem;
+    font-size: 1.75rem;
+    height: 9rem;
+    width: 9rem;
     border-radius: 50%;
     text-align: center;
     font-family: Roboto;
@@ -159,9 +159,21 @@
     }
 
     .round {
-      font-size: 0.5rem;
-      height: 5rem;
-      width: 5rem;
+      font-size: 1rem;
+      height: 6rem;
+      width: 6rem;
+    } 
+  }
+
+  @media only screen and (max-width: 800px) {
+    button {
+      padding: 0.4rem;
+    }
+
+    .round {
+      font-size: 0.75rem;
+      height: 4rem;
+      width: 4rem;
     } 
   }
 </style>

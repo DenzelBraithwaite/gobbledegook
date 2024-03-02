@@ -9,15 +9,17 @@
   import { player1, player1Reset, player2, player2Reset, cardDetails, beastDeck, botDeck, dwarfDeck, elfDeck, goblinDeck, humanDeck, xenoDeck, boostDeck,  trapDeck, neutralDeck } from '../stores';
 
   // Custom components
-  import { Button, Spinner, RacePoints } from './index';
+  import { Button, Library, Spinner, RacePoints } from './index';
   import GGCard from './Card.svelte';
 
   // Websocket
   import { io } from 'socket.io-client';
   // import { emitKeypressEvents } from 'readline';
 
-  let socket = io('http://192.168.2.10:6912'); // Thanos
+  // let socket = io('http://10.3.144.164:6912'); // HO
+  // let socket = io('http://192.168.2.10:6912'); // Thanos
   // let socket = io('http://192.168.2.21:6912'); // MacBook
+  let socket = io('http://192.168.2.51:6912'); // Mat's place
   let gobbledegookDeclared = false;
   let gobbledegookDisabled = false;
   let startBtnDisabled = false;
@@ -27,6 +29,7 @@
   let turnCount = 0;
   let showSpinner = false;
   let eventMessage = '';
+  let libraryVisible = false;
   let showEventMessage = false;
   let remoteCardDetails = {...$cardDetails}; // This is because deckDetails will differ between client and remote, e.g. voidRunner.
   // Deck players draw from, includes all race decks
@@ -639,7 +642,7 @@
       setTimeout(() => {
         socket.emit('end-game');
         showSpinner = false;
-      }, 1500);
+      }, 2000);
       
     } else {
       console.log('Gobbledegook declared!!');
@@ -1106,6 +1109,7 @@
   }
 
   // Show visual feedback for certain events
+  // TODO: turn change flash
   function showEvent(card) {
     showEventMessage = true;
     setTimeout(() => showEventMessage = false, 2000);
@@ -1115,16 +1119,31 @@
     if (card === 'xenoBloom') eventMessage = "XenoBloom!";
     if (card === 'ticktock') eventMessage = "Tick Tock!";
   }
+
+  // Toggles card library visibility
+  function viewLibraryHandler() {
+    libraryVisible = !libraryVisible;
+  }
 </script>
 
-<main>
-  {#if !startBtnDisabled}
-    <Button on:click={startGame} customClasses="btn__green w-25">Start game</Button>
+<main class="main-content">
+  <!-- Card Library -->
+  <!-- svelte-ignore a11y-click-events-have-key-events -->
+  <svg on:click={viewLibraryHandler} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="card-library-btn">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
+  </svg>
+  {#if libraryVisible}
+    <Library />
   {/if}
 
   <!-- Eng game view -->
   {#if winMessage}
     <div class="results-screen" transition:fade>
+      <!-- Play again btn -->
+      {#if !startBtnDisabled}
+        <span class="play-again-btn"><Button on:click={startGame} round={true} customClasses="btn__green">Rematch</Button></span>
+      {/if}
+
       <div class="results-messages-flex-wrapper">
         <div>
           <p>{winMessage}</p>
@@ -1196,8 +1215,6 @@
               displayTitle={$cardDetails[card].displayTitle}
               title={$cardDetails[card].title}
               img={$cardDetails[card].image}
-              trait={$cardDetails[card].trait}
-              traitTitle={$cardDetails[card].traitTitle}
               race={$cardDetails[card].race}
               rarity={$cardDetails[card].rarity}
               points={endGameXenoPointHandler(card, 'p1')}
@@ -1212,8 +1229,6 @@
              displayTitle={$cardDetails[card].displayTitle}
              title={$cardDetails[card].title}
              img={$cardDetails[card].image}
-              trait={$cardDetails[card].trait}
-              traitTitle={$cardDetails[card].traitTitle}
              race={$cardDetails[card].race}
              rarity={$cardDetails[card].rarity}
              points={endGameXenoPointHandler(card, 'p1')}
@@ -1230,8 +1245,6 @@
                 displayTitle={$cardDetails[card].displayTitle}
                 title={$cardDetails[card].title}
                 img={$cardDetails[card].image}
-                trait={$cardDetails[card].trait}
-                traitTitle={$cardDetails[card].traitTitle}
                 race={$cardDetails[card].race}
                 rarity={$cardDetails[card].rarity}
                 points={endGameXenoPointHandler(card, 'p1')}
@@ -1247,8 +1260,6 @@
                displayTitle={$cardDetails[card].displayTitle}
                title={$cardDetails[card].title}
                img={$cardDetails[card].image}
-               trait={$cardDetails[card].trait}
-               traitTitle={$cardDetails[card].traitTitle}
                race={$cardDetails[card].race}
                rarity={$cardDetails[card].rarity}
                points={endGameXenoPointHandler(card, 'p1')}
@@ -1269,8 +1280,6 @@
                displayTitle={$cardDetails[card].displayTitle}
                title={$cardDetails[card].title}
                img={$cardDetails[card].image}
-               trait={$cardDetails[card].trait}
-               traitTitle={$cardDetails[card].traitTitle}
                race={$cardDetails[card].race}
                rarity={$cardDetails[card].rarity}
                points={endGameXenoPointHandler(card, 'p2')}
@@ -1285,8 +1294,6 @@
              displayTitle={$cardDetails[card].displayTitle}
              title={$cardDetails[card].title}
              img={$cardDetails[card].image}
-             trait={$cardDetails[card].trait}
-             traitTitle={$cardDetails[card].traitTitle}
              race={$cardDetails[card].race}
              rarity={$cardDetails[card].rarity}
              points={endGameXenoPointHandler(card, 'p2')}
@@ -1303,8 +1310,6 @@
                displayTitle={$cardDetails[card].displayTitle}
                title={$cardDetails[card].title}
                img={$cardDetails[card].image}
-               trait={$cardDetails[card].trait}
-               traitTitle={$cardDetails[card].traitTitle}
                race={$cardDetails[card].race}
                rarity={$cardDetails[card].rarity}
                points={endGameXenoPointHandler(card, 'p2')}
@@ -1320,8 +1325,6 @@
                displayTitle={$cardDetails[card].displayTitle}
                title={$cardDetails[card].title}
                img={$cardDetails[card].image}
-               trait={$cardDetails[card].trait}
-               traitTitle={$cardDetails[card].traitTitle}
                race={$cardDetails[card].race}
                rarity={$cardDetails[card].rarity}
                points={endGameXenoPointHandler(card, 'p2')}
@@ -1383,10 +1386,12 @@
       <div class="game-buttons">
         <h1 class="turn-count">Turn {turnCount}</h1>
         <GGCard on:click={deckClickHandler} faceUp={false} />
-        {#if gobbledegookDisabled || turnCount < 5}
-          <Button round={true} customClasses="btn__orange_disabled">Gobbledegook!</Button>
+        {#if !startBtnDisabled}
+          <Button on:click={startGame} round={true} customClasses="btn__green">Start</Button>
+        {:else if gobbledegookDisabled || turnCount < 5}
+          <Button round={true} customClasses="btn__orange_disabled">GDG</Button>
         {:else}
-          <Button on:click={gobbledegook} round={true} customClasses="btn__orange">Gobbledegook!</Button>
+          <Button on:click={gobbledegook} round={true} customClasses="btn__orange">GDG</Button>
         {/if}
       </div>
       {#if startBtnDisabled}
@@ -1398,16 +1403,40 @@
 
 
 <style lang="scss">
+  .main-content {
+    position: relative;
+    overflow-y: hidden;
+  }
+
+  .card-library-btn {
+    border-radius: 0.5rem;
+    z-index: 6; // 1 higher than library to make sure it's never hidden behind.
+    stroke: #327738;
+    fill: #32773874;
+    stroke-width: 2;
+    width: 3rem;
+    transition: scale 0.1s ease-out;
+
+    position: absolute;
+    top: 0;
+    right: 1rem;
+
+    &:hover {
+      cursor: pointer;
+      scale: 1.1;
+    }
+  }
+
   /* Game End */
   .results-screen {
     z-index: 1;
-    width: 95%;
-    height: 85dvh;
+    width: 95dvw;
+    height: 95dvh;
     font-size: 1.25rem;
     padding: 1rem;
     color: #fff;
     background: linear-gradient(214deg, #ddceee50, #855a2a50, #69c0ad50, #78c06950, #c0736950, #c2a84c50);
-    box-shadow: 0 4px 20px #000000;
+    box-shadow: 0 4px 20px #00000085;
     border: 10px double #976f39bd;
     border-radius: 0.5rem;
     margin: 1rem auto 0.25rem;
@@ -1420,9 +1449,10 @@
     grid-template-columns: repeat(2, 1fr);
 
     &::-webkit-scrollbar {
-    appearance: none;
+      appearance: none;
+    }
   }
-  }
+
   .results-messages-flex-wrapper {
     position: relative;
     padding: 1rem;
@@ -1490,11 +1520,11 @@
 
   .game-board {
     position: relative;
-    height: 90dvh;
-    width: 90dvw;
+    height: 95dvh;
+    width: 95dvw;
     padding: 0.5rem;
     max-width: 1500px;
-    margin: 1rem auto;
+    margin: 0 auto;
     border-radius: 1rem;
     background-color: #200f009d;
     box-shadow: 0 4px 20px #000000;
@@ -1511,7 +1541,7 @@
   }
 
   .game-event {
-    border: 10px dotted #6fff9340;
+    border: 10px dotted #462e59;
 
     .game-event-message {
       font-weight: bold;
@@ -1521,19 +1551,19 @@
       bottom: 50%;
       right: 50%;
       transform: translate(50%, 50%);
-      font-size: 5rem;
-      color: #6fff93;
+      font-size: 4rem;
+      color: #6a428b;
       text-shadow: 2px 2px 4px #000000;
       background: linear-gradient(214deg, #ddceee50, #855a2a50, #69c0ad50, #78c06950, #c0736950, #c2a84c50);
-      padding: 5rem;
+      padding: 4rem;
       border-radius: 100px;
     }
   }
 
   .card-section {
-    width: 85%;
-    padding: 1rem;
-    height: 32%;
+    width: 95%;
+    padding: 1rem 0;
+    height: 30%;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -1585,7 +1615,7 @@
     color: #b77a5e;
     
     position: absolute;
-    bottom: 16.5rem;
+    top: -1.6rem;
     right: 0;
   }
 
@@ -1595,7 +1625,7 @@
     color: #b77a5e;
     
     position: absolute;
-    top: 17.5rem;
+    bottom: -1.6rem;
     left: 0;
   }
 
@@ -1613,6 +1643,14 @@
     align-items: center;
   }
 
+  .play-again-btn {
+    font-size: 1.5rem;
+    position: absolute;
+    bottom: 0;
+    right: 46%; // to center between discards
+    transform: translateY(42%);
+  }
+
   /* Utility */
   .margin-bottom-sm {
     margin-bottom: 1rem;
@@ -1627,11 +1665,11 @@
   }
 
   .color-red {
-    color: rgb(211, 41, 41);
+    color: #d32929;
   }
 
   .color-blue {
-    color: #324277;
+    color: #40559a;
   }
 
   .color-green {
@@ -1651,7 +1689,7 @@
   }
 
   .color-purple {
-    color: #462e59;
+    color: #593b71;
   }
 
   .color-silver {
@@ -1664,9 +1702,22 @@
 
   /* For smaller devices */
   @media only screen and (max-width: 1100px) {
+    .card-library-btn {
+      stroke-width: 2;
+      width: 3rem;
+
+      position: absolute;
+      top: 0;
+      right: 1rem;
+
+      // instead of hover on desktop
+      &:active {
+        cursor: pointer;
+        scale: 1.1;
+      }
+    }
+
     .results-screen {
-      width: 95%;
-      height: 85dvh;
       font-size: 0.75rem;
       padding: 0.75rem;
       border: 8px double #976f39bd;
@@ -1675,7 +1726,6 @@
 
     .results-messages-flex-wrapper {
       padding: 0.75rem;
-      border-radius: 0.25rem;
     }
     
     .results-player-floating-header {
@@ -1697,15 +1747,12 @@
     }
 
     .game-board {
-      height: 95dvh;
-      width: 95dvw;
-      max-width: 1000px;
       border-radius: 0.75rem;
     }
 
     .card-section {
-      width: 85%;
-      padding: 0.5rem;
+      justify-content: space-evenly;
+      padding: 0.5rem 0;
       gap: 1rem;
     }
 
@@ -1727,10 +1774,12 @@
 
     .p1-name {
       font-size: 1rem;
+      top: -1.1rem;
     }
 
     .p2-name {
       font-size: 1rem;
+      bottom: -1.1rem;
     }
 
     .turn-active {
@@ -1740,9 +1789,21 @@
     .game-buttons {
       gap: 1.5rem;
     }
+
+    .play-again-btn {
+      font-size: 1rem;
+      transform: translateY(42%);
+    }
   }
 
   @media only screen and (max-width: 800px) {
+    .card-library-btn {
+      // remove scale on mobile hover, since no hover.
+      &:hover {
+        scale: 1;
+      }
+    }
+
     .results-screen {
       font-size: 0.5rem;
       padding: 0.5rem;
@@ -1750,7 +1811,6 @@
 
     .results-messages-flex-wrapper {
       padding: 0.5rem;
-      border-radius: 0.125rem;
     }
     
     .results-player-floating-header {
@@ -1772,16 +1832,12 @@
     }
 
     .game-board {
-      height: 95dvh;
-      width: 95dvw;
-      max-width: 1000px;
       border-radius: 0.75rem;
     }
 
     .card-section {
-      width: 85%;
-      padding: 0.25rem;
-      gap: 1rem;
+      padding: 0.25rem 0;
+      gap: 0.5rem;
     }
 
     .turn-text {
@@ -1806,6 +1862,10 @@
 
     .game-buttons {
       gap: 1rem;
+    }
+
+    .play-again-btn {
+      font-size: 0.75rem;
     }
   }
   

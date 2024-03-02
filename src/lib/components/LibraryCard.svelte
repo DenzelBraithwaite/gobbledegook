@@ -1,12 +1,4 @@
 <script>
-  // hooks
-  import { createEventDispatcher } from 'svelte';
-
-  // Transitions
-  import { fly, fade } from 'svelte/transition';
-
-  // props
-  export let faceUp = true;
   export let displayTitle = 'Title here...';
   export let title = '';
   export let img = '/card-bg.png';
@@ -19,17 +11,7 @@
 
   $: if (race === 'goblin-ish') race = 'goblin';
 
-  const createEvent = createEventDispatcher();
-
-  function cardClickHandler(event) {    
-    createEvent('cardClick', {
-      'title': title,
-      'points': points,
-      'race': race,
-      'trait': trait
-    })
-  }
-
+  // TODO: worth moving to helper function ?
   function capitalize(string){
     const firstHalf = string[0].toUpperCase();
     const secondHalf = string.slice(1);
@@ -37,13 +19,9 @@
   };
 </script>
 
-{#if !faceUp}
-  <!-- svelte-ignore a11y-click-events-have-key-events -->
-  <div on:click class="card facedown bottom-deck" in:fly={{x: 100}} out:fade></div>
-{:else}
 <!-- If card is legendary, shows special race colors, otherwise matches race color -->
 <!-- svelte-ignore a11y-click-events-have-key-events -->
-<div on:click={cardClickHandler} class="card bg-{race}{rarity === 'legendary' ? '-rare' : ''}" in:fly={{x: 100}} out:fade>
+<div class="card bg-{race}{rarity === 'legendary' ? '-rare' : ''}">
   <img class="card-img" src={img} alt="img of card">
   <p class="race {race}-race">{capitalize(race)}</p>
   <p class="points {race}-race">{points}</p>
@@ -56,7 +34,6 @@
     </div>
   </div>
 </div>
-{/if}
 
 <style lang="scss">
   .card {
@@ -392,7 +369,7 @@
     }
 
     .card-title {
-      height: 1.25rem;
+      height: 1.5rem;
       font-size: 0.75rem;
     }
 
@@ -436,7 +413,7 @@
     }
 
     .card-title {
-      height: 1rem;
+      height: 1.5rem;
       font-size: 0.45rem;
     }
 

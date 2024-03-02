@@ -476,7 +476,7 @@ const cardDetails = writable({
     rarity: 'amazing',
     traitTitle: '',
     trait: '',
-    description: 'A bot created as a gift to the elves as a peace treaty.',
+    description: 'Counts as both a bot and elf, created as a gift to the elves as a peace treaty.',
     race: 'bot',
     image: '/bots/fae-bot.png'
   },
@@ -602,6 +602,7 @@ const cardDetails = writable({
     race: 'beast',
     image: '/beasts/fox.png'
   },
+  // if full enemy human hand, pawl barkington will be worth negative points, or less points, or all beasts will be worth less points.
   dog: {
     title: 'dog',
     displayTitle: 'Pawl Barkington',
@@ -623,7 +624,7 @@ const cardDetails = writable({
     amount: 3,
     rarity: 'epic',
     traitTitle: 'Antibodies',
-    trait: 'Blocks all ALLY end game boost cards.',
+    trait: 'Blocks all of your end game boost cards, not the enemy boosts.',
     description: 'The xenoGuard is a highly intelligent and powerful creature, feared by many. It is the most feared creature in the xeno hive, tasked with the safety of the xeno overlord.',
     race: 'xeno',
     image: '/xenos/xeno_guard.png'
@@ -874,6 +875,7 @@ const cardDetails = writable({
     race: 'neutral',
     image: '/neutrals/vision.png'
   },
+  // FIXME: Adds to xenopoints but not final score at end?
   xenoBloom: {
     title: 'xenoBloom',
     displayTitle: 'Xeno Bloom',
