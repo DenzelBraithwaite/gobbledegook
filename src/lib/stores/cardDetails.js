@@ -411,7 +411,7 @@ const cardDetails = writable({
     points: 2,
     amount: 3,
     rarity: 'uncommon',
-    traitTitle: 'Half and half.',
+    traitTitle: 'Half and half',
     trait: 'Hobbit points count towards both dwarves and humans.',
     description: "Half dwarf, half human. Although rare and different, they're generally accepted by all dwarves.",
     race: 'dwarf',

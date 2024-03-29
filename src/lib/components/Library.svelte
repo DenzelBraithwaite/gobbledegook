@@ -7,36 +7,217 @@
 
   // These will result in a multi-dimensional array [[card, details], [card, details]...]
   const humanCards = Object.entries($cardDetails).filter(([card, details]) => details.race === 'human');
-  const goblinCards = Object.entries($cardDetails).filter(([card, details]) => details.race === 'goblin');
+  const goblinCards = Object.entries($cardDetails).filter(([card, details]) => ['goblin', 'goblin-ish'].includes(details.race));
   const elfCards = Object.entries($cardDetails).filter(([card, details]) => details.race === 'elf');
   const dwarfCards = Object.entries($cardDetails).filter(([card, details]) => details.race === 'dwarf');
   const botCards = Object.entries($cardDetails).filter(([card, details]) => details.race === 'bot');
   const beastCards = Object.entries($cardDetails).filter(([card, details]) => details.race === 'beast');
   const xenoCards = Object.entries($cardDetails).filter(([card, details]) => details.race === 'xeno');
+  const boostCards = Object.entries($cardDetails).filter(([card, details]) => details.race === 'boost');
+  const trapCards = Object.entries($cardDetails).filter(([card, details]) => details.race === 'trap');
+  const neutralCards = Object.entries($cardDetails).filter(([card, details]) => details.race === 'neutral');
 </script>
 
-<!-- Humans -->
 <main class="main-content">
-  {#each humanCards as keyValuePair}
-    <div class="card-details">
-      <!-- Card art -->
-      <!-- <LibraryCard
-        displayTitle={keyValuePair[1].displayTitle}
-        title={keyValuePair[1].title}
-        img={keyValuePair[1].image}
-        description={keyValuePair[1].description}
-        race={keyValuePair[1].race}
-        rarity={keyValuePair[1].rarity}
-        points={keyValuePair[1].points}
-      /> -->
+  <!-- Humans -->
+  <div class="deck-section">
+    {#each humanCards as keyValuePair}
+      <div class="card-wrapper">
+        <!-- Card art -->
+        <LibraryCard
+          displayTitle={keyValuePair[1].displayTitle}
+          title={keyValuePair[1].title}
+          img={keyValuePair[1].image}
+          description={keyValuePair[1].description}
+          trait={keyValuePair[1].trait}
+          traitTitle={keyValuePair[1].traitTitle}
+          race={keyValuePair[1].race}
+          rarity={keyValuePair[1].rarity}
+          points={keyValuePair[1].points}
+        />
+      </div>
+    {/each}
+  </div>
 
-      <!-- Card details -->
-      <!-- <h2>Details here</h2> -->
+  <!-- Goblins -->
+  <div class="deck-section">
+    {#each goblinCards as keyValuePair}
+      <div class="card-wrapper">
+        <!-- Card art -->
+        <LibraryCard
+          displayTitle={keyValuePair[1].displayTitle}
+          title={keyValuePair[1].title}
+          img={keyValuePair[1].image}
+          description={keyValuePair[1].description}
+          trait={keyValuePair[1].trait}
+          traitTitle={keyValuePair[1].traitTitle}
+          race={keyValuePair[1].race}
+          rarity={keyValuePair[1].rarity}
+          points={keyValuePair[1].points}
+        />
+      </div>
+    {/each}
+  </div>
 
-      <!-- Card trait info -->
-      <!-- <h2>Trait here</h2> -->
-    </div>
-  {/each}
+  <!-- Elves -->
+  <div class="deck-section">
+    {#each elfCards as keyValuePair}
+      <div class="card-wrapper">
+        <!-- Card art -->
+        <LibraryCard
+          displayTitle={keyValuePair[1].displayTitle}
+          title={keyValuePair[1].title}
+          img={keyValuePair[1].image}
+          description={keyValuePair[1].description}
+          trait={keyValuePair[1].trait}
+          traitTitle={keyValuePair[1].traitTitle}
+          race={keyValuePair[1].race}
+          rarity={keyValuePair[1].rarity}
+          points={keyValuePair[1].points}
+        />
+      </div>
+    {/each}
+  </div>
+
+  <!-- Dwarves -->
+  <div class="deck-section">
+    {#each dwarfCards as keyValuePair}
+      <div class="card-wrapper">
+        <!-- Card art -->
+        <LibraryCard
+          displayTitle={keyValuePair[1].displayTitle}
+          title={keyValuePair[1].title}
+          img={keyValuePair[1].image}
+          description={keyValuePair[1].description}
+          trait={keyValuePair[1].trait}
+          traitTitle={keyValuePair[1].traitTitle}
+          race={keyValuePair[1].race}
+          rarity={keyValuePair[1].rarity}
+          points={keyValuePair[1].points}
+        />
+      </div>
+    {/each}
+  </div>
+
+  <!-- Beasts -->
+  <div class="deck-section">
+    {#each beastCards as keyValuePair}
+      <div class="card-wrapper">
+        <!-- Card art -->
+        <LibraryCard
+          displayTitle={keyValuePair[1].displayTitle}
+          title={keyValuePair[1].title}
+          img={keyValuePair[1].image}
+          description={keyValuePair[1].description}
+          trait={keyValuePair[1].trait}
+          traitTitle={keyValuePair[1].traitTitle}
+          race={keyValuePair[1].race}
+          rarity={keyValuePair[1].rarity}
+          points={keyValuePair[1].points}
+        />
+      </div>
+    {/each}
+  </div>
+
+  <!-- Bots -->
+  <div class="deck-section">
+    {#each botCards as keyValuePair}
+      <div class="card-wrapper">
+        <!-- Card art -->
+        <LibraryCard
+          displayTitle={keyValuePair[1].displayTitle}
+          title={keyValuePair[1].title}
+          img={keyValuePair[1].image}
+          description={keyValuePair[1].description}
+          trait={keyValuePair[1].trait}
+          traitTitle={keyValuePair[1].traitTitle}
+          race={keyValuePair[1].race}
+          rarity={keyValuePair[1].rarity}
+          points={keyValuePair[1].points}
+        />
+      </div>
+    {/each}
+  </div>
+
+  <!-- Xenos -->
+  <div class="deck-section">
+    {#each xenoCards as keyValuePair}
+      <div class="card-wrapper">
+        <!-- Card art -->
+        <LibraryCard
+          displayTitle={keyValuePair[1].displayTitle}
+          title={keyValuePair[1].title}
+          img={keyValuePair[1].image}
+          description={keyValuePair[1].description}
+          trait={keyValuePair[1].trait}
+          traitTitle={keyValuePair[1].traitTitle}
+          race={keyValuePair[1].race}
+          rarity={keyValuePair[1].rarity}
+          points={keyValuePair[1].points}
+        />
+      </div>
+    {/each}
+  </div>
+
+  <!-- Boosts -->
+  <div class="deck-section">
+    {#each boostCards as keyValuePair}
+      <div class="card-wrapper">
+        <!-- Card art -->
+        <LibraryCard
+          displayTitle={keyValuePair[1].displayTitle}
+          title={keyValuePair[1].title}
+          img={keyValuePair[1].image}
+          description={keyValuePair[1].description}
+          trait={keyValuePair[1].trait}
+          traitTitle={keyValuePair[1].traitTitle}
+          race={keyValuePair[1].race}
+          rarity={keyValuePair[1].rarity}
+          points={keyValuePair[1].points}
+        />
+      </div>
+    {/each}
+  </div>
+
+  <!-- Traps -->
+  <div class="deck-section">
+    {#each trapCards as keyValuePair}
+      <div class="card-wrapper">
+        <!-- Card art -->
+        <LibraryCard
+          displayTitle={keyValuePair[1].displayTitle}
+          title={keyValuePair[1].title}
+          img={keyValuePair[1].image}
+          description={keyValuePair[1].description}
+          trait={keyValuePair[1].trait}
+          traitTitle={keyValuePair[1].traitTitle}
+          race={keyValuePair[1].race}
+          rarity={keyValuePair[1].rarity}
+          points={keyValuePair[1].points}
+        />
+      </div>
+    {/each}
+  </div>
+
+  <!-- Neutral -->
+  <div class="deck-section">
+    {#each neutralCards as keyValuePair}
+      <div class="card-wrapper">
+        <!-- Card art -->
+        <LibraryCard
+          displayTitle={keyValuePair[1].displayTitle}
+          title={keyValuePair[1].title}
+          img={keyValuePair[1].image}
+          description={keyValuePair[1].description}
+          trait={keyValuePair[1].trait}
+          traitTitle={keyValuePair[1].traitTitle}
+          race={keyValuePair[1].race}
+          rarity={keyValuePair[1].rarity}
+          points={keyValuePair[1].points}
+        />
+      </div>
+    {/each}
+  </div>
 
   <!-- Card Grid -->
   <div class="grid">
@@ -62,11 +243,11 @@
     height: 90dvh;
     width: 90dvw;
     padding: 1rem;
-    background: linear-gradient(214deg, #ddceee99, #855a2a99, #69c0ad99, #78c06999, #c0736999, #c2a84c99);
+    background-color: #000000f6;
     overflow-y: scroll;
     border-radius: 0.5rem;
     box-shadow: 0 0.5rem 2rem #00000080;
-    border: 2px solid #327738;
+    border: 2px solid #0d3010;
 
     position: fixed;
     bottom: 50%;
@@ -74,12 +255,13 @@
     transform: translate(50%, 50%);
   }
 
-  .card-details {
-    margin-bottom: 1rem;
+  .deck-section {
+    margin-bottom: 5rem;
+  }
 
-    display: flex;
-    justify-content: space-evenly;
-    align-items: center;
+  .card-wrapper {
+    margin: 1.5rem auto 0;
+    width: 90%;
   }
 
   .grid {  

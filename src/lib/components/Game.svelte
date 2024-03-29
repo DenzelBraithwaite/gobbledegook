@@ -17,9 +17,9 @@
   // import { emitKeypressEvents } from 'readline';
 
   // let socket = io('http://10.3.144.164:6912'); // HO
-  // let socket = io('http://192.168.2.10:6912'); // Thanos
+  let socket = io('http://192.168.2.10:6912'); // Thanos
   // let socket = io('http://192.168.2.21:6912'); // MacBook
-  let socket = io('http://192.168.2.51:6912'); // Mat's place
+  // let socket = io('http://192.168.2.51:6912'); // Mat's place
   let gobbledegookDeclared = false;
   let gobbledegookDisabled = false;
   let startBtnDisabled = false;
