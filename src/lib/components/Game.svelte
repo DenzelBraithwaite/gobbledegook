@@ -1394,9 +1394,6 @@
           <Button on:click={gobbledegook} round={true} customClasses="btn__orange">GDG</Button>
         {/if}
       </div>
-      {#if startBtnDisabled}
-        <p class="turn-text">{$player1.turn ? "Player 1" : "Player 2"}<span>'s turn</span></p>
-      {/if}
     </div>
   {/if}
 </main>
@@ -1411,19 +1408,25 @@
   .card-library-btn {
     border-radius: 0.5rem;
     z-index: 6; // 1 higher than library to make sure it's never hidden behind.
-    stroke: #327738;
-    fill: #32773874;
-    stroke-width: 2;
-    width: 3rem;
-    transition: scale 0.1s ease-out;
+    stroke: #d44215;
+    fill: #d442158a;
+    border: 1px solid #d44215;
+    stroke-width: 1.5;
+    background-color: #0c0c0cd3;
+    width: 2.5rem;
+    padding: 0.125rem;
+    transition: all 0.15s ease-out;
 
     position: absolute;
-    top: 0;
-    right: 1rem;
+    top: 0.5rem;
+    right: 0.5rem;
 
     &:hover {
       cursor: pointer;
+      stroke: #327738;
+      fill: #32773874;
       scale: 1.1;
+      border: 1px solid #327738;
     }
   }
 

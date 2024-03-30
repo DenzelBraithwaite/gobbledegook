@@ -17,18 +17,18 @@
   <p class="points {race}-race">{points}</p>
   <div class="img-section">
     <img class="card-img" src={img} alt="img of card">
-    <p class="section-title {race}-title position-bottom-left">{displayTitle}</p>
+    <p class="card-title {race}-title position-bottom-left">{displayTitle}</p>
   </div>
 
   <div class="description-section">
-    <h2 class="section-title {race}-title position-bottom-center">Description</h2>
+    <h2 class="card-title {race}-title position-bottom-center">Description</h2>
     <p class="description">{description}</p>
   </div>
 
   <div class="trait-section">
-    <h2 class="section-title {race}-title position-bottom-right">Trait</h2>
+    <h2 class="card-title {race}-title position-bottom-right">Trait</h2>
     <h2 class="trait-title">{traitTitle}</h2>
-    <p>{trait}</p>
+    <p class="trait">{trait}</p>
   </div>
 </article>
 
@@ -38,13 +38,18 @@
     cursor: pointer;
     position: relative;
     width: 100%;
-    height: 15rem;
+    height: 16rem;
     border-radius: 0.25rem;
     box-shadow: 0 2px 8px #00000063;
+    transition: scale 0.1s ease-out;
 
     display: flex;
     align-items: flex-start;
     justify-content: space-evenly;
+
+    &:hover {
+      scale: 1.1;
+    }
   }
 
   .img-section,
@@ -64,6 +69,13 @@
     background-color: #f1f1f194;
     max-width: 30%;
     margin: 0.5rem auto 0;
+
+    overflow-y: scroll;
+
+    &::-webkit-scrollbar {
+      width: 0;
+      background: transparent;
+    }
   }
 
   .img-section {
@@ -80,7 +92,7 @@
     border-radius: 0.25rem 0.25rem 0 0;
   }
 
-  .section-title {
+  .card-title {
     color: #fff0d2;
     width: 33%;
     padding: 0.5rem;
@@ -98,12 +110,6 @@
     font-weight: bold;
     text-align: center;
     margin-bottom: 0.75rem;
-  }
-
-  .bottom-section-wrapper::-webkit-scrollbar,
-  .card-bottom-section::-webkit-scrollbar {
-    // background: transparent;
-    // width: 0;
   }
 
   .points {
@@ -369,37 +375,48 @@
     right: 0;
   }
 
-  @media only screen and (max-width: 1100px) {
-    .card {
+  @media only screen and (max-width: 1000px) {
+    .card-title {
+      font-size: 1.125rem;
     }
 
-    .section-title {
+    .trait-title {
+      font-size: 0.9rem;
     }
 
-    .description-section::-webkit-scrollbar,
-    .trait-section::-webkit-scrollbar {
-      // background: transparent;
-      // width: 0;
-    }
-
-    .points {
+    .description,
+    .trait {
+      font-size: 0.85rem;
     }
   }
 
   @media only screen and (max-width: 800px) {
-    .card {
+    .card-title {
+      font-size: 0.8rem;
     }
 
-    .section-title {
+    .trait-title {
+      font-size: 0.8rem;
+    }
+    
+    .description,
+    .trait {
+      font-size: 0.75rem;
+    }
+  }
+
+  @media only screen and (max-width: 625px) {
+    .card-title {
+      font-size: 0.65rem;
     }
 
-    .description-section::-webkit-scrollbar,
-    .trait-section::-webkit-scrollbar {
-      // background: transparent;
-      // width: 0;
+    .trait-title {
+      font-size: 0.65rem;
     }
-
-    .points {
+    
+    .description,
+    .trait {
+      font-size: 0.6rem;
     }
   }
 </style>
