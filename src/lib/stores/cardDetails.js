@@ -584,8 +584,8 @@ const cardDetails = writable({
     points: 6,
     amount: 3,
     rarity: 'rare',
-    traitTitle: '',
-    trait: '',
+    traitTitle: 'Wolf pack',
+    trait: 'Receive +2 points for every wolf in your hand, including this one. This ability stacks.',
     description: 'A lone wolf with the strength of a pack.',
     race: 'beast',
     image: '/beasts/wolf.png'
@@ -609,9 +609,9 @@ const cardDetails = writable({
     points: 4,
     amount: 3,
     rarity: 'uncommon',
-    traitTitle: '',
-    trait: '',
-    description: 'More bark than bite, recognized as the weakest beast.',
+    traitTitle: "Man's best friend",
+    trait: 'If ally hand contains humans (or hobbit), pawl receives + 10 points at the end of the game.',
+    description: 'More bark than bite, recognized as the weakest beast since he obeys humans.',
     race: 'beast',
     image: '/beasts/dog.png'
   },
@@ -863,6 +863,7 @@ const cardDetails = writable({
     race: 'neutral',
     image: '/neutrals/ticktock.png'
   },
+  // FIXME: WHen showing enemy hand it shows ally's version of xeno points not enemy's. Might be consitent with exposed and other xenos, happened with voidrunner.
   vision: {
     title: 'vision',
     displayTitle: 'Vision',

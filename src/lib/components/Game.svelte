@@ -794,7 +794,6 @@
     if (player.hand.includes('goblinLord')) calculateGoblinLord(player, enemy);
     if (player.hand.includes('elfKing')) calculateElfKing(player, enemy);
     if (player.hand.includes('dreamDestroyer')) calculateDreamDestroyer(player);
-    if (player.hand.includes('dreamDestroyer')) calculateDreamDestroyer(player);
     if (player.hand.includes('ai')) calculateAi(player, enemy);
     if (player.hand.includes('protectron')) calculateProtectron(player, enemy); // Must be after A.I. since A.I. resets bot points.
     if (player.hand.includes('longbeardLeader')) calculateLongbeard(player);
@@ -805,6 +804,12 @@
     // Nebulites buff xenos by 4 points
     if (player.hand.includes('nebulite')) calculateSpecialXenoCard(player, 'nebulite');
 
+    // If player has humans and pawl barkington, beasts receive +10 points.
+    if (player.hand.includes('dog') && (player.hand.includes('hobbit') || player.hand.some(card => cardDetails[card].race === 'human'))) player.points.beasts += 10;
+
+    // Player gains +2 for every wolf on the field, including himself.
+    player.points.beasts += (player.hand.filter(card => card === 'wolf').length * 2);
+
     // Handles end game boost cards
     endGameBoostHandler(player);
 
@@ -814,7 +819,7 @@
     // Handles end game neutral cards
     endGameNeutralHandler(player);
 
-    // FIXME: for some reason, after xenobloom, it coints the points but doesn't recognize that xenos are the highest points.
+    // FIXME: for some reason, after xenobloom, it counts the points but doesn't recognize that xenos are the highest points.
     player.highestPoints = Math.max(
       player.points.beasts,
       player.points.bots,
@@ -1388,7 +1393,7 @@
         <GGCard on:click={deckClickHandler} faceUp={false} />
         {#if !startBtnDisabled}
           <Button on:click={startGame} round={true} customClasses="btn__green">Start</Button>
-        {:else if gobbledegookDisabled || turnCount < 5}
+        {:else if gobbledegookDisabled || turnCount < 10}
           <Button round={true} customClasses="btn__orange_disabled">GDG</Button>
         {:else}
           <Button on:click={gobbledegook} round={true} customClasses="btn__orange">GDG</Button>

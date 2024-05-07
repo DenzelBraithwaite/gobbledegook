@@ -7,13 +7,13 @@ const neutralDeck = writable([
   'echo',
   'echo',
   'switcharoo',
-  'switcharoo',
   'ticktock',
   'ticktock',
   'ticktock',
   'vision',
   'vision',
   'xenoBloom',
+  'xenoBloom'
 ]);
 
 export default neutralDeck;
