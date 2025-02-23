@@ -805,6 +805,7 @@
     if (player.hand.includes('nebulite')) calculateSpecialXenoCard(player, 'nebulite');
 
     // If player has humans and pawl barkington, beasts receive +10 points.
+    // FIXME: game crashed here Cannot read properties of undefined (reading 'race')
     if (player.hand.includes('dog') && (player.hand.includes('hobbit') || player.hand.some(card => cardDetails[card].race === 'human'))) player.points.beasts += 10;
 
     // Player gains +2 for every wolf on the field, including himself.
@@ -872,6 +873,7 @@
     }
   }
 
+  // TODO: boosts like rejuvenate are added after the draw, making one person win. I actually like this, make sure this is the behaviour with all boosts and traps to avoid draws.
   // Instant win for goblins unless enemy has full elf hand + elf king, if so, then instant draw.
   function calculateGoblinLord(player, enemy) {
     // Checks if player hand has only goblins
