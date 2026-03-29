@@ -729,15 +729,92 @@
     }
   }
 
+  // TODO: Finish
+  // TODO: USE THIS SOMEWHERE
+  // Calculates up-to-date current player points, wipes each time to avoid adding points to previous ones.
+  function calculateCurrentPlayerPoints() {
+    const player = playingAs() === 'p1' ? $player1 : $player2;
+    const enemy = playingAs() === 'p1' ? $player2 : $player1;
+
+    // Reset points each time for a clean calculation of points.
+    player.points = {
+      beasts: 0,
+      bots: 0,
+      dwarves: 0,
+      elves: 0,
+      humans: 0,
+      goblins: 0,
+      xenos: 0
+    };
+    player.highestPoints = 0;
+  
+    // Calculates hand before special cards.
+    calculateBasePoints(player);
+
+    // Because calculateTotalPoints() is run back to back, firtst with p1 as player, p2 might calculate bot points even when "hacked" by A.I..
+    if (enemy.hand.includes('ai')) player.points.bots = 0;
+    
+    // Must be before emperor calculation for proper result, adds bonus points to all humans.
+    if (player.hand.includes('commander')) calculateCommander(player);
+
+    // Multiplies human points by 2 then adds rest of hand as human points.
+    if (player.hand.includes('emperor')) calculateEmperor(player);
+
+    // Determines if player has full goblin hand and if enemy has full elf hand with elf leader, assigns points accordingly.
+    if (player.hand.includes('goblinLord')) calculateGoblinLord(player, enemy);
+
+    // If elf twins in hand player gains bonus points depending on how many. Must be before Elf king calculation for proper calculation.
+    if (player.hand.includes('nelladan') && player.hand.includes('nadallen')) calculateElfTwins(player);
+
+    // Determines if enemy has full goblin hand and if player has full elf hand, assigns points accordingly.
+    if (player.hand.includes('elfKing')) calculateElfKing(player, enemy);
+
+    // Calculates all beasts as if they are worth 12 points.
+    if (player.hand.includes('dreamDestroyer')) calculateDreamDestroyer(player);
+
+    // If player has humans/hobbits, pawl barkington gains +10 points.
+    // FIXME: game crashed here Cannot read properties of undefined (reading 'race')
+    if (player.hand.includes('dog') && (player.hand.includes('hobbit') || player.hand.some(card => cardDetails[card].race === 'human'))) player.points.beasts += 10;
+
+    // Player gains +2 for every wolf on the field, including himself.
+    if (player.hand.includes('wolf')) calculateWolfPack(player);
+
+    // Adds +2 to all bot cards (player + enemy) then steals all bot points.
+    if (player.hand.includes('ai')) calculateAi(player, enemy);
+
+    // Must be after A.I. since A.I. resets bot points. Quarantine all viruses adding +8 to their value and +1 bot point to Protectron per quarantined virus.
+    if (player.hand.includes('protectron')) calculateProtectron(player, enemy);
+
+    // Calculates +5 dwarf points per discarded dwarf by any player.
+    if (player.hand.includes('longbeardLeader')) calculateLongbeard(player);
+
+    // Nebulites buff xenos by 4 points
+    if (player.hand.includes('nebulite')) calculateSpecialXenoCard(player, 'nebulite');
+
+    // Handles end game boost cards, adds last-minute bonus points unaffected by leaders.
+    endGameBoostHandler(player);
+
+    // Handles end game trap cards
+    endGameTrapHandler(player);
+
+    // Handles end game neutral cards
+    endGameNeutralHandler(player);
+
+    // FIXME: for some reason, after xenobloom, it counts the points but doesn't recognize that xenos are the highest points.
+    setPlayerHighestPoints(player);
+  }
+
   // Calculates card points by race, doesn't include special traits
   function calculateBasePoints(player) {
     player.hand.forEach(card => {
       const race = $cardDetails[card].race;
       switch(race) {
+        // When calculating dreamdestroyer, it resets beast points. Remember that just in case.
         case 'beast':
           player.points.beasts += $cardDetails[card].points;
         break;
 
+        // When calculating A.I., it resets bot points. Remember that just in case.
         case 'bot':
           if ($cardDetails[card].title === 'faeBot') player.points.elves += $cardDetails[card].points;
            player.points.bots += $cardDetails[card].points;
@@ -781,6 +858,7 @@
     });
   }
 
+  // TODO: Obsolete soon, remove when no longer used. Repalced with calculateCurrentPlayerPoints()
   // Calculates total points (special and base)
   function calculateTotalPoints(player, enemy) {
     calculateBasePoints(player);
@@ -804,9 +882,9 @@
     // Nebulites buff xenos by 4 points
     if (player.hand.includes('nebulite')) calculateSpecialXenoCard(player, 'nebulite');
 
-    // If player has humans and pawl barkington, beasts receive +10 points.
-    // FIXME: game crashed here Cannot read properties of undefined (reading 'race')
-    if (player.hand.includes('dog') && (player.hand.includes('hobbit') || player.hand.some(card => cardDetails[card].race === 'human'))) player.points.beasts += 10;
+    // // If player has humans and pawl barkington, beasts receive +10 points.
+    // // FIXME: game crashed here Cannot read properties of undefined (reading 'race')
+    // if (player.hand.includes('dog') && (player.hand.includes('hobbit') || player.hand.some(card => cardDetails[card].race === 'human'))) player.points.beasts += 10;
 
     // Player gains +2 for every wolf on the field, including himself.
     player.points.beasts += (player.hand.filter(card => card === 'wolf').length * 2);
@@ -821,6 +899,19 @@
     endGameNeutralHandler(player);
 
     // FIXME: for some reason, after xenobloom, it counts the points but doesn't recognize that xenos are the highest points.
+    player.highestPoints = Math.max(
+      player.points.beasts,
+      player.points.bots,
+      player.points.dwarves,
+      player.points.elves,
+      player.points.goblins,
+      player.points.humans,
+      player.points.xenos
+    );
+  }
+
+  // Calculates and updates player's highest points among races.
+  function setPlayerHighestPoints(player) {
     player.highestPoints = Math.max(
       player.points.beasts,
       player.points.bots,
@@ -849,6 +940,7 @@
         if ($cardDetails[card].race === 'human' || $cardDetails[card].title === 'hobbit') player.points.humans += numOfCommanders;
       });
   }
+
   // Handles human commanders who buff their team
   function calculateProtectron(player, enemy) {
     let numOfProtectrons = player.hand.filter(card => card === 'protectron').length;
@@ -861,14 +953,18 @@
     }
       
     player.hand.forEach(card => {
-      if (card === 'virus') player.points.bots += 8; // since -2 + 8 = 6
-      if (card === 'protectron') player.points.bots += (numOfProtectrons * numOfViruses); // buffed for each virus
+      if (card === 'virus') player.points.bots += 8;
+
+      // Buffed for each virus, base points already calculated.
+      if (card === 'protectron') player.points.bots += (numOfProtectrons * numOfViruses);
     });
 
     if (player.hand.includes('ai')) {
       enemy.hand.forEach(card => {
-        if (card === 'virus') player.points.bots += 8; // since -2 + 8 = 6
-        if (card === 'protectron') player.points.bots += (numOfProtectrons * numOfViruses); // buffed for each virus
+        if (card === 'virus') player.points.bots += 8;
+
+        // Buffed for each virus, base points already calculated.
+        if (card === 'protectron') player.points.bots += (numOfProtectrons * numOfViruses);
       });
     }
   }
@@ -897,6 +993,15 @@
     }
   }
 
+  // Adds bonus points for matching elf twins
+  function calculateElfTwins(player) {
+    // Each Nelladan gets +5 points for matching with Nadallen and Nadallen gets +5 points per Nelladan. Amount * 5 * 2 
+    const bonusTwinPoints = player.hand.filter(card => card === 'nelladan').length * 10;
+
+    player.points.elves += bonusTwinPoints;
+  }
+
+  // Calculates special elf king effects
   function calculateElfKing(player, enemy) {
     // Checks if enemy hand has only goblins
     const goblinHand = enemy.hand.every(card => { 
@@ -926,6 +1031,11 @@
     player.hand.forEach(card => {
       if ($cardDetails[card].race === 'beast') player.points.beasts += 12;
     });
+  }
+
+  function calculateWolfPack(player) {
+    const numOfWolves = player.hand.filter(card => card === 'wolf').length;
+    player.points.beasts += numOfWolves * (numOfWolves * 2);
   }
 
   // Adds ALL bot card points on the field to players score, and bots have +2
@@ -1004,6 +1114,7 @@
   // Handles boost cards at the end of the game
   function endGameBoostHandler(player) {
     // Corruption card blocks all boosts
+    // TODO: corruption should only count when drawn or when still in hand due to switcharoo FIXME: is this broken?
     if (player.hand.includes('xenoguard') || player.hand.includes('corruption') || player.discards.includes('corruption')) return;
 
     // Handles charge boost
@@ -1107,6 +1218,7 @@
           $player1.points.xenos += 15;
           return $player1;
         })
+
         player2.update($player2 => {
           $player2.points.xenos += 15;
           return $player2;
@@ -1353,8 +1465,28 @@
       {#if showEventMessage}
         <p class="game-event-message" in:fade>{eventMessage}</p>
       {/if}
+
+      <!-- TODO: fix FIXME: -->
       <div class="card-section card-section__ally {$player1.turn ? "section-active" : ""}">
-        <p class="p1-name {$player1.turn ? "turn-active" : ""}">Player 1</p>
+        <div class="player-scores-wrapper player-scores-wrapper__ally">
+          {#if playingAs() === 'p1'}
+            <h1>{playingAs()}</h1>
+            <div class="player-scores">
+              <span>HUM <span class="color-blue">{$player1.points.humans} </span></span>
+              <span>| GBL <span class="color-green">{$player1.points.goblins}</span></span>
+              <span>| ELF <span class="color-silver">{$player1.points.elves}</span></span>
+              <span>| DWF <span class="color-maroon">{$player1.points.dwarves}</span></span>
+              <span>| BST <span class="color-brown">{$player1.points.beasts}</span></span>
+              <span>| BOT <span class="color-grey">{$player1.points.bots}</span></span>
+              <span>| XNO <span class="color-yellow">{$player1.points.xenos} </span>| </span>
+              <!-- TODO: view all/more option to show curses and blessings and a full summary -->
+              <span class="text-12px"><strong>View More</strong></span>
+            </div>
+          {/if}
+
+          <p class="p1-name {$player1.turn ? "turn-active" : ""}">Player 1</p>
+        </div>
+
         {#each $player1.hand as card}
           <GGCard
             on:cardClick={(event) => selectCard(event, $player1.hand)}
@@ -1371,8 +1503,25 @@
           />
         {/each}
       </div>
+
       <div class="card-section card-section__enemy {$player2.turn ? "section-active" : ""}">
-        <p class="p2-name {$player2.turn ? "turn-active" : ""}">Player 2</p>
+        <div class="player-scores-wrapper player-scores-wrapper__enemy">
+          {#if playingAs() === 'p2'}
+            <div class="player-scores">
+              <span>HUM <span class="color-blue">{$player2.points.humans} </span></span>
+              <span>| GBL <span class="color-green">{$player2.points.goblins}</span></span>
+              <span>| ELF <span class="color-silver">{$player2.points.elves}</span></span>
+              <span>| DWF <span class="color-maroon">{$player2.points.dwarves}</span></span>
+              <span>| BST <span class="color-brown">{$player2.points.beasts}</span></span>
+              <span>| BOT <span class="color-grey">{$player2.points.bots}</span></span>
+              <span>| XNO <span class="color-yellow">{$player2.points.xenos} </span>| </span>
+              <!-- TODO: view all/more option to show curses and blessings and a full summary -->
+              <span class="text-12px"><strong>View More</strong></span>
+            </div>
+          {/if}
+
+          <p class="p2-name {$player2.turn ? "turn-active" : ""}">Player 2</p>
+        </div>
         {#each $player2.hand as card}
           <GGCard
             on:cardClick={(event) => selectCard(event, $player2.hand)}
@@ -1619,24 +1768,41 @@
     color: #b77a5e;
   }
 
-  .p1-name {
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: #b77a5e;
-    
+  .player-scores-wrapper {
+    width: 100%;
+    padding: 4px;
+    border-radius: 8px;
+    background-color: #311a0fc2;
+    border: 2px solid #45240E;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
     position: absolute;
-    top: -1.6rem;
+  }
+
+  .player-scores-wrapper__ally {
+    top: -40px;
     right: 0;
   }
 
-  .p2-name {
+  .player-scores-wrapper__enemy {
+    bottom: -40px;
+    left: 0;
+  }
+
+  .player-scores {
+    width: 85%;
+    border-radius: 4px;
+    color: #B77A59;
+  }
+
+  .p1-name, .p2-name {
     font-size: 1.5rem;
     font-weight: bold;
     color: #b77a5e;
     
-    position: absolute;
-    bottom: -1.6rem;
-    left: 0;
   }
 
   .turn-active {
@@ -1708,6 +1874,10 @@
 
   .color-yellow {
     color: #8e7419;
+  }
+
+  .text-12px {
+    font-size: 0.75rem;
   }
 
   /* For smaller devices */

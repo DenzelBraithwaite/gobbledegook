@@ -254,7 +254,7 @@ const cardDetails = writable({
     amount: 1,
     rarity: 'rare',
     traitTitle: 'Twin Power',
-    trait: 'If both Nelladan and Nadallen are in your hand, they both receive +5 bonus points. This effect does not stack with itself or the elf king.',
+    trait: 'If both Nelladan and Nadallen are in your hand, they both receive +5 bonus points. This effect stacks with each extra Nelladan and the elf king.',
     description: 'The stronger half of the rare elvan twins.',
     race: 'elf',
     image: '/elves/nadallen.png'
@@ -266,7 +266,7 @@ const cardDetails = writable({
     amount: 4,
     rarity: 'uncommon',
     traitTitle: 'Twin Power',
-    trait: 'If both Nelladan and Nadallen are in your hand, they both receive +5 bonus points. This effect does not stack with itself or the elf king.',
+    trait: 'If both Nelladan and Nadallen are in your hand, they both receive +5 bonus points. This effect stacks with the elf king.',
     description: 'A rare elvan twin.',
     race: 'elf',
     image: '/elves/nelladan.png'
@@ -451,7 +451,7 @@ const cardDetails = writable({
     amount: 2,
     rarity: 'epic',
     traitTitle: 'Antivirus',
-    trait: 'Reprograms viruses into helpful programs, setting their point value to 6. Protectron will also receive +1 point for every reprogrammed virus.',
+    trait: 'Reprograms viruses into helpful programs, increasing their point value by 8. Protectron will also receive +1 point for every reprogrammed virus.',
     description: 'The most advanced battle bot and previous leader of the bots until A.I. took over, now second in command.',
     race: 'bot',
     image: '/bots/protectron.png'
@@ -585,7 +585,7 @@ const cardDetails = writable({
     amount: 3,
     rarity: 'rare',
     traitTitle: 'Wolf pack',
-    trait: 'Receive +2 points for every wolf in your hand, including this one. This ability stacks.',
+    trait: 'Receive +2 points for every wolf in your hand, including this one.',
     description: 'A lone wolf with the strength of a pack.',
     race: 'beast',
     image: '/beasts/wolf.png'
@@ -602,7 +602,6 @@ const cardDetails = writable({
     race: 'beast',
     image: '/beasts/fox.png'
   },
-  // if full enemy human hand, pawl barkington will be worth negative points, or less points, or all beasts will be worth less points.
   dog: {
     title: 'dog',
     displayTitle: 'Pawl Barkington',
