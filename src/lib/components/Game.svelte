@@ -1089,11 +1089,12 @@
   }
 
   // Adds boost card to players boosts array
+  // TODO: fixed charge same issue as calculation of infection, not sure if good, have yet to test.
   function addBoostCard(player, card) {
     player.boosts = [...player.boosts, card];
-
+    
     if (card === 'chastity') player.hasChastity = true;
-    if (card === 'charge') player.chargeDrawnTurns = [...player.chargeDrawnTurns, gameState.turnCount];
+    if (card === 'charge') player.chargeDrawnTurns.push(gameState.turnCount);
   }
 
   // Handles boost cards at the end of the game
@@ -1103,7 +1104,6 @@
     // Corruption card blocks all boosts
     if (player.hand.includes('xenoguard') || player.hand.includes('corruption') || player.discards.includes('corruption')) return;
 
-    // Handles charge boost
     for (let i = 0; i < player.chargeDrawnTurns.length; i++) player.chargePoints += (gameState.turnCount - player.chargeDrawnTurns[i]);
     player.points.bots += player.chargePoints;
     player.points.humans += player.chargePoints;
@@ -1115,11 +1115,12 @@
   }
 
   // Adds trap card to players traps array
+  // TODO: fixed same issue as calculation of charge, not sure if good, have yet to test.
   function addTrapCard(player, card) {
     player.traps = [...player.traps, card];
 
     if (card === 'corruption') player.hasCorruption = true;
-    if (card === 'infect') player.infectDrawnTurns = [...player.infectDrawnTurns, gameState.turnCount];
+    if (card === 'infect') player.infectDrawnTurns.push(gameState.turnCount);
     if (card === 'exposed' && !player.hasChastity && !player.hand.includes('chastity')) player.isExposed = true;
   }
 
