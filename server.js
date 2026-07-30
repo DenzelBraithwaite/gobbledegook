@@ -72,6 +72,9 @@ io.on('connection', socket => {
   // Start game
   socket.on('start-game', data => socket.broadcast.emit('game-started', data));
 
+  // Change username / player title
+  socket.on('username-changed', data => socket.broadcast.emit('update-username', data));
+
   // Count turns
   socket.on('new-turn', () => io.emit('add-turn-count'));
 

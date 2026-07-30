@@ -253,7 +253,7 @@
 
 <style lang="scss">
   .main-content {
-    z-index: 5;
+    z-index: 6;
     height: 90dvh;
     width: 90dvw;
     padding: 1rem;
