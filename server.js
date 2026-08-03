@@ -38,33 +38,32 @@ function userLimitReached() {
 }
 
 function assignUsernames() {
-  const numUsers = Object.keys(users).length;
   let username = '';
-  if (numUsers < 2) {
-    username = 'p' + (numUsers + 1);
-    if (users[username] && username === 'p1') username = 'p2';
-    if (users[username] && username === 'p2') username = 'p1';
-  } else {
+  if (userLimitReached()) {
     username = `Guest_${Math.floor(Math.random() * 100)}`;
     while (users[username]) username = `Guest_${Math.floor(Math.random() * 100)}`;
     if (!users['p1']) username = 'p1';
     if (!users['p2']) username = 'p2';
+    return username;
   }
 
+  const numOfUsers = Object.keys(users).length;
+  username = 'p' + (numOfUsers + 1);
+  if (users[username] && username === 'p1') username = 'p2';
+  if (users[username] && username === 'p2') username = 'p1';
   return username;
 }
 
 io.on('connection', socket => {
   const username = assignUsernames();
   users[username] = socket.id;
-  console.log(`\n${username} connected.`);
-  
-  // emit that client is ready to all clients
-  socket.on('client-ready', () => io.emit('set-users', users));
+  console.log(`\n${username} connected with ID:${users[username]}.`);
+  const players = Object.entries(users).filter(([key, val]) => ['p1', 'p2'].includes(key));
+  if (['p1', 'p2'].includes(username)) io.emit('set-users', players);
 
   // Remove users from list of users.
   socket.on('disconnect', () => {
-    console.log(`\n${username} disconnected.`);
+    console.log(`\n${username} with ID:${users[username]} disconnected.`);
     delete users[username];
     logUsers();
   });

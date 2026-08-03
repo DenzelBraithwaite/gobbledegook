@@ -9,7 +9,12 @@
   import { Card } from './index';
   
   // Props
-  export let discards: string[] = [];
+  export let discards: string[] = ['wolf', 'dog', 'panther', 'rhino', 'lion', 'bear'];
+  // discards = [
+  //   'wolf', 'dog', 'panther', 'rhino', 'lion', 'bear',
+  //   'wolf', 'dog', 'panther', 'rhino', 'lion', 'bear',
+  //   'wolf', 'dog', 'panther', 'rhino', 'lion', 'bear'
+  // ];
 
   // These will result in a multi-dimensional array [[card, details], [card, details]...]
   let discardsWithCardDetails = [];

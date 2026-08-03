@@ -14,13 +14,10 @@
 
   // Websocket
   import { io } from 'socket.io-client';
-  // import { emitKeypressEvents } from 'readline';
 
-  // let socket = io('http://10.3.144.164:6912'); // HO
+  let socket = io('http://10.3.144.106:6912'); // Work MacBook
   // let socket = io('http://192.168.2.21:6912'); // MacBook
-  // let socket = io('http://192.168.2.51:6912'); // Mat's place
-  let socket = io('http://192.168.2.10:6912'); // Thanos
-  // TODO: determine if this should be a store
+  // let socket = io('http://192.168.2.10:6912'); // Thanos
   $: gameState = {
     gobbledegookDeclared: false,
     gobbledegookDisabled: false,
@@ -39,7 +36,7 @@
     p2NameChangeVisible: false,
     playingAs: ''
   };
-  // Thisis because deckDetails will differ between client and remote, e.g. voidRunner.
+  // deckDetails will differ between client and remote so we need a clean copy, e.g. voidRunner.
   let remoteCardDetails = {...$cardDetails};
   // Deck players draw from, includes all race decks
   let fullDeck = {
@@ -64,27 +61,8 @@
     // Handles connection errors
     socket.on('connect_error', error => console.error('Connection error:', error));
 
-    // Sets users (Beware that p1 might be titled player 2 and vice versa due to server.js)
-    socket.on('set-users', users => {
-      Object.entries(users).forEach(([username, userId]) => {
-        player1.update($player1 => {
-          $player1.id = users['p1'];
-          return $player1;
-        });
-        player1Reset.set({...$player1});
-
-        player2.update($player2 => {
-          $player2.id = users['p2'];
-          return $player2;
-        });
-        player2Reset.set({...$player2});
-
-        // TODO: Handle guests.
-
-        // So displayed name and points are correct.
-        playingAs() === 'p1' ? gameState.playingAs = 'p1' : gameState.playingAs = 'p2';
-      }); 
-    });
+    // Takes users from server and sets them on clients' frontend
+    socket.on('set-users', users => setUsers(users));
 
     // Resets game and updates player hands
     socket.on('game-started', data => {
@@ -154,17 +132,11 @@
     // Handles first server reply for xeno updates (like 3 way handshake pt 1)
     socket.on('end-game-sync-started', data => {
       // The goal is to update the remote player's xeno points (since they will differ)
-      if (playingAs() === 'p1') player2.set(data.player2);
-      if (playingAs() === 'p2') player1.set(data.player1);
+      if (gameState.playingAs === 'p1') player2.set(data.player2);
+      if (gameState.playingAs === 'p2') player1.set(data.player1);
 
       // Update remote client's remote deck, then send their deck to the client that started the handshake so they can update their remote deck
       remoteCardDetails = {...data.cardDetails};
-
-      // For guests TODO: test later
-      // if (!['p1', 'p2'].includes(playingAs())) {
-      //   player1.set(data.player1);
-      //   player2.set(data.player2);
-      // }
 
       // Make sure client who initiated the update gets their data updated as well.
       socket.emit('finish-end-game-sync', {player1: $player1, player2: $player2, cardDetails: $cardDetails});
@@ -176,24 +148,52 @@
       player1.set(data.player1);
       player2.set(data.player2);
       remoteCardDetails = {...data.cardDetails};
-
-      // For guests TODO: test later
-      // if (!['p1', 'p2'].includes(playingAs())) {
-      //   player1.set(data.player1);
-      //   player2.set(data.player2);
-      // }
     });
 
     // Handles game end for all users
     socket.on('game-ended', data => endGame());
 
-    // Lets server know client is ready.
-    socket.emit('client-ready');
-
-    // TODO:
     // Let's user change their username at anytime
     socket.on('update-username', data => updateUsernameForThisClient(data))
   });
+
+  // sets users based on [username, id] from server.js
+  function setUsers(users: [string, string][]): void {
+    console.log(users);
+    console.log('---');
+    users.forEach(user => {
+      if (user[0] === 'p1') {
+        player1.update($player1 => {
+          $player1.id = users['p1'];
+          return $player1;
+        });
+        player1Reset.set({...$player1});
+        gameState.playingAs = 'p1';
+      }
+      
+      if (user[0] === 'p2') {
+        player2.update($player2 => {
+          $player2.id = users['p2'];
+          return $player2;
+        });
+        player2Reset.set({...$player2});
+        gameState.playingAs = 'p2';
+      }
+    }); 
+    console.log(gameState.playingAs);
+  }
+
+  // Initiaties a new round
+  function startGame() {
+    resetGame();
+    dealCards($player1);
+    dealCards($player2);
+    decideFirstPlayer();
+    calculateCurrentPlayerPoints();
+
+    // Send data to websocket server
+    socket.emit('start-game', {player1: $player1, player2: $player2, fullDeck});
+  }
 
   // Ends current round
   function endGame() {
@@ -256,18 +256,6 @@
       winMessage: ''
     }
   }
-  
-  // Initiaties a new round
-  function startGame() {
-    resetGame();
-    dealCards($player1);
-    dealCards($player2);
-    decideFirstPlayer();
-    calculateCurrentPlayerPoints();
-
-    // Send data to websocket server
-    socket.emit('start-game', {player1: $player1, player2: $player2, fullDeck});
-  }
 
   // Ensures player 1 isn't always first to start
   function decideFirstPlayer() {
@@ -329,19 +317,11 @@
     return false;
   }
 
-  // Determine's if the player is p1, p2 or guest
-  function playingAs() {
-    if ($player1.id === socket.id) return 'p1';
-    if ($player2.id === socket.id) return 'p2';
-    return 'guest';
-  }
-
   // Determines if card should be visible or not
   function isCardVisible(playerSide) {
     if (gameState.gameOver) return true;
-    if (playingAs() === 'guest') return true;
-    if (playingAs() === 'p1' && playerSide === 'p1') return true;
-    if (playingAs() === 'p2' && playerSide === 'p2') return true;
+    if (gameState.playingAs === 'p1' && playerSide === 'p1') return true;
+    if (gameState.playingAs === 'p2' && playerSide === 'p2') return true;
 
     // player has vision?
     return false;
@@ -519,7 +499,7 @@
     }
 
     // Checks if player is player 1 or 2, then adds card to hand
-    if (playingAs() === 'p1') {
+    if (gameState.playingAs === 'p1') {
       player1.update($player1 => {
         $player1.hand = [...$player1.hand, cardDrawn];
         $player1.cardsDrawn = [...player.cardsDrawn, cardDrawn];
@@ -562,9 +542,8 @@
   }
 
   // Determines who can click on deck
-  function deckClickHandler() {
+  function clickOnDeck() {
     if (gameState.gameOver) return;
-    if (playingAs() === 'guest') return;
     if (isPlayerTurn() && $player1.turn) drawCard($player1);
     if (isPlayerTurn() && $player2.turn) drawCard($player2);
   }
@@ -574,7 +553,7 @@
     if (!isPlayerTurn()) return;
 
     // Who's playing?
-    const player = playingAs() === 'p1' ? $player1 : $player2;
+    const player = gameState.playingAs === 'p1' ? $player1 : $player2;
 
     // Using store update methods instead of player var ^
     if ($player1.turn) {
@@ -756,11 +735,11 @@
     let player;
     let enemy;
     if (options.swapPlayers) {
-      player = playingAs() === 'p1' ? $player2 : $player1;
-      enemy = playingAs() === 'p1' ? $player1 : $player2;
+      player = gameState.playingAs === 'p1' ? $player2 : $player1;
+      enemy = gameState.playingAs === 'p1' ? $player1 : $player2;
     } else {
-      player = playingAs() === 'p1' ? $player1 : $player2;
-      enemy = playingAs() === 'p1' ? $player2 : $player1;
+      player = gameState.playingAs === 'p1' ? $player1 : $player2;
+      enemy = gameState.playingAs === 'p1' ? $player2 : $player1;
     }
 
     // Reset points each time for a clean calculation then calculates hand before special cards.
@@ -857,7 +836,7 @@
 
         // Points may vary between clients with Xenos, handle this.
         case 'xeno':
-          player.points.xenos += ((playingAs() === 'p1' && player === $player1) || (playingAs() === 'p2' && player === $player2)) ? $cardDetails[card].points : remoteCardDetails[card].points;
+          player.points.xenos += ((gameState.playingAs === 'p1' && player === $player1) || (gameState.playingAs === 'p2' && player === $player2)) ? $cardDetails[card].points : remoteCardDetails[card].points;
         break;
 
         // Don't care about these
@@ -1080,7 +1059,7 @@
     // Return regular points if it's not special xeno card
     if (!['warpstalker', 'voidRunner'].includes(cardTitle)) return $cardDetails[cardTitle].points;
     
-    if (playingAs() === player) {
+    if (gameState.playingAs === player) {
       if (cardTitle === 'warpstalker') return $cardDetails['warpstalker'].points;
       if (cardTitle === 'voidRunner') return $cardDetails['voidRunner'].points;
     } else {
@@ -1241,14 +1220,14 @@
   }
 
   function updateUsernameForOtherClient(): void {
-    playingAs() === 'p1' ? gameState.p1NameChangeVisible = false : gameState.p2NameChangeVisible = false;
-    const player = playingAs() === 'p1' ? $player1 : $player2;
+    gameState.playingAs === 'p1' ? gameState.p1NameChangeVisible = false : gameState.p2NameChangeVisible = false;
+    const player = gameState.playingAs === 'p1' ? $player1 : $player2;
     player.title = gameState.newPlayerTitle;
     socket.emit('username-changed', player.title);
   }
 
   function updateUsernameForThisClient(newUsername): void {
-    playingAs() === 'p1' ? $player2.title = newUsername : $player1.title = newUsername;
+    gameState.playingAs === 'p1' ? $player2.title = newUsername : $player1.title = newUsername;
   }
 
   function setPlayerPointsToZero(player): void {
@@ -1267,108 +1246,123 @@
   }
 
   function toggleP1NameChangeVisibility(): void {
-    if (playingAs() === 'p2') return;
+    if (gameState.playingAs === 'p2') return;
     gameState.p1NameChangeVisible = !gameState.p1NameChangeVisible;
   }
   
   function toggleP2NameChangeVisibility(): void {
-    if (playingAs() === 'p1') return;
+    if (gameState.playingAs === 'p1') return;
     gameState.p2NameChangeVisible = !gameState.p2NameChangeVisible;
   }
 </script>
 
 <!-- svelte-ignore a11y-click-events-have-key-events -->
-<main class="main-content">
-  <!-- Discards -->
-  <svg on:click={viewDiscardHandler} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="card-discards-btn">
-    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
-  </svg>
-  {#if gameState.discardsVisible}
-    <Discards discards={gameState.playingAs === 'p1' ? $player1.discards : $player2.discards}/>
-  {/if}
+ {#if ['p1', 'p2'].includes(gameState.playingAs)}
+  <main class="main-content">
+    <!-- Discards -->
+    <svg on:click={viewDiscardHandler} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="card-discards-btn">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
+    </svg>
+    {#if gameState.discardsVisible}
+      <Discards discards={gameState.playingAs === 'p1' ? $player1.discards : $player2.discards}/>
+    {/if}
 
-  <!-- Card Library -->
-  <svg on:click={viewLibraryHandler} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="card-library-btn">
-    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
-  </svg>
-  {#if gameState.libraryVisible}
-    <Library />
-  {/if}
+    <!-- Card Library -->
+    <svg on:click={viewLibraryHandler} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="card-library-btn">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
+    </svg>
+    {#if gameState.libraryVisible}
+      <Library />
+    {/if}
 
-  <!-- Eng game view -->
-  {#if gameState.winMessage}
-    <div class="results-screen" transition:fade>
-      <!-- Play again btn -->
-      {#if !gameState.startBtnDisabled}
-        <span class="play-again-btn"><Button on:click={startGame} round={true} customClasses="btn__green">Rematch</Button></span>
-      {/if}
+    <!-- Eng game view -->
+    {#if gameState.winMessage}
+      <div class="results-screen" transition:fade>
+        <!-- Play again btn -->
+        {#if !gameState.startBtnDisabled}
+          <span class="play-again-btn"><Button on:click={startGame} round={true} customClasses="btn__green">Rematch</Button></span>
+        {/if}
 
-      <div class="results-messages-flex-wrapper">
-        <div>
-          <p>{gameState.winMessage}</p>
-          <p class="margin-bottom-sm">{gameState.loseMessage}</p>
+        <div class="results-messages-flex-wrapper">
+          <div>
+            <p>{gameState.winMessage}</p>
+            <p class="margin-bottom-sm">{gameState.loseMessage}</p>
 
-          <p>Player1 Boosts: </p>
-          {#each $player1.boosts as boost}
-            <span class="color-blue">{boost} &nbsp;</span>
-          {/each}
-          <p class="margin-bottom-sm">Charge boost points: <span class="color-blue">{$player1.chargePoints}</span></p>
+            <p>Player1 Boosts: </p>
+            {#each $player1.boosts as boost}
+              <span class="color-blue">{boost} &nbsp;</span>
+            {/each}
+            <p class="margin-bottom-sm">Charge boost points: <span class="color-blue">{$player1.chargePoints}</span></p>
 
-          <p>Player1 Traps: </p>
-          <span>Trap cards: </span>
-          {#each $player1.traps as trap}
-            <span class="color-red">{trap} &nbsp;</span>
-          {/each}
-          <p class="margin-bottom-sm">Infect trap penalty: <span class="color-red">{$player1.infectPoints}</span></p>
+            <p>Player1 Traps: </p>
+            <span>Trap cards: </span>
+            {#each $player1.traps as trap}
+              <span class="color-red">{trap} &nbsp;</span>
+            {/each}
+            <p class="margin-bottom-sm">Infect trap penalty: <span class="color-red">{$player1.infectPoints}</span></p>
 
-          <span>Neutral cards: </span>
-          {#each $player1.neutrals as neutral}
-            <span class="color-purple">{neutral} &nbsp;</span>
-          {/each}
+            <span>Neutral cards: </span>
+            {#each $player1.neutrals as neutral}
+              <span class="color-purple">{neutral} &nbsp;</span>
+            {/each}
 
-          <!-- Show all race points -->
-          <RacePoints player={$player1}/>
+            <!-- Show all race points -->
+            <RacePoints player={$player1}/>
 
-          <h2 class="results-player-floating-header results-player-float-left">{$player1.title}</h2>
+            <h2 class="results-player-floating-header results-player-float-left">{$player1.title}</h2>
+          </div>
+          <div>
+            <p>{$player1.title} Win/Lose/Draw: {$player1.wins}/{$player1.losses}/{$player1.draws}</p>
+            <p class="margin-bottom-sm">{$player2.title} Win/Lose/Draw: {$player2.wins}/{$player2.losses}/{$player2.draws}</p>
+
+
+            <p>Player2 Boosts: </p>
+            <span>Boost cards: </span>
+            {#each $player2.boosts as boost}
+              <span class="color-blue">{boost} &nbsp;</span>
+            {/each}
+            <p class="margin-bottom-sm">Charge boost points: <span class="color-blue">{$player2.chargePoints}</span></p>
+
+            <p>Player2 Traps: </p>
+            <span>Trap cards: </span>
+            {#each $player2.traps as trap}
+              <span class="color-red">{trap} &nbsp;</span>
+            {/each}
+            <p class="margin-bottom-sm">Infect trap penalty: <span class="color-red">{$player2.infectPoints}</span></p>
+
+            <span>Neutral cards: </span>
+            {#each $player2.neutrals as neutral}
+              <span class="color-purple">{neutral} &nbsp;</span>
+            {/each}
+
+            <!-- Show all race points -->
+            <RacePoints player={$player2}/>
+
+            <h2 class="results-player-floating-header results-player-float-right">{$player2.title}</h2>
+            <h2 class="results-player-floating-header results-turn-count-float-middle">Turn count: {gameState.turnCount}</h2>
+          </div>
         </div>
-        <div>
-          <p>{$player1.title} Win/Lose/Draw: {$player1.wins}/{$player1.losses}/{$player1.draws}</p>
-          <p class="margin-bottom-sm">{$player2.title} Win/Lose/Draw: {$player2.wins}/{$player2.losses}/{$player2.draws}</p>
 
+        <div class="player-history-wrapper">
+          <!-- Cards Drawn -->
+          <div class="history__cards-drawn">
+            <!-- Starting hand, placed here so it's at the beginning, left side of parent -->
+            <p class="history__small-header">Starting Hand:</p>
+            {#each $player1.startingHand as card}
+              <div class="history__card-wrapper">
+                <GGCard
+                displayTitle={$cardDetails[card].displayTitle}
+                title={$cardDetails[card].title}
+                img={$cardDetails[card].image}
+                race={$cardDetails[card].race}
+                rarity={$cardDetails[card].rarity}
+                points={endGameXenoPointHandler(card, 'p1')}
+                />
+              </div>
+            {/each}
 
-          <p>Player2 Boosts: </p>
-          <span>Boost cards: </span>
-          {#each $player2.boosts as boost}
-            <span class="color-blue">{boost} &nbsp;</span>
-          {/each}
-          <p class="margin-bottom-sm">Charge boost points: <span class="color-blue">{$player2.chargePoints}</span></p>
-
-          <p>Player2 Traps: </p>
-          <span>Trap cards: </span>
-          {#each $player2.traps as trap}
-            <span class="color-red">{trap} &nbsp;</span>
-          {/each}
-          <p class="margin-bottom-sm">Infect trap penalty: <span class="color-red">{$player2.infectPoints}</span></p>
-
-          <span>Neutral cards: </span>
-          {#each $player2.neutrals as neutral}
-            <span class="color-purple">{neutral} &nbsp;</span>
-          {/each}
-
-          <!-- Show all race points -->
-          <RacePoints player={$player2}/>
-
-          <h2 class="results-player-floating-header results-player-float-right">{$player2.title}</h2>
-          <h2 class="results-player-floating-header results-turn-count-float-middle">Turn count: {gameState.turnCount}</h2>
-        </div>
-      </div>
-
-      <div class="player-history-wrapper">
-        <!-- Cards Drawn -->
-        <div class="history__cards-drawn">
-          <!-- Starting hand, placed here so it's at the beginning, left side of parent -->
-          <p class="history__small-header">Starting Hand:</p>
-          {#each $player1.startingHand as card}
+            <p class="history__small-header">Cards drawn:</p>
+            {#each $player1.cardsDrawn as card}
             <div class="history__card-wrapper">
               <GGCard
               displayTitle={$cardDetails[card].displayTitle}
@@ -1379,228 +1373,215 @@
               points={endGameXenoPointHandler(card, 'p1')}
               />
             </div>
-          {/each}
-
-          <p class="history__small-header">Cards drawn:</p>
-          {#each $player1.cardsDrawn as card}
-          <div class="history__card-wrapper">
-            <GGCard
-             displayTitle={$cardDetails[card].displayTitle}
-             title={$cardDetails[card].title}
-             img={$cardDetails[card].image}
-             race={$cardDetails[card].race}
-             rarity={$cardDetails[card].rarity}
-             points={endGameXenoPointHandler(card, 'p1')}
-            />
+            {/each}
           </div>
-          {/each}
-        </div>
-        <div class="history__cards-discarded">
-          <!-- Final hand, placed here so it's at the beginning, right side of parent -->
-          <p class="history__small-header">Final Hand:</p>
-          {#each $player1.hand as card}
-            <div class="history__card-wrapper">
-              <GGCard
+          <div class="history__cards-discarded">
+            <!-- Final hand, placed here so it's at the beginning, right side of parent -->
+            <p class="history__small-header">Final Hand:</p>
+            {#each $player1.hand as card}
+              <div class="history__card-wrapper">
+                <GGCard
+                  displayTitle={$cardDetails[card].displayTitle}
+                  title={$cardDetails[card].title}
+                  img={$cardDetails[card].image}
+                  race={$cardDetails[card].race}
+                  rarity={$cardDetails[card].rarity}
+                  points={endGameXenoPointHandler(card, 'p1')}
+                />
+              </div>
+            {/each}
+
+            <!-- Cards Discarded -->
+            <p class="history__small-header">Cards discarded:</p>
+            {#each $player1.discards as card}
+              <div class="history__card-wrapper">
+                <GGCard
                 displayTitle={$cardDetails[card].displayTitle}
                 title={$cardDetails[card].title}
                 img={$cardDetails[card].image}
                 race={$cardDetails[card].race}
                 rarity={$cardDetails[card].rarity}
                 points={endGameXenoPointHandler(card, 'p1')}
-              />
-            </div>
-          {/each}
-
-          <!-- Cards Discarded -->
-          <p class="history__small-header">Cards discarded:</p>
-          {#each $player1.discards as card}
-            <div class="history__card-wrapper">
-              <GGCard
-               displayTitle={$cardDetails[card].displayTitle}
-               title={$cardDetails[card].title}
-               img={$cardDetails[card].image}
-               race={$cardDetails[card].race}
-               rarity={$cardDetails[card].rarity}
-               points={endGameXenoPointHandler(card, 'p1')}
-              />
-            </div>
-          {/each}
-        </div>
-      </div>
-
-      <div class="player-history-wrapper">
-        <!-- Cards Drawn -->
-        <div class="history__cards-drawn">
-          <!-- Starting hand, placed here so it's at the beginning, left side of parent -->
-          <p class="history__small-header">Starting Hand:</p>
-          {#each $player2.startingHand as card}
-            <div class="history__card-wrapper">
-              <GGCard
-               displayTitle={$cardDetails[card].displayTitle}
-               title={$cardDetails[card].title}
-               img={$cardDetails[card].image}
-               race={$cardDetails[card].race}
-               rarity={$cardDetails[card].rarity}
-               points={endGameXenoPointHandler(card, 'p2')}
-              />
-            </div>
-          {/each}
-
-          <p class="history__small-header">Cards drawn:</p>
-          {#each $player2.cardsDrawn as card}
-          <div class="history__card-wrapper">
-            <GGCard
-             displayTitle={$cardDetails[card].displayTitle}
-             title={$cardDetails[card].title}
-             img={$cardDetails[card].image}
-             race={$cardDetails[card].race}
-             rarity={$cardDetails[card].rarity}
-             points={endGameXenoPointHandler(card, 'p2')}
-            />
+                />
+              </div>
+            {/each}
           </div>
-          {/each}
         </div>
-        <div class="history__cards-discarded">
-          <!-- Final hand, placed here so it's at the beginning, right side of parent -->
-          <p class="history__small-header">Final Hand:</p>
-          {#each $player2.hand as card}
-            <div class="history__card-wrapper">
-              <GGCard
-               displayTitle={$cardDetails[card].displayTitle}
-               title={$cardDetails[card].title}
-               img={$cardDetails[card].image}
-               race={$cardDetails[card].race}
-               rarity={$cardDetails[card].rarity}
-               points={endGameXenoPointHandler(card, 'p2')}
-              />
-            </div>
-          {/each}
 
-          <!-- Cards Discarded -->
-          <p class="history__small-header">Cards discarded:</p>
-          {#each $player2.discards as card}
+        <div class="player-history-wrapper">
+          <!-- Cards Drawn -->
+          <div class="history__cards-drawn">
+            <!-- Starting hand, placed here so it's at the beginning, left side of parent -->
+            <p class="history__small-header">Starting Hand:</p>
+            {#each $player2.startingHand as card}
+              <div class="history__card-wrapper">
+                <GGCard
+                displayTitle={$cardDetails[card].displayTitle}
+                title={$cardDetails[card].title}
+                img={$cardDetails[card].image}
+                race={$cardDetails[card].race}
+                rarity={$cardDetails[card].rarity}
+                points={endGameXenoPointHandler(card, 'p2')}
+                />
+              </div>
+            {/each}
+
+            <p class="history__small-header">Cards drawn:</p>
+            {#each $player2.cardsDrawn as card}
             <div class="history__card-wrapper">
               <GGCard
-               displayTitle={$cardDetails[card].displayTitle}
-               title={$cardDetails[card].title}
-               img={$cardDetails[card].image}
-               race={$cardDetails[card].race}
-               rarity={$cardDetails[card].rarity}
-               points={endGameXenoPointHandler(card, 'p2')}
+              displayTitle={$cardDetails[card].displayTitle}
+              title={$cardDetails[card].title}
+              img={$cardDetails[card].image}
+              race={$cardDetails[card].race}
+              rarity={$cardDetails[card].rarity}
+              points={endGameXenoPointHandler(card, 'p2')}
               />
             </div>
-          {/each}
+            {/each}
+          </div>
+          <div class="history__cards-discarded">
+            <!-- Final hand, placed here so it's at the beginning, right side of parent -->
+            <p class="history__small-header">Final Hand:</p>
+            {#each $player2.hand as card}
+              <div class="history__card-wrapper">
+                <GGCard
+                displayTitle={$cardDetails[card].displayTitle}
+                title={$cardDetails[card].title}
+                img={$cardDetails[card].image}
+                race={$cardDetails[card].race}
+                rarity={$cardDetails[card].rarity}
+                points={endGameXenoPointHandler(card, 'p2')}
+                />
+              </div>
+            {/each}
+
+            <!-- Cards Discarded -->
+            <p class="history__small-header">Cards discarded:</p>
+            {#each $player2.discards as card}
+              <div class="history__card-wrapper">
+                <GGCard
+                displayTitle={$cardDetails[card].displayTitle}
+                title={$cardDetails[card].title}
+                img={$cardDetails[card].image}
+                race={$cardDetails[card].race}
+                rarity={$cardDetails[card].rarity}
+                points={endGameXenoPointHandler(card, 'p2')}
+                />
+              </div>
+            {/each}
+          </div>
         </div>
       </div>
-    </div>
-  
-  <!-- Game / Board view -->
-  {:else}
-    <!-- Loading screen -->
-    {#if gameState.showSpinner}
-      <Spinner />
-    {/if}
-
-    <!-- svelte-ignore a11y-click-events-have-key-events -->
-    <div class="game-board {gameState.showEventMessage ? 'game-event' : ''} {gameState.gobbledegookDeclared ? 'gobble-declared' : ''}">
-      {#if gameState.showEventMessage}
-        <p class="game-event-message" in:fade>{gameState.eventMessage}</p>
+    
+    <!-- Game / Board view -->
+    {:else}
+      <!-- Loading screen -->
+      {#if gameState.showSpinner}
+        <Spinner />
       {/if}
 
-      <!-- TODO: fix FIXME: -->
-      <div class="card-section card-section__ally {$player1.turn ? "section-active" : ""}">
-        <div class="player-scores-wrapper player-scores-wrapper__ally">
-          {#if gameState.playingAs === 'p1'}
-            <div class="player-scores">
-              <span>HUM <span class="color-blue">{$player1.points.humans} </span></span>
-              <span>| GBL <span class="color-green">{$player1.points.goblins}</span></span>
-              <span>| ELF <span class="color-silver">{$player1.points.elves}</span></span>
-              <span>| DWF <span class="color-maroon">{$player1.points.dwarves}</span></span>
-              <span>| BST <span class="color-brown">{$player1.points.beasts}</span></span>
-              <span>| BOT <span class="color-grey">{$player1.points.bots}</span></span>
-              <span>| XNO <span class="color-yellow">{$player1.points.xenos} </span>| </span>
-              <!-- TODO: view all/more option to show curses and blessings and a full summary TODO: -->
-              <!-- <span class="text-12px"><strong>View More</strong></span> -->
-            </div>
-          {/if}
-
-          {#if gameState.p1NameChangeVisible}
-            <input bind:value={gameState.newPlayerTitle} on:blur={updateUsernameForOtherClient} type="text" />
-          {:else}
-            <p on:click={toggleP1NameChangeVisibility} class="p1-name {$player1.turn ? "turn-active" : ""}">{$player1.title}</p>
-          {/if}
-        </div>
-
-        {#each $player1.hand as card}
-          <GGCard
-            on:cardClick={(event) => selectCard(event, $player1.hand)}
-            faceUp={isCardVisible('p1') || $player2.hasVision || $player1.isExposed}
-            displayTitle={$cardDetails[card].displayTitle}
-            title={$cardDetails[card].title}
-            img={$cardDetails[card].image}
-            trait={$cardDetails[card].trait}
-            traitTitle={$cardDetails[card].traitTitle}
-            description={$cardDetails[card].description}
-            race={$cardDetails[card].race}
-            rarity={$cardDetails[card].rarity}
-            points={$cardDetails[card].points}
-          />
-        {/each}
-      </div>
-
-      <div class="card-section card-section__enemy {$player2.turn ? "section-active" : ""}">
-        <div class="player-scores-wrapper player-scores-wrapper__enemy">
-          {#if gameState.playingAs === 'p2'}
-            <div class="player-scores">
-              <span>HUM <span class="color-blue">{$player2.points.humans} </span></span>
-              <span>| GBL <span class="color-green">{$player2.points.goblins}</span></span>
-              <span>| ELF <span class="color-silver">{$player2.points.elves}</span></span>
-              <span>| DWF <span class="color-maroon">{$player2.points.dwarves}</span></span>
-              <span>| BST <span class="color-brown">{$player2.points.beasts}</span></span>
-              <span>| BOT <span class="color-grey">{$player2.points.bots}</span></span>
-              <span>| XNO <span class="color-yellow">{$player2.points.xenos} </span>| </span>
-              <!-- TODO: view all/more option to show curses and blessings and a full summary TODO: -->
-              <!-- <span class="text-12px"><strong>View More</strong></span> -->
-            </div>
-          {/if}
-
-          {#if gameState.p2NameChangeVisible}
-            <input bind:value={gameState.newPlayerTitle} on:blur={updateUsernameForOtherClient} type="text" />
-          {:else}
-            <p on:click={toggleP2NameChangeVisibility} class="p2-name {$player2.turn ? "turn-active" : ""}">{$player2.title}</p>
-          {/if}
-        </div>
-        {#each $player2.hand as card}
-          <GGCard
-            on:cardClick={(event) => selectCard(event, $player2.hand)}
-            faceUp={isCardVisible('p2') || $player1.hasVision || $player2.isExposed}
-            displayTitle={$cardDetails[card].displayTitle}
-            title={$cardDetails[card].title}
-            img={$cardDetails[card].image}
-            trait={$cardDetails[card].trait}
-            traitTitle={$cardDetails[card].traitTitle}
-            description={$cardDetails[card].description}
-            race={$cardDetails[card].race}
-            rarity={$cardDetails[card].rarity}
-            points={$cardDetails[card].points}
-          />
-        {/each}
-      </div>
-
-      <div class="game-buttons">
-        <h1 class="turn-count">Turn {gameState.turnCount}</h1>
-        <GGCard on:click={deckClickHandler} faceUp={false} />
-        {#if !gameState.startBtnDisabled}
-          <Button on:click={startGame} round={true} customClasses="btn__green">Start</Button>
-        {:else if gameState.gobbledegookDisabled || gameState.turnCount < 10}
-          <Button round={true} customClasses="btn__orange_disabled">GDG</Button>
-        {:else}
-          <Button on:click={gobbledegook} round={true} customClasses="btn__orange">GDG</Button>
+      <!-- svelte-ignore a11y-click-events-have-key-events -->
+      <div class="game-board {gameState.showEventMessage ? 'game-event' : ''} {gameState.gobbledegookDeclared ? 'gobble-declared' : ''}">
+        {#if gameState.showEventMessage}
+          <p class="game-event-message" in:fade>{gameState.eventMessage}</p>
         {/if}
+
+        <!-- TODO: fix FIXME: -->
+        <div class="card-section card-section__ally {$player1.turn ? "section-active" : ""}">
+          <div class="player-scores-wrapper player-scores-wrapper__ally">
+            {#if gameState.playingAs === 'p1'}
+              <div class="player-scores">
+                <span>HUM <span class="color-blue">{$player1.points.humans} </span></span>
+                <span>| GBL <span class="color-green">{$player1.points.goblins}</span></span>
+                <span>| ELF <span class="color-silver">{$player1.points.elves}</span></span>
+                <span>| DWF <span class="color-maroon">{$player1.points.dwarves}</span></span>
+                <span>| BST <span class="color-brown">{$player1.points.beasts}</span></span>
+                <span>| BOT <span class="color-grey">{$player1.points.bots}</span></span>
+                <span>| XNO <span class="color-yellow">{$player1.points.xenos} </span>| </span>
+                <!-- TODO: view all/more option to show curses and blessings and a full summary TODO: -->
+                <!-- <span class="text-12px"><strong>View More</strong></span> -->
+              </div>
+            {/if}
+
+            {#if gameState.p1NameChangeVisible}
+              <input bind:value={gameState.newPlayerTitle} on:blur={updateUsernameForOtherClient} type="text" />
+            {:else}
+              <p on:click={toggleP1NameChangeVisibility} class="p1-name {$player1.turn ? "turn-active" : ""}">{$player1.title}</p>
+            {/if}
+          </div>
+
+          {#each $player1.hand as card}
+            <GGCard
+              on:cardClick={(event) => selectCard(event, $player1.hand)}
+              faceUp={isCardVisible('p1') || $player2.hasVision || $player1.isExposed}
+              displayTitle={$cardDetails[card].displayTitle}
+              title={$cardDetails[card].title}
+              img={$cardDetails[card].image}
+              trait={$cardDetails[card].trait}
+              traitTitle={$cardDetails[card].traitTitle}
+              description={$cardDetails[card].description}
+              race={$cardDetails[card].race}
+              rarity={$cardDetails[card].rarity}
+              points={$cardDetails[card].points}
+            />
+          {/each}
+        </div>
+
+        <div class="card-section card-section__enemy {$player2.turn ? "section-active" : ""}">
+          <div class="player-scores-wrapper player-scores-wrapper__enemy">
+            {#if gameState.playingAs === 'p2'}
+              <div class="player-scores">
+                <span>HUM <span class="color-blue">{$player2.points.humans} </span></span>
+                <span>| GBL <span class="color-green">{$player2.points.goblins}</span></span>
+                <span>| ELF <span class="color-silver">{$player2.points.elves}</span></span>
+                <span>| DWF <span class="color-maroon">{$player2.points.dwarves}</span></span>
+                <span>| BST <span class="color-brown">{$player2.points.beasts}</span></span>
+                <span>| BOT <span class="color-grey">{$player2.points.bots}</span></span>
+                <span>| XNO <span class="color-yellow">{$player2.points.xenos} </span>| </span>
+                <!-- TODO: view all/more option to show curses and blessings and a full summary TODO: -->
+                <!-- <span class="text-12px"><strong>View More</strong></span> -->
+              </div>
+            {/if}
+
+            {#if gameState.p2NameChangeVisible}
+              <input bind:value={gameState.newPlayerTitle} on:blur={updateUsernameForOtherClient} type="text" />
+            {:else}
+              <p on:click={toggleP2NameChangeVisibility} class="p2-name {$player2.turn ? "turn-active" : ""}">{$player2.title}</p>
+            {/if}
+          </div>
+          {#each $player2.hand as card}
+            <GGCard
+              on:cardClick={(event) => selectCard(event, $player2.hand)}
+              faceUp={isCardVisible('p2') || $player1.hasVision || $player2.isExposed}
+              displayTitle={$cardDetails[card].displayTitle}
+              title={$cardDetails[card].title}
+              img={$cardDetails[card].image}
+              trait={$cardDetails[card].trait}
+              traitTitle={$cardDetails[card].traitTitle}
+              description={$cardDetails[card].description}
+              race={$cardDetails[card].race}
+              rarity={$cardDetails[card].rarity}
+              points={$cardDetails[card].points}
+            />
+          {/each}
+        </div>
+
+        <div class="game-buttons">
+          <h1 class="turn-count">Turn {gameState.turnCount}</h1>
+          <GGCard on:click={clickOnDeck} faceUp={false} />
+          {#if !gameState.startBtnDisabled}
+            <Button on:click={startGame} round={true} customClasses="btn__green">Start</Button>
+          {:else if gameState.gobbledegookDisabled || gameState.turnCount < 10}
+            <Button round={true} customClasses="btn__orange_disabled">GDG</Button>
+          {:else}
+            <Button on:click={gobbledegook} round={true} customClasses="btn__orange">GDG</Button>
+          {/if}
+        </div>
       </div>
-    </div>
-  {/if}
-</main>
+    {/if}
+  </main>
+{/if}
 
 
 <style lang="scss">
