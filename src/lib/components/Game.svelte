@@ -806,6 +806,7 @@
     // Nebulites buff xenos by 4 points
     if (player.hand.includes('nebulite')) calculateSpecialXenoCard(player, 'nebulite');
 
+    // FIXME: TODO: FIXME: endgame things should only trigger once, also check resets make sure they account for traps and boosts
     // Handles end game boost cards, adds last-minute bonus points unaffected by leaders.
     endGameBoostHandler(player);
 
@@ -1261,6 +1262,8 @@
       xenos: 0
     };
     player.highestPoints = 0;
+    player.chargePoints = 0;
+    player.infectPoints = 0;
   }
 
   function toggleP1NameChangeVisibility(): void {
