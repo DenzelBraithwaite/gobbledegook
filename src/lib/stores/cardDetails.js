@@ -537,7 +537,7 @@ const cardDetails = writable({
     amount: 3,
     rarity: 'amazing',
     traitTitle: 'Thick skin',
-    trait: 'Blocks all endgame trap cards.',
+    trait: 'If this card is in the player\'s hand at the end of the game, they will block all trap cards.',
     description: 'A feared beast at the top of the food chain.',
     race: 'beast',
     image: '/beasts/rhino.png'
@@ -623,7 +623,7 @@ const cardDetails = writable({
     amount: 3,
     rarity: 'epic',
     traitTitle: 'Antibodies',
-    trait: 'Blocks all of your end game boost cards, not the enemy boosts.',
+    trait: 'If this card is in the player\'s hand at the end of the game, they will not receive any boosts.',
     description: 'The xenoGuard is a highly intelligent and powerful creature, feared by many. It is the most feared creature in the xeno hive, tasked with the safety of the xeno overlord.',
     race: 'xeno',
     image: '/xenos/xeno_guard.png'
@@ -875,7 +875,6 @@ const cardDetails = writable({
     race: 'neutral',
     image: '/neutrals/vision.png'
   },
-  // FIXME: Adds to xenopoints but not final score at end?
   xenoBloom: {
     title: 'xenoBloom',
     displayTitle: 'Xeno Bloom',

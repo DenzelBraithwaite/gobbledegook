@@ -15,7 +15,8 @@
   // Websocket
   import { io } from 'socket.io-client';
 
-  let socket = io('http://10.3.144.106:6912'); // Work MacBook
+  // let socket = io('http://10.3.144.106:6912'); // Work MacBook at work
+  let socket = io('http://192.168.2.19:6912'); // Work MacBook at home
   // let socket = io('http://192.168.2.21:6912'); // MacBook
   // let socket = io('http://192.168.2.10:6912'); // Thanos
   $: gameState = {
@@ -36,7 +37,6 @@
     p2NameChangeVisible: false,
     playingAs: ''
   };
-  // deckDetails will differ between client and remote so we need a clean copy, e.g. voidRunner.
   let remoteCardDetails = {...$cardDetails};
   // Deck players draw from, includes all race decks
   let fullDeck = {
@@ -93,6 +93,10 @@
         $player2.hasVision = false;
         return $player2;
       });
+
+      const gdgButtonAvailable = (!gameState.gameOver && !gameState.gobbledegookDeclared && gameState.turnCount >= 10);
+      if (gdgButtonAvailable && isPlayerTurn()) gameState.gobbledegookDisabled = false;
+      if (isPlayerTurn()) showEvent('turn-change');
     });
 
     // Increase turn count
@@ -130,7 +134,7 @@
     socket.on('gdg-declared', () => gameState.gobbledegookDeclared = true);
 
     // Handles first server reply for xeno updates (like 3 way handshake pt 1)
-    socket.on('end-game-sync-started', data => {
+    socket.on('xeno-sync-started', data => {
       // The goal is to update the remote player's xeno points (since they will differ)
       if (gameState.playingAs === 'p1') player2.set(data.player2);
       if (gameState.playingAs === 'p2') player1.set(data.player1);
@@ -139,11 +143,11 @@
       remoteCardDetails = {...data.cardDetails};
 
       // Make sure client who initiated the update gets their data updated as well.
-      socket.emit('finish-end-game-sync', {player1: $player1, player2: $player2, cardDetails: $cardDetails});
+      socket.emit('finish-xeno-sync', {player1: $player1, player2: $player2, cardDetails: $cardDetails});
     });
 
     // Handles last server reply for xeno updates (like 3 way handshake pt 2)
-    socket.on('end-game-sync-finished', data => {
+    socket.on('xeno-sync-finished', data => {
       // The goal is to update the remote player's xeno points (since they will differ)
       player1.set(data.player1);
       player2.set(data.player2);
@@ -159,28 +163,26 @@
 
   // sets users based on [username, id] from server.js
   function setUsers(users: [string, string][]): void {
-    console.log(users);
-    console.log('---');
     users.forEach(user => {
       if (user[0] === 'p1') {
         player1.update($player1 => {
-          $player1.id = users['p1'];
+          $player1.id = user[1]; // socket id 2nd item in arr
           return $player1;
         });
         player1Reset.set({...$player1});
-        gameState.playingAs = 'p1';
       }
       
       if (user[0] === 'p2') {
         player2.update($player2 => {
-          $player2.id = users['p2'];
+          $player2.id = user[1]; // socket id 2nd item in arr
           return $player2;
         });
         player2Reset.set({...$player2});
-        gameState.playingAs = 'p2';
       }
-    }); 
-    console.log(gameState.playingAs);
+    });
+
+    if (socket.id === $player1.id) gameState.playingAs = 'p1';
+    if (socket.id === $player2.id) gameState.playingAs = 'p2';
   }
 
   // Initiaties a new round
@@ -212,7 +214,6 @@
 
     const options = {calculateOpponentCards: true, swapPlayers: false, recursive: true};
     calculateCurrentPlayerPoints(options);
-    console.log({p1: $player1, p2: $player2});
     determineWinner();
 
     // Loggs decks to console
@@ -224,9 +225,9 @@
   // Resets values to restart the game.
   function resetGame() {
     // Reset p1
-    player1.set({...$player1Reset});
+    player1.set({...$player1Reset, title: $player1.title});
     // Reset p2
-    player2.set({...$player2Reset});
+    player2.set({...$player2Reset, title: $player2.title});
 
     // Reset Deck
     fullDeck = {
@@ -360,7 +361,7 @@
       if (['chastity'].includes(cardDrawn)) addBoostCard(player, cardDrawn);
 
       // If the card is a neutral that triggers even without being drawn, handle it.
-      if (['switcharoo'].includes(cardDrawn)) addneutralCard(player, cardDrawn);
+      if (['switcharoo'].includes(cardDrawn)) addneutralCard(player, cardDrawn, false);
     }
 
     // Need to reassign for svelte to be reactive
@@ -409,11 +410,11 @@
     if (deckTypes.length === 0 && currentDeck === undefined) {
       console.log("No more cards!");
       gameState.showSpinner = true;
-      socket.emit('start-end-game-sync', {player1: $player1, player2: $player2, cardDetails: $cardDetails});
+      updateClientsForSpecialXenoCards();
       setTimeout(() => {
         socket.emit('end-game');
         gameState.showSpinner = false;
-      }, 1500);
+      }, 2000);
       
       return;
     };
@@ -464,7 +465,6 @@
         return;
       };
 
-      // TODO: break this out into a function
       // If it's the longbeard leader, dwarf commander or dwarvenCall, the next card will be dwarf
       if (cardDrawn === 'longbeardLeader' || cardDrawn === 'dwarfCommander' || (cardDrawn === 'dwarvenCall' && !player.hasCorruption)) player.dwarfNextTurn = true;
 
@@ -589,15 +589,14 @@
 
     if (gameState.gobbledegookDeclared) {
       gameState.showSpinner = true;
-      socket.emit('start-end-game-sync', {player1: $player1, player2: $player2, cardDetails: $cardDetails});
+      updateClientsForSpecialXenoCards();
       setTimeout(() => {
         socket.emit('end-game');
         gameState.showSpinner = false;
-      }, 1500);
+      }, 2000);
       
     } else {
       changeTurns();
-      gameState.gobbledegookDisabled = false;
     }
   };
 
@@ -638,14 +637,13 @@
 
     if (gameState.gobbledegookDeclared) {
       gameState.showSpinner = true;
-      socket.emit('start-end-game-sync', {player1: $player1, player2: $player2, cardDetails: $cardDetails});
+      updateClientsForSpecialXenoCards();
       setTimeout(() => {
         socket.emit('end-game');
         gameState.showSpinner = false;
       }, 2000);
       
     } else {
-      console.log('Gobbledegook declared!!');
       changeTurns();
       gameState.gobbledegookDeclared = true;
       socket.emit('gdg-declared');
@@ -729,7 +727,6 @@
     }
   }
 
-  // TODO: FINISH then use after each action to update points
   // Calculates up-to-date current player points, wipes each time to avoid adding points to previous ones.
   function calculateCurrentPlayerPoints(options = {calculateOpponentCards: false, swapPlayers: false, recursive: false}) {
     let player;
@@ -745,57 +742,14 @@
     // Reset points each time for a clean calculation then calculates hand before special cards.
     setPlayerPointsToZero(player);
     calculateBasePoints(player);
+    calculateSpecialTraits(player, enemy, options);
 
-    // Only wipe player's bot points if they know enemy has AI
-    if (options.calculateOpponentCards && enemy.hand.includes('ai')) player.points.bots = 0;
-    
-    // Must be before emperor calculation for proper result, adds bonus points to all humans.
-    if (player.hand.includes('commander')) calculateCommander(player);
-
-    // Multiplies human points by 2 then adds rest of hand as human points.
-    if (player.hand.includes('emperor')) calculateEmperor(player);
-
-    // Determines if player has full goblin hand and if enemy has full elf hand with elf leader, assigns points accordingly.
-    if (player.hand.includes('goblinLord')) calculateGoblinLord(player, enemy, options.calculateOpponentCards);
-
-    // If elf twins in hand player gains bonus points depending on how many. Must be before Elf king calculation for proper calculation.
-    if (player.hand.includes('nelladan') && player.hand.includes('nadallen')) calculateElfTwins(player);
-
-    // Determines if enemy has full goblin hand and if player has full elf hand, assigns points accordingly.
-    if (player.hand.includes('elfKing')) calculateElfKing(player, enemy, options.calculateOpponentCards);
-
-    // Calculates all beasts as if they are worth 12 points.
-    if (player.hand.includes('dreamDestroyer')) calculateDreamDestroyer(player);
-
-    // If player has humans/hobbits, pawl barkington gains +10 points.
-    if (player.hand.includes('dog') && (player.hand.includes('hobbit') || player.hand.some(card => $cardDetails[card].race === 'human'))) player.points.beasts += 10;
-
-    // Player gains +2 for every wolf on the field, including himself.
-    if (player.hand.includes('wolf')) calculateWolfPack(player);
-
-    // Adds +2 to all bot cards (player + enemy) then steals all bot points.
-    if (player.hand.includes('ai')) calculateAi(player, enemy, options.calculateOpponentCards);
-
-    // Must be after A.I. since A.I. resets bot points. Quarantine all viruses adding +8 to their value and +1 bot point to Protectron per quarantined virus.
-    if (player.hand.includes('protectron')) calculateProtectron(player, enemy);
-
-    // Calculates +5 dwarf points per discarded dwarf by any player.
-    if (player.hand.includes('longbeardLeader')) calculateLongbeard(player, options.calculateOpponentCards);
-
-    // Nebulites buff xenos by 4 points
-    if (player.hand.includes('nebulite')) calculateSpecialXenoCard(player, 'nebulite');
-
-    // FIXME: TODO: FIXME: endgame things should only trigger once, also check resets make sure they account for traps and boosts
-    // Handles end game boost cards, adds last-minute bonus points unaffected by leaders.
-    endGameBoostHandler(player);
-
-    // Handles end game trap cards
+    // Handles end game boost, trap and neutral cards. These occur AFTER special traits are calculated.
+    endGameBoostHandler(player, enemy, options);
     endGameTrapHandler(player);
-
-    // Handles end game neutral cards
     endGameNeutralHandler(player);
 
-    // FIXME: for some reason, after xenobloom, it counts the points but doesn't recognize that xenos are the highest points.
+    // Determines player's race with the most points to compare to other player.
     setPlayerHighestPoints(player);
 
     if (options.recursive) calculateCurrentPlayerPoints({calculateOpponentCards: true, swapPlayers: true, recursive: false});
@@ -806,15 +760,15 @@
     player.hand.forEach(card => {
       const race = $cardDetails[card].race;
       switch(race) {
-        // When calculating dreamdestroyer, it resets beast points. Remember that just in case.
+        // When calculating dreamdestroyer, it resets beast points
         case 'beast':
           player.points.beasts += $cardDetails[card].points;
         break;
 
-        // When calculating A.I., it resets bot points. Remember that just in case.
+        // When calculating A.I., it resets bot points
         case 'bot':
           if ($cardDetails[card].title === 'faeBot') player.points.elves += $cardDetails[card].points;
-           player.points.bots += $cardDetails[card].points;
+          player.points.bots += $cardDetails[card].points;
         break;
 
         case 'elf':
@@ -834,7 +788,7 @@
           player.points.humans += $cardDetails[card].points;
         break;
 
-        // Points may vary between clients with Xenos, handle this.
+        // TODO: is this still truePoints may vary between clients with Xenos, I handle this by sharing state repeatedly of cardDetails
         case 'xeno':
           player.points.xenos += ((gameState.playingAs === 'p1' && player === $player1) || (gameState.playingAs === 'p2' && player === $player2)) ? $cardDetails[card].points : remoteCardDetails[card].points;
         break;
@@ -859,6 +813,56 @@
         player.points.xenos
       );
     });
+  }
+
+  // Calculates all race card special traits
+  function calculateSpecialTraits(player, enemy, options = {calculateOpponentCards: false, swapPlayers: false, recursive: false}): void {
+    // Only wipe player's bot points if they know enemy has AI
+    if (options.calculateOpponentCards && enemy.hand.includes('ai')) player.points.bots = 0;
+    
+    // Must be before emperor calculation for proper result, adds bonus points to all humans.
+    if (player.hand.includes('commander')) calculateCommander(player);
+
+    // Multiplies human points by 2 then adds rest of hand as human points.
+    if (player.hand.includes('emperor')) calculateEmperor(player);
+
+    // Determines if player has full goblin hand and if enemy has full elf hand with elf leader, assigns points accordingly.
+    if (player.hand.includes('goblinLord')) calculateGoblinLord(player, enemy, options.calculateOpponentCards);
+
+    // If elf twins in hand player gains bonus points depending on how many. Must be before Elf king calculation for proper calculation.
+    if (player.hand.includes('nelladan') && player.hand.includes('nadallen')) calculateElfTwins(player);
+
+    // Determines if enemy has full goblin hand and if player has full elf hand, assigns points accordingly.
+    if (player.hand.includes('elfKing')) calculateElfKing(player, enemy, options.calculateOpponentCards);
+
+    // Calculates all beasts as if they are worth 12 points.
+    if (player.hand.includes('dreamDestroyer')) calculateDreamDestroyer(player);
+
+    // If player has humans/hobbits, pawl barkington gains +10 points.
+    if (player.hand.includes('dog') && (player.hand.includes('hobbit') || player.hand.some(card => $cardDetails[card].race === 'human'))) {
+      const numOfDogs = player.hand.filter(c => c === 'dog').length;
+      player.points.beasts += 10 * numOfDogs;
+    }
+
+    // Player gains +2 for every wolf on the field, including himself.
+    if (player.hand.includes('wolf')) calculateWolfPack(player);
+
+    // Adds +2 to all bot cards (player + enemy) then steals all bot points.
+    if (player.hand.includes('ai')) calculateAi(player, enemy, options);
+
+    // Must be after A.I. since A.I. resets bot points. Quarantine all viruses adding +8 to their value and +1 bot point to Protectron per quarantined virus.
+    if (player.hand.includes('protectron')) calculateProtectron(player, enemy);
+
+    // Calculates +5 dwarf points per discarded dwarf by any player.
+    if (player.hand.includes('longbeardLeader')) calculateLongbeard(player, options.calculateOpponentCards);
+
+    // Nebulites buff xenos by 4 points
+    if (player.hand.includes('nebulite')) calculateSpecialXenoCard(player, 'nebulite');
+  }
+
+  // Trade warpstalker and voidrunner client values before calculation
+  async function updateClientsForSpecialXenoCards() {
+    socket.emit('start-xeno-sync', {player1: $player1, player2: $player2, cardDetails: $cardDetails});
   }
 
   // Calculates and updates player's highest points among races.
@@ -918,14 +922,12 @@
     }
   }
 
-  // TODO: boosts like rejuvenate are added after the draw, making one person win. I actually like this, make sure this is the behaviour with all boosts and traps to avoid draws.
   // Instant win for goblins unless enemy has full elf hand + elf king, if so, then instant draw.
   function calculateGoblinLord(player, enemy, calculateElfDefense = false) {
     // Checks if player hand has only goblins
     const goblinHand = player.hand.every(card => { 
       return $cardDetails[card].race === 'goblin';
     });
-    console.log(`from inside calculateGoblinLord, goblinHand = ${goblinHand}`)
     
     // Ignore enemy cards if the game is still going on
     if (!calculateElfDefense && goblinHand) {
@@ -998,14 +1000,14 @@
   }
 
   // Adds ALL bot card points on the field to players score, and bots have +2
-  function calculateAi(player, enemy, calculateHackingAbility = false) {  
+  function calculateAi(player, enemy, options = {calculateOpponentCards: false, swapPlayers: false, recursive: false}) {  
     // Need to reset since bot points are added in calculateBasePoints()
     player.points.bots = 0;
     player.hand.forEach(card => {
       if ($cardDetails[card].race === 'bot') player.points.bots += ($cardDetails[card].points + 2);
     });
 
-    if (calculateHackingAbility) {
+    if (options.calculateOpponentCards) {
       // Add all bot points from enemy hand as well
       enemy.points.bots = 0;
       enemy.hand.forEach(card => {
@@ -1041,7 +1043,7 @@
       $cardDetails[card].points = Math.ceil(Math.random() * 7) + 6;
     }
 
-    // If card drwan is voidRunner, set points equal to amount of turns passed
+    // If card drawn is voidRunner, set points equal to amount of turns passed
     if (card === 'voidRunner') {
       $cardDetails[card].points = gameState.turnCount;
     }
@@ -1055,7 +1057,7 @@
   }
 
   // For displaying special void points at the end of the game
-  function endGameXenoPointHandler(cardTitle, player) {
+  function endGameXenoPointHandler(cardTitle, player): number {
     // Return regular points if it's not special xeno card
     if (!['warpstalker', 'voidRunner'].includes(cardTitle)) return $cardDetails[cardTitle].points;
     
@@ -1069,7 +1071,6 @@
   }
 
   // Adds boost card to players boosts array
-  // TODO: fixed charge same issue as calculation of infection, not sure if good, have yet to test.
   function addBoostCard(player, card) {
     player.boosts = [...player.boosts, card];
     
@@ -1078,14 +1079,17 @@
   }
 
   // Handles boost cards at the end of the game
-  function endGameBoostHandler(player) {
-    // FIXME: is this broken?
-    // TODO: corruption should only count when drawn or when still in hand due to switcharoo
-    // Corruption card blocks all boosts
-    if (player.hand.includes('xenoguard') || player.hand.includes('corruption') || player.discards.includes('corruption')) return;
+  function endGameBoostHandler(player, enemy, options = {calculateOpponentCards: false, swapPlayers: false, recursive: false}) {
+    // These cards block all boosts
+    if (player.hand.includes('xenoGuard') ||
+        (player.hand.includes('corruption') || player.discards.includes('corruption'))
+    ) return;
 
+    // Add charge points to human and bot points
     for (let i = 0; i < player.chargeDrawnTurns.length; i++) player.chargePoints += (gameState.turnCount - player.chargeDrawnTurns[i]);
-    player.points.bots += player.chargePoints;
+    
+    // calculateAI runs before this, charge points should be stolen if a player has 'ai'
+    options.calculateOpponentCards && enemy.hand.includes('ai') ? enemy.points.bots += player.chargePoints : player.points.bots += player.chargePoints;
     player.points.humans += player.chargePoints;
 
     // Handles other boosts
@@ -1101,13 +1105,18 @@
 
     if (card === 'corruption') player.hasCorruption = true;
     if (card === 'infect') player.infectDrawnTurns.push(gameState.turnCount);
-    if (card === 'exposed' && !player.hasChastity && !player.hand.includes('chastity')) player.isExposed = true;
+    if (card === 'exposed' && !player.hasChastity && !player.hand.includes('chastity')) {
+      player.isExposed = true;
+      socket.emit('display-event', 'exposed');
+    }
   }
 
   // Handles trap cards at the end of the game
   function endGameTrapHandler(player) {
     // Corruption card blocks all boosts, also checks for rhino in hand at end
-    if (player.hand.includes('rhino') || player.hand.includes('chastity') || player.discards.includes('chastity')) return;
+    if (player.hand.includes('rhino') ||
+        (player.hand.includes('chastity') || player.discards.includes('chastity'))
+    ) return;
 
     // Handles infect trap
     for (let i = 0; i < player.infectDrawnTurns.length; i++) player.infectPoints += (gameState.turnCount - player.infectDrawnTurns[i]);
@@ -1121,14 +1130,17 @@
   }
 
   // Adds neutral card to players neutrals array
-  function addneutralCard(player, card) {
+  function addneutralCard(player, card, drawn = true) {
     player.neutrals = [...player.neutrals, card];
 
     // If Echo card, player draws and plays twice
     if (card === 'echo') player.playingTwice = true;
 
     // If vision card, player sees enemy's hand for one turn
-    if (card === 'vision') player.hasVision = true;
+    if (card === 'vision' && drawn) {
+      player.hasVision = true;
+      showEvent('vision');
+    }
 
     // Add turn to turnCount if card is Ticktock
     if (card === 'ticktock') {
@@ -1198,15 +1210,35 @@
   }
 
   // Show visual feedback for certain events
-  // TODO: turn change flash
-  function showEvent(card) {
+  async function showEvent(trigger: 'neutralize' | 'switcharoo' | 'xenoBloom' | 'ticktock' | 'exposed' | 'vision' | 'turn-change') {
+    while (gameState.showEventMessage) await new Promise(resolve => setTimeout(resolve, 100)); // wait 100ms each time
+    let timer = 2500;
     gameState.showEventMessage = true;
-    setTimeout(() => gameState.showEventMessage = false, 2000);
-
-    if (card === 'neutralize') gameState.eventMessage = "Neutralized!";
-    if (card === 'switcharoo') gameState.eventMessage = "Switcharoo!";
-    if (card === 'xenoBloom') gameState.eventMessage = "XenoBloom!";
-    if (card === 'ticktock') gameState.eventMessage = "Tick Tock!";
+    switch (trigger) {
+      case 'turn-change':
+        timer = 1250;
+        gameState.eventMessage = "It's Your Turn!";
+        break;
+      case 'exposed':
+        gameState.eventMessage = "Exposed 🔍!";
+        break;
+      case 'vision':
+        gameState.eventMessage = "Vision 👁️_👁️!";
+        break;
+      case 'neutralize':
+        gameState.eventMessage = "Neutralized ⚖️!";
+        break;
+      case 'switcharoo':
+          gameState.eventMessage = "Switcharoo 🔃!";
+          break;
+      case 'xenoBloom':
+        gameState.eventMessage = "XenoBloom 👽!";
+        break;
+      case 'ticktock':
+        gameState.eventMessage = "Tick Tock ⏰!";
+        break;
+    }
+    setTimeout(() => gameState.showEventMessage = false, timer);
   }
 
   // Toggles card library visibility
@@ -1484,10 +1516,9 @@
       <!-- svelte-ignore a11y-click-events-have-key-events -->
       <div class="game-board {gameState.showEventMessage ? 'game-event' : ''} {gameState.gobbledegookDeclared ? 'gobble-declared' : ''}">
         {#if gameState.showEventMessage}
-          <p class="game-event-message" in:fade>{gameState.eventMessage}</p>
+          <p class="game-event-message">{gameState.eventMessage}</p>
         {/if}
 
-        <!-- TODO: fix FIXME: -->
         <div class="card-section card-section__ally {$player1.turn ? "section-active" : ""}">
           <div class="player-scores-wrapper player-scores-wrapper__ally">
             {#if gameState.playingAs === 'p1'}
@@ -1499,13 +1530,16 @@
                 <span>| BST <span class="color-brown">{$player1.points.beasts}</span></span>
                 <span>| BOT <span class="color-grey">{$player1.points.bots}</span></span>
                 <span>| XNO <span class="color-yellow">{$player1.points.xenos} </span>| </span>
+                {#if $player1.isExposed}
+                  <span class="color-red">🔍<strong>EXPOSED</strong>🔍</span>
+                {/if}
                 <!-- TODO: view all/more option to show curses and blessings and a full summary TODO: -->
                 <!-- <span class="text-12px"><strong>View More</strong></span> -->
               </div>
             {/if}
 
             {#if gameState.p1NameChangeVisible}
-              <input bind:value={gameState.newPlayerTitle} on:blur={updateUsernameForOtherClient} type="text" />
+              <input bind:value={gameState.newPlayerTitle} on:blur={updateUsernameForOtherClient} type="text" maxlength="20"/>
             {:else}
               <p on:click={toggleP1NameChangeVisibility} class="p1-name {$player1.turn ? "turn-active" : ""}">{$player1.title}</p>
             {/if}
@@ -1539,13 +1573,16 @@
                 <span>| BST <span class="color-brown">{$player2.points.beasts}</span></span>
                 <span>| BOT <span class="color-grey">{$player2.points.bots}</span></span>
                 <span>| XNO <span class="color-yellow">{$player2.points.xenos} </span>| </span>
+                {#if $player2.isExposed}
+                  <span class="color-red">🔍<strong>EXPOSED</strong>🔍</span>
+                {/if}
                 <!-- TODO: view all/more option to show curses and blessings and a full summary TODO: -->
                 <!-- <span class="text-12px"><strong>View More</strong></span> -->
               </div>
             {/if}
 
             {#if gameState.p2NameChangeVisible}
-              <input bind:value={gameState.newPlayerTitle} on:blur={updateUsernameForOtherClient} type="text" />
+              <input bind:value={gameState.newPlayerTitle} on:blur={updateUsernameForOtherClient} type="text" maxlength="20"/>
             {:else}
               <p on:click={toggleP2NameChangeVisibility} class="p2-name {$player2.turn ? "turn-active" : ""}">{$player2.title}</p>
             {/if}
@@ -1746,18 +1783,18 @@
 
     .game-event-message {
       font-weight: bold;
-      display: block;
-      z-index: 2;
-      position: absolute;
-      bottom: 50%;
-      right: 50%;
-      transform: translate(50%, 50%);
       font-size: 4rem;
       color: #6a428b;
       text-shadow: 2px 2px 4px #000000;
       background: linear-gradient(214deg, #ddceee50, #855a2a50, #69c0ad50, #78c06950, #c0736950, #c2a84c50);
       padding: 4rem;
       border-radius: 100px;
+      z-index: 2;
+      display: block;
+      position: absolute;
+      bottom: 50%;
+      right: 50%;
+      transform: translate(50%, 50%);
     }
   }
 
@@ -1845,6 +1882,7 @@
     font-size: 1.5rem;
     font-weight: bold;
     color: #b77a5e;
+    text-wrap: nowrap;
   }
 
   .turn-active {

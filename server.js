@@ -105,10 +105,10 @@ io.on('connection', socket => {
   socket.on('end-game', data => io.emit('game-ended', data));
 
   // Start updating xeno points, like 3 way handshake part 1
-  socket.on('start-end-game-sync', data => socket.broadcast.emit('end-game-sync-started', data));
+  socket.on('start-xeno-sync', data => socket.broadcast.emit('xeno-sync-started', data));
 
   // Finish updating xeno points
-  socket.on('finish-end-game-sync', data => socket.broadcast.emit('end-game-sync-finished', data)); 
+  socket.on('finish-xeno-sync', data => socket.broadcast.emit('xeno-sync-finished', data)); 
 
   // Log connected users in the server console.
   logUsers();
