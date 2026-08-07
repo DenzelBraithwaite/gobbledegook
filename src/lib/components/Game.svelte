@@ -5,6 +5,9 @@
   // Transitions
   import { fade } from 'svelte/transition';
 
+  // Helpers
+  import wait from '../helpers/wait';
+
   // Stores
   import { player1, player1Reset, player2, player2Reset, cardDetails, beastDeck, botDeck, dwarfDeck, elfDeck, goblinDeck, humanDeck, xenoDeck, boostDeck,  trapDeck, neutralDeck } from '../stores';
 
@@ -15,9 +18,9 @@
   // Websocket
   import { io } from 'socket.io-client';
 
-  // let socket = io('http://10.3.144.106:6912'); // Work MacBook at work
-  let socket = io('http://192.168.2.19:6912'); // Work MacBook at home
-  // let socket = io('http://192.168.2.21:6912'); // MacBook
+  let socket = io('http://10.3.144.90:6912'); // Work MacBook at work, changes a lot.
+  // let socket = io('http://192.168.2.19:6912'); // Work MacBook at home
+  // let socket = io('http://192.168.2.21:6912'); // Personal MacBook at home (ofc)
   // let socket = io('http://192.168.2.10:6912'); // Thanos
   $: gameState = {
     gobbledegookDeclared: false,
@@ -93,7 +96,8 @@
         $player2.hasVision = false;
         return $player2;
       });
-
+      
+      calculateCurrentPlayerPoints();
       const gdgButtonAvailable = (!gameState.gameOver && !gameState.gobbledegookDeclared && gameState.turnCount >= 10);
       if (gdgButtonAvailable && isPlayerTurn()) gameState.gobbledegookDisabled = false;
       if (isPlayerTurn()) showEvent('turn-change');
@@ -110,10 +114,15 @@
       // Make sure player's (hands) are consistent.
       player1.set(data.player1);
       player2.set(data.player2);
+
+      // Recalculate points otherwise client gets stale points from other client (seems to fix weird point glitch)
+      calculateCurrentPlayerPoints();
     });
 
-    // Handles cards that make players swap hands
+    // Handles cards that make players swap hands, updates xenos too (client sending broadcast already updated)
     socket.on('hands-swapped', data => {
+      $cardDetails['voidRunner'].points = data.copyOfXenoPoints.voidRunner;
+      $cardDetails['warpstalker'].points = data.copyOfXenoPoints.warpstalker;
       player1.set(data.player1);
       player2.set(data.player2);
     });
@@ -143,15 +152,16 @@
       remoteCardDetails = {...data.cardDetails};
 
       // Make sure client who initiated the update gets their data updated as well.
-      socket.emit('finish-xeno-sync', {player1: $player1, player2: $player2, cardDetails: $cardDetails});
+      socket.emit('continue-xeno-sync', {player1: $player1, player2: $player2, cardDetails: $cardDetails});
     });
 
     // Handles last server reply for xeno updates (like 3 way handshake pt 2)
-    socket.on('xeno-sync-finished', data => {
+    socket.on('finish-xeno-sync', data => {
       // The goal is to update the remote player's xeno points (since they will differ)
       player1.set(data.player1);
       player2.set(data.player2);
       remoteCardDetails = {...data.cardDetails};
+      gameState.showSpinner = false;
     });
 
     // Handles game end for all users
@@ -186,10 +196,10 @@
   }
 
   // Initiaties a new round
-  function startGame() {
+  async function startGame() {
     resetGame();
-    dealCards($player1);
-    dealCards($player2);
+    await dealCards($player1);
+    await dealCards($player2);
     decideFirstPlayer();
     calculateCurrentPlayerPoints();
 
@@ -330,12 +340,11 @@
 
   // Changes active player turn
   function changeTurns() {
-    calculateCurrentPlayerPoints();
     socket.emit('change-turns', {player1: $player1, player2: $player2});
   }
 
   // Deals 5 cards to each player at the start of the round
-  function dealCards(player) {
+  async function dealCards(player) {
     // Make sure hand is empty
     player.hand = [];
     
@@ -355,13 +364,13 @@
       player.hand.push(cardDrawn);
 
       // If the card is a trap that triggers even without being drawn, handle it.
-      if (['corruption'].includes(cardDrawn)) addTrapCard(player, cardDrawn);
+      if (['corruption'].includes(cardDrawn)) await addTrapCard(player, cardDrawn);
 
       // If the card is a boost that triggers even without being drawn, handle it.
       if (['chastity'].includes(cardDrawn)) addBoostCard(player, cardDrawn);
 
       // If the card is a neutral that triggers even without being drawn, handle it.
-      if (['switcharoo'].includes(cardDrawn)) addneutralCard(player, cardDrawn, false);
+      if (['switcharoo'].includes(cardDrawn)) await addneutralCard(player, cardDrawn, false);
     }
 
     // Need to reassign for svelte to be reactive
@@ -381,7 +390,7 @@
   }
 
   // Draws and removes 1 random card from the deck
-  function drawCard(player, newTurn = true) {
+  async function drawCard(player, newTurn = true) {
     if (gameState.gameOver) return;
     if (newTurn) calculateNewTurn(player);
     let currentDeck = '';
@@ -409,13 +418,11 @@
     // When the last card is drawn, currentDeck becomes undefined. This will catch that
     if (deckTypes.length === 0 && currentDeck === undefined) {
       console.log("No more cards!");
-      gameState.showSpinner = true;
+      // Puts spinner while game while updating xenos, every .5s checks if done before continuing.
       updateClientsForSpecialXenoCards();
-      setTimeout(() => {
-        socket.emit('end-game');
-        gameState.showSpinner = false;
-      }, 2000);
+      while (gameState.showSpinner) await wait(500);
       
+      socket.emit('end-game');
       return;
     };
 
@@ -461,7 +468,7 @@
         }
 
         // Draw new card but doesn't count as new turn
-        drawCard(player, false);
+        await drawCard(player, false);
         return;
       };
 
@@ -478,13 +485,13 @@
       if (cardDrawn === 'warpstalker' || cardDrawn === 'voidRunner') calculateSpecialXenoCard(player, cardDrawn);
 
       // If the card is a trap, handle it.
-      if ($cardDetails[cardDrawn].race === 'trap') addTrapCard(player, cardDrawn);
+      if ($cardDetails[cardDrawn].race === 'trap') await addTrapCard(player, cardDrawn);
 
       // If the card is a boost, handle it.
       if ($cardDetails[cardDrawn].race === 'boost') addBoostCard(player, cardDrawn);
 
       // If the card is a neutral, handle it.
-      if ($cardDetails[cardDrawn].race === 'neutral') addneutralCard(player, cardDrawn);
+      if ($cardDetails[cardDrawn].race === 'neutral') await addneutralCard(player, cardDrawn);
     }
 
     // Remove card from deck
@@ -512,9 +519,8 @@
         return $player2;
       });
     }
-    
     calculateCurrentPlayerPoints();
-
+    
     // Emits to server that a card was drawn
     socket.emit('draw-card', {player1: $player1, player2: $player2, deckTypes: deckTypes, fullDeck: fullDeck});
   }
@@ -542,14 +548,14 @@
   }
 
   // Determines who can click on deck
-  function clickOnDeck() {
+  async function clickOnDeck() {
     if (gameState.gameOver) return;
-    if (isPlayerTurn() && $player1.turn) drawCard($player1);
-    if (isPlayerTurn() && $player2.turn) drawCard($player2);
+    if (isPlayerTurn() && $player1.turn) await drawCard($player1);
+    if (isPlayerTurn() && $player2.turn) await drawCard($player2);
   }
 
   // Removes card from hand if player hand has over 6 cards
-  function discard(card) {
+  async function discard(card) {
     if (!isPlayerTurn()) return;
 
     // Who's playing?
@@ -576,7 +582,7 @@
     socket.emit('discard-card', {player1: $player1, player2: $player2});
 
     // Check if card discarded is switcharoo, if so, swap hands, but don't swap if they have echo in effect (too many cards)
-    if (card === 'switcharoo' && player.hand.length === 5 && !gameState.gobbledegookDeclared) swapHands();
+    if (card === 'switcharoo' && player.hand.length === 5 && !gameState.gobbledegookDeclared) await swapHands();
 
     // If player is playing twice, let them draw again.
     if (player.playingTwice && card !== 'echo') player.playingTwice = false;
@@ -588,61 +594,62 @@
     if (player.hand.length > 5) return;
 
     if (gameState.gobbledegookDeclared) {
-      gameState.showSpinner = true;
+      // Puts spinner while game while updating xenos, every .5s checks if done before continuing.
       updateClientsForSpecialXenoCards();
-      setTimeout(() => {
-        socket.emit('end-game');
-        gameState.showSpinner = false;
-      }, 2000);
+      while (gameState.showSpinner) await wait(500);
       
+      socket.emit('end-game');
     } else {
       changeTurns();
     }
   };
 
-  function swapHands() {
-    // Show switcharoo message for both playesr
+  async function swapHands() {
+    // Puts spinner while game while updating xenos, every .5s checks if done before continuing.
+    updateClientsForSpecialXenoCards();
+    while (gameState.showSpinner) await wait(500);
+
+    const copyOfXenoPoints = {
+      voidRunner: $cardDetails['voidRunner'].points,
+      warpstalker: $cardDetails['warpstalker'].points,
+    }
+    $cardDetails['voidRunner'].points = remoteCardDetails['voidRunner'].points;
+    $cardDetails['warpstalker'].points = remoteCardDetails['warpstalker'].points;
+
+    let tempHand = [...$player2.hand];
+    player2.update($player2 => {
+      $player2.hand = [...$player1.hand];
+      return $player2;
+    });
+    player1.update($player1 => {
+      $player1.hand = [...tempHand];
+      return $player1;
+    });
+
+    socket.emit('swap-hands', {player1: $player1, player2: $player2, copyOfXenoPoints});
     socket.emit('display-event', 'switcharoo');
-
-      let tempHand = [...$player2.hand];
-
-      player2.update($player2 => {
-        $player2.hand = [...$player1.hand];
-        return $player2;
-      });
-      player1.update($player1 => {
-        $player1.hand = [...tempHand];
-        return $player1;
-      });
-
-    // Let clients know hands swapped
-    socket.emit('swap-hands', {player1: $player1, player2: $player2});
   }
   
   // Handles player click on card
-  function selectCard(event, playerHand) {
+  async function selectCard(event, playerHand) {
     // Gather info about the card, what card was just clicked? Title is most important
     let title = event.detail.title;
 
-    if (playerHand.length > 5) {
-      discard(title);
-    }
+    if (playerHand.length > 5) await discard(title);
   }
  
   // Handles player click on gobbledegook button
-  function gobbledegook() {
+  async function gobbledegook() {
     // Check if it's player's turn
     if (!isPlayerTurn()) return;
     if (gameState.gameOver) return;
 
     if (gameState.gobbledegookDeclared) {
-      gameState.showSpinner = true;
+      // Puts spinner while game while updating xenos, every .5s checks if done before continuing.
       updateClientsForSpecialXenoCards();
-      setTimeout(() => {
-        socket.emit('end-game');
-        gameState.showSpinner = false;
-      }, 2000);
+      while (gameState.showSpinner) await wait(500);
       
+      socket.emit('end-game');
     } else {
       changeTurns();
       gameState.gobbledegookDeclared = true;
@@ -788,7 +795,8 @@
           player.points.humans += $cardDetails[card].points;
         break;
 
-        // TODO: is this still truePoints may vary between clients with Xenos, I handle this by sharing state repeatedly of cardDetails
+        // This ensures that if this function runs on player client from the enemy perspective that it should use the remote cardDetails for xenos.
+        // This would happen because calculateCurrentPlayerPoints can run recursively, swapping perspective to enemy to calculate their points for end game for current player.
         case 'xeno':
           player.points.xenos += ((gameState.playingAs === 'p1' && player === $player1) || (gameState.playingAs === 'p2' && player === $player2)) ? $cardDetails[card].points : remoteCardDetails[card].points;
         break;
@@ -860,8 +868,9 @@
     if (player.hand.includes('nebulite')) calculateSpecialXenoCard(player, 'nebulite');
   }
 
-  // Trade warpstalker and voidrunner client values before calculation
-  async function updateClientsForSpecialXenoCards() {
+  // Trades warpstalker and voidrunner client values before calculation
+  function updateClientsForSpecialXenoCards() {
+    gameState.showSpinner = true;
     socket.emit('start-xeno-sync', {player1: $player1, player2: $player2, cardDetails: $cardDetails});
   }
 
@@ -1099,14 +1108,16 @@
   }
 
   // Adds trap card to players traps array
-  // TODO: fixed same issue as calculation of charge, not sure if good, have yet to test.
-  function addTrapCard(player, card) {
+  async function addTrapCard(player, card) {
     player.traps = [...player.traps, card];
 
     if (card === 'corruption') player.hasCorruption = true;
     if (card === 'infect') player.infectDrawnTurns.push(gameState.turnCount);
     if (card === 'exposed' && !player.hasChastity && !player.hand.includes('chastity')) {
-      player.isExposed = true;
+      // Puts spinner while game while updating xenos, every .5s checks if done before continuing.
+      updateClientsForSpecialXenoCards();
+      while (gameState.showSpinner) await wait(500);
+      player.id === $player1.id ? player1.set({...$player1, isExposed: true}) : player2.set({...$player2, isExposed: true});
       socket.emit('display-event', 'exposed');
     }
   }
@@ -1130,15 +1141,21 @@
   }
 
   // Adds neutral card to players neutrals array
-  function addneutralCard(player, card, drawn = true) {
+  async function addneutralCard(player, card, drawn = true) {
     player.neutrals = [...player.neutrals, card];
 
     // If Echo card, player draws and plays twice
-    if (card === 'echo') player.playingTwice = true;
+    if (card === 'echo') {
+      player.playingTwice = true;
+      socket.emit('display-event', 'echo');
+    }
 
     // If vision card, player sees enemy's hand for one turn
     if (card === 'vision' && drawn) {
-      player.hasVision = true;
+      // Puts spinner while game while updating xenos, every .5s checks if done before continuing.
+      updateClientsForSpecialXenoCards();
+      while (gameState.showSpinner) await wait(500);
+      player.id === $player1.id ? player1.set({...$player1, hasVision: true}) : player2.set({...$player2, hasVision: true});
       showEvent('vision');
     }
 
@@ -1159,7 +1176,7 @@
 
   // Neutralizes deeck (remove boosts / traps in effect)
   function neutralizeDeck() {
-    socket.emit('display-event', 'neutralize');
+    showEvent('neutralize');
 
       player1.update($player1 => {
         $player1.boosts = [];
@@ -1210,17 +1227,20 @@
   }
 
   // Show visual feedback for certain events
-  async function showEvent(trigger: 'neutralize' | 'switcharoo' | 'xenoBloom' | 'ticktock' | 'exposed' | 'vision' | 'turn-change') {
-    while (gameState.showEventMessage) await new Promise(resolve => setTimeout(resolve, 100)); // wait 100ms each time
-    let timer = 2500;
+  async function showEvent(trigger: 'neutralize' | 'switcharoo' | 'xenoBloom' | 'ticktock' | 'exposed' | 'vision' | 'echo' | 'turn-change') {
+    while (gameState.showEventMessage) await wait(100);
+    let timer = 1500;
     gameState.showEventMessage = true;
     switch (trigger) {
       case 'turn-change':
-        timer = 1250;
+        timer = 750;
         gameState.eventMessage = "It's Your Turn!";
         break;
       case 'exposed':
         gameState.eventMessage = "Exposed 🔍!";
+        break;
+      case 'echo':
+        gameState.eventMessage = "( ((Echo!)) )";
         break;
       case 'vision':
         gameState.eventMessage = "Vision 👁️_👁️!";
@@ -1312,7 +1332,7 @@
       <div class="results-screen" transition:fade>
         <!-- Play again btn -->
         {#if !gameState.startBtnDisabled}
-          <span class="play-again-btn"><Button on:click={startGame} round={true} customClasses="btn__green">Rematch</Button></span>
+          <span class="play-again-btn"><Button on:click={async () => await startGame()} round={true} customClasses="btn__green">Rematch</Button></span>
         {/if}
 
         <div class="results-messages-flex-wrapper">
@@ -1375,7 +1395,7 @@
           </div>
         </div>
 
-        <div class="player-history-wrapper">
+        <div class="player-history-wrapper {$player1.highestPoints > $player2.highestPoints ? 'player-history-wrapper__winner' : 'player-history-wrapper__loser'}">
           <!-- Cards Drawn -->
           <div class="history__cards-drawn">
             <!-- Starting hand, placed here so it's at the beginning, left side of parent -->
@@ -1386,6 +1406,9 @@
                 displayTitle={$cardDetails[card].displayTitle}
                 title={$cardDetails[card].title}
                 img={$cardDetails[card].image}
+                trait={$cardDetails[card].trait}
+                traitTitle={$cardDetails[card].traitTitle}
+                description={$cardDetails[card].description}
                 race={$cardDetails[card].race}
                 rarity={$cardDetails[card].rarity}
                 points={endGameXenoPointHandler(card, 'p1')}
@@ -1400,6 +1423,9 @@
               displayTitle={$cardDetails[card].displayTitle}
               title={$cardDetails[card].title}
               img={$cardDetails[card].image}
+              trait={$cardDetails[card].trait}
+              traitTitle={$cardDetails[card].traitTitle}
+              description={$cardDetails[card].description}
               race={$cardDetails[card].race}
               rarity={$cardDetails[card].rarity}
               points={endGameXenoPointHandler(card, 'p1')}
@@ -1416,6 +1442,9 @@
                   displayTitle={$cardDetails[card].displayTitle}
                   title={$cardDetails[card].title}
                   img={$cardDetails[card].image}
+                  trait={$cardDetails[card].trait}
+                  traitTitle={$cardDetails[card].traitTitle}
+                  description={$cardDetails[card].description}
                   race={$cardDetails[card].race}
                   rarity={$cardDetails[card].rarity}
                   points={endGameXenoPointHandler(card, 'p1')}
@@ -1431,6 +1460,9 @@
                 displayTitle={$cardDetails[card].displayTitle}
                 title={$cardDetails[card].title}
                 img={$cardDetails[card].image}
+                trait={$cardDetails[card].trait}
+                traitTitle={$cardDetails[card].traitTitle}
+                description={$cardDetails[card].description}
                 race={$cardDetails[card].race}
                 rarity={$cardDetails[card].rarity}
                 points={endGameXenoPointHandler(card, 'p1')}
@@ -1440,7 +1472,7 @@
           </div>
         </div>
 
-        <div class="player-history-wrapper">
+        <div class="player-history-wrapper {$player2.highestPoints > $player1.highestPoints ? 'player-history-wrapper__winner' : 'player-history-wrapper__loser'}">
           <!-- Cards Drawn -->
           <div class="history__cards-drawn">
             <!-- Starting hand, placed here so it's at the beginning, left side of parent -->
@@ -1451,6 +1483,9 @@
                 displayTitle={$cardDetails[card].displayTitle}
                 title={$cardDetails[card].title}
                 img={$cardDetails[card].image}
+                trait={$cardDetails[card].trait}
+                traitTitle={$cardDetails[card].traitTitle}
+                description={$cardDetails[card].description}
                 race={$cardDetails[card].race}
                 rarity={$cardDetails[card].rarity}
                 points={endGameXenoPointHandler(card, 'p2')}
@@ -1465,6 +1500,9 @@
               displayTitle={$cardDetails[card].displayTitle}
               title={$cardDetails[card].title}
               img={$cardDetails[card].image}
+              trait={$cardDetails[card].trait}
+              traitTitle={$cardDetails[card].traitTitle}
+              description={$cardDetails[card].description}
               race={$cardDetails[card].race}
               rarity={$cardDetails[card].rarity}
               points={endGameXenoPointHandler(card, 'p2')}
@@ -1481,6 +1519,9 @@
                 displayTitle={$cardDetails[card].displayTitle}
                 title={$cardDetails[card].title}
                 img={$cardDetails[card].image}
+                trait={$cardDetails[card].trait}
+                traitTitle={$cardDetails[card].traitTitle}
+                description={$cardDetails[card].description}
                 race={$cardDetails[card].race}
                 rarity={$cardDetails[card].rarity}
                 points={endGameXenoPointHandler(card, 'p2')}
@@ -1496,6 +1537,9 @@
                 displayTitle={$cardDetails[card].displayTitle}
                 title={$cardDetails[card].title}
                 img={$cardDetails[card].image}
+                trait={$cardDetails[card].trait}
+                traitTitle={$cardDetails[card].traitTitle}
+                description={$cardDetails[card].description}
                 race={$cardDetails[card].race}
                 rarity={$cardDetails[card].rarity}
                 points={endGameXenoPointHandler(card, 'p2')}
@@ -1514,12 +1558,12 @@
       {/if}
 
       <!-- svelte-ignore a11y-click-events-have-key-events -->
-      <div class="game-board {gameState.showEventMessage ? 'game-event' : ''} {gameState.gobbledegookDeclared ? 'gobble-declared' : ''}">
+      <div class="game-board" class:game-event={gameState.showEventMessage} class:gobble-declared={gameState.gobbledegookDeclared}>
         {#if gameState.showEventMessage}
           <p class="game-event-message">{gameState.eventMessage}</p>
         {/if}
 
-        <div class="card-section card-section__ally {$player1.turn ? "section-active" : ""}">
+        <div class="card-section card-section__ally" class:section-active={gameState.playingAs === 'p1' && $player1.turn} class:enemy-section-active={gameState.playingAs === 'p2' && $player1.turn}>
           <div class="player-scores-wrapper player-scores-wrapper__ally">
             {#if gameState.playingAs === 'p1'}
               <div class="player-scores">
@@ -1532,6 +1576,9 @@
                 <span>| XNO <span class="color-yellow">{$player1.points.xenos} </span>| </span>
                 {#if $player1.isExposed}
                   <span class="color-red">🔍<strong>EXPOSED</strong>🔍</span>
+                {/if}
+                {#if $player1.hasVision}
+                  <span class="color-purple">👁️<strong>VISION</strong>👁️</span>
                 {/if}
                 <!-- TODO: view all/more option to show curses and blessings and a full summary TODO: -->
                 <!-- <span class="text-12px"><strong>View More</strong></span> -->
@@ -1547,7 +1594,7 @@
 
           {#each $player1.hand as card}
             <GGCard
-              on:cardClick={(event) => selectCard(event, $player1.hand)}
+              on:cardClick={async (event) => await selectCard(event, $player1.hand)}
               faceUp={isCardVisible('p1') || $player2.hasVision || $player1.isExposed}
               displayTitle={$cardDetails[card].displayTitle}
               title={$cardDetails[card].title}
@@ -1557,12 +1604,12 @@
               description={$cardDetails[card].description}
               race={$cardDetails[card].race}
               rarity={$cardDetails[card].rarity}
-              points={$cardDetails[card].points}
+              points={(['voidRunner', 'warpstalker'].includes(card) && gameState.playingAs === 'p2') ? remoteCardDetails[card].points : $cardDetails[card].points}
             />
           {/each}
         </div>
 
-        <div class="card-section card-section__enemy {$player2.turn ? "section-active" : ""}">
+        <div class="card-section card-section__enemy" class:section-active={gameState.playingAs === 'p2' && $player2.turn} class:enemy-section-active={gameState.playingAs === 'p1' && $player2.turn}>
           <div class="player-scores-wrapper player-scores-wrapper__enemy">
             {#if gameState.playingAs === 'p2'}
               <div class="player-scores">
@@ -1575,6 +1622,9 @@
                 <span>| XNO <span class="color-yellow">{$player2.points.xenos} </span>| </span>
                 {#if $player2.isExposed}
                   <span class="color-red">🔍<strong>EXPOSED</strong>🔍</span>
+                {/if}
+                {#if $player2.hasVision}
+                  <span class="color-purple">👁️<strong>VISION</strong>👁️</span>
                 {/if}
                 <!-- TODO: view all/more option to show curses and blessings and a full summary TODO: -->
                 <!-- <span class="text-12px"><strong>View More</strong></span> -->
@@ -1589,7 +1639,7 @@
           </div>
           {#each $player2.hand as card}
             <GGCard
-              on:cardClick={(event) => selectCard(event, $player2.hand)}
+              on:cardClick={async (event) => await selectCard(event, $player2.hand)}
               faceUp={isCardVisible('p2') || $player1.hasVision || $player2.isExposed}
               displayTitle={$cardDetails[card].displayTitle}
               title={$cardDetails[card].title}
@@ -1599,20 +1649,20 @@
               description={$cardDetails[card].description}
               race={$cardDetails[card].race}
               rarity={$cardDetails[card].rarity}
-              points={$cardDetails[card].points}
+              points={(['voidRunner', 'warpstalker'].includes(card) && gameState.playingAs === 'p1') ? remoteCardDetails[card].points : $cardDetails[card].points}
             />
           {/each}
         </div>
 
         <div class="game-buttons">
           <h1 class="turn-count">Turn {gameState.turnCount}</h1>
-          <GGCard on:click={clickOnDeck} faceUp={false} />
+          <GGCard on:click={async() => await clickOnDeck()} faceUp={false} />
           {#if !gameState.startBtnDisabled}
-            <Button on:click={startGame} round={true} customClasses="btn__green">Start</Button>
+            <Button on:click={async () => await startGame()} round={true} customClasses="btn__green">Start</Button>
           {:else if gameState.gobbledegookDisabled || gameState.turnCount < 10}
             <Button round={true} customClasses="btn__orange_disabled">GDG</Button>
           {:else}
-            <Button on:click={gobbledegook} round={true} customClasses="btn__orange">GDG</Button>
+            <Button on:click={async () => gobbledegook()} round={true} customClasses="btn__orange">GDG</Button>
           {/if}
         </div>
       </div>
@@ -1736,10 +1786,19 @@
   }
 
   .player-history-wrapper {
+    border-radius: 8px;
+    margin-top: 2rem;
     display: flex;
     justify-content: center;
     gap: 2rem;
-    margin-top: 2rem;
+  }
+
+  .player-history-wrapper__winner {
+    background: linear-gradient(275deg, #d4ffd540, #19391f);
+  }
+  
+  .player-history-wrapper__loser {
+    background: linear-gradient(275deg, #ffd4d440, #391919);
   }
 
   .history__card-wrapper {
@@ -1826,6 +1885,11 @@
   .section-active {
     background: linear-gradient(275deg, #d4ffd540, #19391f);
     border: 2px solid #6fff9340;
+  }
+
+  .enemy-section-active {
+    background: linear-gradient(275deg, #ffd4d440, #391919);
+    border: 2px solid #ff6f8740;
   }
 
   .turn-text {

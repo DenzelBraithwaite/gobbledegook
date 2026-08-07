@@ -698,7 +698,7 @@ const cardDetails = writable({
     rarity: '',
     traitTitle: 'Purity',
     trait: 'Active immediately even if discarded. Blocks all trap cards except Corruption, only one exists in deck. If acquired by switcharoo, only active while in hand.',
-    description: '',
+    description: 'An intriguing artifact said to repel all evil.',
     race: 'boost',
     image: '/boosts/rainbow_boost.png'
   },
@@ -710,7 +710,7 @@ const cardDetails = writable({
     rarity: '',
     traitTitle: 'Rejuvenation',
     trait: 'If drawn, player gains 10 points at the end of the game even after this card is discarded',
-    description: '',
+    description: 'An artifact that is believed to strengthen all being.',
     race: 'boost',
     image: '/boosts/blue_boost.png'
   },
@@ -722,7 +722,7 @@ const cardDetails = writable({
     rarity: '',
     traitTitle: 'Last Call',
     trait: 'If drawn, next card drawn is a dwarf. If no dwarves are left, draw random card.',
-    description: '',
+    description: 'It\'s really just a mug of ale, but guaranteed to summon a dwarf if one is nearby.',
     race: 'boost',
     image: '/boosts/ale.png'
   },
@@ -734,7 +734,7 @@ const cardDetails = writable({
     rarity: '',
     traitTitle: 'Recharge',
     trait: 'Only affects bots and humans. If drawn, at the end of the game, gain points equal to (amount of turns - turns passed since drawn * charge cards) even if discarded.',
-    description: '',
+    description: 'This curious electrified liquid seems to only benefit electronics and the human anatomy.',
     race: 'boost',
     image: '/boosts/charge.png'
   },
@@ -748,7 +748,7 @@ const cardDetails = writable({
     rarity: '',
     traitTitle: 'Impurity',
     trait: 'Active immediately even if discarded. Blocks all boost cards except Chastity, only one exists in deck. If acquired by switcharoo, only active while in hand.',
-    description: '',
+    description: 'An ominous artifact feared for it\'s ability to prevent all that is good.',
     race: 'trap',
     image: '/boosts/rainbow_boost.png'
   },
@@ -760,7 +760,7 @@ const cardDetails = writable({
     rarity: '',
     traitTitle: 'Sapped',
     trait: 'If drawn, player loses 10 points at the end of the game even after this card is discarded.',
-    description: '',
+    description: 'A burning sticky substance that harms all who have the misfortune of touching it.',
     race: 'trap',
     image: '/traps/red_trap.png'
   },
@@ -772,7 +772,7 @@ const cardDetails = writable({
     rarity: '',
     traitTitle: 'Dissociate',
     trait: 'If drawn, xenos lose 10 points at the end of the game even after this card is discarded.',
-    description: '',
+    description: 'A curious artifact that repels the xenos, harmless to others.',
     race: 'trap',
     image: '/traps/xeno_trap.png'
   },
@@ -784,7 +784,7 @@ const cardDetails = writable({
     rarity: '',
     traitTitle: 'Infection',
     trait: 'Does not affect bots. If drawn, at the end of the game, lose points equal to (amount of turns - turns passed since drawn * infect cards) even if discarded.',
-    description: '',
+    description: 'A contagious metastasizing virus that targets living hosts.',
     race: 'trap',
     image: '/traps/green_trap.png'
   },
@@ -792,11 +792,11 @@ const cardDetails = writable({
     title: 'lost',
     displayTitle: 'Lost',
     points: 0,
-    amount: 2,
+    amount: 3,
     rarity: '',
     traitTitle: 'Lost',
     trait: 'If drawn, lose a turn because this card is useless.',
-    description: '',
+    description: 'A harmless sprite attracted to negative energy.',
     race: 'trap',
     image: '/traps/white_trap.png'
   },
@@ -808,7 +808,7 @@ const cardDetails = writable({
     rarity: '',
     traitTitle: 'Expose',
     trait: 'If drawn, your hand is exposed until your next turn, unless you have a card that blocks traps.',
-    description: '',
+    description: 'A spirit that briefly feeds on thoughts, making them temporarily tangible and visible to the naked eye.',
     race: 'trap',
     image: '/traps/camo_trap.png'
   },
@@ -822,7 +822,7 @@ const cardDetails = writable({
     rarity: '',
     traitTitle: 'Neutralize',
     trait: "When drawn, all boosts and traps in effect are neutralized. Only 1 in deck.",
-    description: '',
+    description: 'A passive spirit that strives for balance in all things.',
     race: 'neutral',
     image: '/neutrals/neutralize.png'
   },
@@ -834,7 +834,7 @@ const cardDetails = writable({
     rarity: '',
     traitTitle: 'Swap Swap',
     trait: "When discarded, players will swap hands unless player has over 6 cards or gobbledegook declared. For special xeno cards(e.g. Void Runner) they will receive the new player's point value for that card, not the previous value.",
-    description: '',
+    description: 'A trickster spirit who enjoys swapping the location of precious items.',
     race: 'neutral',
     image: '/neutrals/switcharoo.png'
   },
@@ -845,8 +845,8 @@ const cardDetails = writable({
     amount: 3,
     rarity: '',
     traitTitle: 'Echo Echo',
-    trait: "If drawn, player can draw another card, maximum 7. Discarding echos prolongs this, when you discard a non echo card, you will need to continue discarding down to 5 cards.",
-    description: '',
+    trait: "If drawn, player can draw another card, maximum hand of 7. Discarding echos prolongs this, when you discard a non echo card, you will need to continue discarding down to 5 cards.",
+    description: 'A self-multiplying rapidly decaying relic believed to have a soul, it appears randomly.',
     race: 'neutral',
     image: '/neutrals/echo.png'
   },
@@ -858,11 +858,10 @@ const cardDetails = writable({
     rarity: '',
     traitTitle: 'Chrono Charge',
     trait: "If drawn, adds 3 turns.",
-    description: '',
+    description: 'A curious sprite that briefly accelerates time when it manifests.',
     race: 'neutral',
     image: '/neutrals/ticktock.png'
   },
-  // FIXME: WHen showing enemy hand it shows ally's version of xeno points not enemy's. Might be consitent with exposed and other xenos, happened with voidrunner.
   vision: {
     title: 'vision',
     displayTitle: 'Vision',
@@ -871,7 +870,7 @@ const cardDetails = writable({
     rarity: '',
     traitTitle: 'Envision',
     trait: "If drawn, see the opponents cards for the duration of your turn.",
-    description: '',
+    description: 'An all seeing but passive spirit that shares its visions with others.',
     race: 'neutral',
     image: '/neutrals/vision.png'
   },
@@ -883,7 +882,7 @@ const cardDetails = writable({
     rarity: '',
     traitTitle: 'Bloom',
     trait: "If drawn, both players receive +15 bonus xeno points at the end of the game.",
-    description: '',
+    description: 'A spirit that blesses xenos, it is believed to have been born from the countless deaths of xenos on earth.',
     race: 'neutral',
     image: '/neutrals/xeno_bloom.png'
   },

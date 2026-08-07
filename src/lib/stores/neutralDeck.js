@@ -1,7 +1,5 @@
 import { writable } from 'svelte/store';
 
-// TODO: need to make more so there's lower chance of game crashing if all are drawn turn one.
-// FIXME:
 const neutralDeck = writable([
   'neutralize',
   'echo',

@@ -8,6 +8,7 @@ const trapDeck = writable([
   'infect',
   'lost',
   'lost',
+  'lost',
   'xenophobia',
   'exposed',
   'exposed',

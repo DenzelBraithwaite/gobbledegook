@@ -108,7 +108,7 @@ io.on('connection', socket => {
   socket.on('start-xeno-sync', data => socket.broadcast.emit('xeno-sync-started', data));
 
   // Finish updating xeno points
-  socket.on('finish-xeno-sync', data => socket.broadcast.emit('xeno-sync-finished', data)); 
+  socket.on('continue-xeno-sync', data => socket.broadcast.emit('finish-xeno-sync', data)); 
 
   // Log connected users in the server console.
   logUsers();
