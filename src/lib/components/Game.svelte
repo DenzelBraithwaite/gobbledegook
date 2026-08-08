@@ -40,6 +40,7 @@
     p2NameChangeVisible: false,
     playingAs: ''
   };
+  let controlCopyOfCardDetails = {...$cardDetails};
   let remoteCardDetails = {...$cardDetails};
   // Deck players draw from, includes all race decks
   let fullDeck = {
@@ -242,21 +243,22 @@
     // Reset p2
     player2.set({...$player2Reset, title: $player2.title});
 
-    // Reset Deck TODO:
     fullDeck = {
-      // beasts: [...$beastDeck],
-      // bots: [...$botDeck],
-      // dwarves: [...$dwarfDeck],
+      beasts: [...$beastDeck],
+      bots: [...$botDeck],
+      dwarves: [...$dwarfDeck],
       elves: [...$elfDeck],
-      // goblins: [...$goblinDeck],
-      // humans: [...$humanDeck],
-      // xenos: [...$xenoDeck],
-      // boosts: [...$boostDeck],
-      // traps: [...$trapDeck],
-      // neutrals: [...$neutralDeck]
+      goblins: [...$goblinDeck],
+      humans: [...$humanDeck],
+      xenos: [...$xenoDeck],
+      boosts: [...$boostDeck],
+      traps: [...$trapDeck],
+      neutrals: [...$neutralDeck]
     };
-    $cardDetails['warpstalker'].points = 0;
-    $cardDetails['voidRunner'].points = 0;
+
+    cardDetails.set({...controlCopyOfCardDetails});
+    // $cardDetails['warpstalker'].points = 0; // TODO: remove once confirming above line fixes issue (also restart issue)
+    // $cardDetails['voidRunner'].points = 0;
     deckTypes = Object.keys(fullDeck);
     remoteCardDetails = {...$cardDetails};
 
@@ -1355,17 +1357,43 @@
     return $cardDetails[card].rarity;
   }
 
+  // Determines if the points will be green to show they are being buffed
+  function determineIfBuffed(player, card): boolean {
+    const specialXenoCards = ['voidRunner', 'warpstalker'];
+    const pointValue = determinePoints(player, card);
+    const isPeakingAtOtherHand = ((gameState.playingAs === 'p1' && player.id === $player2.id) || gameState.playingAs === 'p2' && player.id === $player1.id);
+
+    
+    if (isPeakingAtOtherHand && specialXenoCards.includes(card)) console.log({pointValue, remoteDetails: remoteCardDetails[card].points});
+    if (isPeakingAtOtherHand && specialXenoCards.includes(card)) return (pointValue > remoteCardDetails[card].points);
+    
+    console.log({pointValue, cardDetails: controlCopyOfCardDetails[card].points});
+    return (pointValue > $cardDetails[card].points);
+  }
+
   // Modifies card points depending on cards in player hand
   function determinePoints(player, card): number {
     const triggerTwinEffect = player.hand.includes('nelladan') && player.hand.includes('nadallen');
-    if (player.hand.includes('dreamDestroyer') && $cardDetails[card].race === 'beast') return 12;
+    if ((player.hand.includes('dreamDestroyer') || card === 'dog') && $cardDetails[card].race === 'beast') return determineBeastPoints(player, card);
     if ((player.hand.includes('ai') || player.hand.includes('protectron')) && $cardDetails[card].race === 'bot') return determineBotPoints(player, card);
     if (triggerTwinEffect || (player.hand.includes('elfKing') && ($cardDetails[card].race === 'elf' || card === 'faeBot'))) return determineElfPoints(player, card);
+    if ((player.hand.includes('emperor') || player.hand.includes('commander')) && ($cardDetails[card].race === 'human' || card === 'hobbit')) return determineHumanPoints(player, card);
     
     // If this is being called on player 1/2's hand and the card is a voidrunner/warp and I'm player 2/1 return appropriate points.
-    const xenoCards = ['voidRunner', 'warpstalker'];
-    if (player.id === $player1.id) return (xenoCards.includes(card) && gameState.playingAs === 'p2') ? remoteCardDetails[card].points : $cardDetails[card].points;
-    if (player.id === $player2.id) return (xenoCards.includes(card) && gameState.playingAs === 'p1') ? remoteCardDetails[card].points : $cardDetails[card].points;
+    const xenoCards = ['voidRunner', 'warpstalker', 'nebulite'];
+    if (player.hand.some(c => xenoCards.includes(c)) && $cardDetails[card].race === 'xeno') return determineXenoPoints(player, card);
+
+    return $cardDetails[card].points;
+  }
+
+  function determineBeastPoints(player, card): number {
+    const hasHumans = player.hand.some(c => $cardDetails[c].race === 'human' || c === 'hobbit');
+    const hasDreamDestroyer = player.hand.includes('dreamDestroyer');
+
+    if (card === 'dog' && hasHumans && hasDreamDestroyer) return 22;
+    if (card === 'dog' && hasHumans) return 14;
+    if (hasDreamDestroyer) return 12;
+    return $cardDetails[card].points;
   }
 
   function determineBotPoints(player, card): number {
@@ -1407,6 +1435,29 @@
 
     // Default
     return $cardDetails[card].points * 2;
+  }
+
+  function determineHumanPoints(player, card): number {
+    const hasEmperor = player.hand.includes('emperor');
+    const numOfCommanders = player.hand.filter(c => c === 'commander').length;
+
+    if (hasEmperor) return ($cardDetails[card].points + numOfCommanders) * 2;
+    if (!hasEmperor) return ($cardDetails[card].points + numOfCommanders);
+  }
+
+  function determineXenoPoints(player, card): number {
+    const specialXenoCards = ['voidRunner', 'warpstalker'];
+    const numOfNebulites = player.hand.filter(c => c === 'nebulite').length;
+
+    if (player.id === $player1.id && (numOfNebulites > 0 && card !== 'nebulite')) {
+      return (specialXenoCards.includes(card) && gameState.playingAs === 'p2') ? remoteCardDetails[card].points + 4 : $cardDetails[card].points + 4;
+    } else if (player.id === $player1.id) {
+      return (specialXenoCards.includes(card) && gameState.playingAs === 'p2') ? remoteCardDetails[card].points : $cardDetails[card].points;
+    } else if (player.id === $player2.id && (numOfNebulites > 0 && card !== 'nebulite')) {
+      return (specialXenoCards.includes(card) && gameState.playingAs === 'p1') ? remoteCardDetails[card].points + 4 : $cardDetails[card].points + 4;
+    } else if (player.id === $player2.id) {
+      return (specialXenoCards.includes(card) && gameState.playingAs === 'p1') ? remoteCardDetails[card].points : $cardDetails[card].points;
+    }
   }
 </script>
 
@@ -1732,6 +1783,7 @@
               race={$cardDetails[card].race}
               rarity={determineRarity($player1, card)}
               points={determinePoints($player1, card)}
+              buffed={determineIfBuffed($player1, card)}
             />
           {/each}
         </div>
@@ -1790,6 +1842,7 @@
               race={$cardDetails[card].race}
               rarity={determineRarity($player2, card)}
               points={determinePoints($player2, card)}
+              buffed={determineIfBuffed($player2, card)}
             />
           {/each}
         </div>

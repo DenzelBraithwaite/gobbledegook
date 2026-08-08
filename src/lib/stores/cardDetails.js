@@ -524,9 +524,9 @@ const cardDetails = writable({
     points: 12,
     amount: 1,
     rarity: 'legendary',
-    traitTitle: '🤬Roid Rage🤬',
+    traitTitle: 'Dream Pact💤',
     trait: 'All of your beasts are worth 12 points.',
-    description: 'The fiercest creature in the animal kingdom.',
+    description: 'The fiercest creature in all of the animal kingdom.',
     race: 'beast',
     image: '/beasts/dream-destroyer.png'
   },

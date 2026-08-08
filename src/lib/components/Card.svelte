@@ -16,6 +16,7 @@
   export let description = '';
   export let trait = '';
   export let traitTitle = '';
+  export let buffed = false;
 
   $: if (race === 'goblin-ish') race = 'goblin';
 
@@ -46,7 +47,7 @@
 <div on:click={cardClickHandler} class="card bg-{race}{rarity === 'legendary' ? '-rare' : ''}" in:fly={{x: 100}} out:fade>
   <img class="card-img" src={img} alt="img of card">
   <p class="race {race}-race">{capitalize(race)}</p>
-  <p class="points {race}-race">{points}</p>
+  <p class="points {race}-race" class:points-buffed={buffed}>{points}</p>
   <p class="card-title {race}-title">{displayTitle}</p>
   <div class="card-bottom-section">
     <div class="bottom-section-wrapper">
@@ -381,6 +382,13 @@
 
   .neutral-title {
     background-color: #3b1d4e5e;
+  }
+
+  // Utility
+  .points-buffed {
+    color: #2fdb2f;
+    font-weight: bold;
+    scale: 1.25;
   }
 
   @media only screen and (max-width: 1100px) {
