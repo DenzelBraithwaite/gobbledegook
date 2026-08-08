@@ -332,12 +332,10 @@
   }
 
   .trap-section {
-    background: linear-gradient(to top left, #327738b4, #78c069b4, #327738b4);
     background: linear-gradient(353deg, #000000, #ffffff4a 50%);
   }
 
   .neutral-section {
-    background: linear-gradient(to top left, #327738b4, #78c069b4, #327738b4);
     background: linear-gradient(353deg,#31273e,#933ce929 50%);
   }
 

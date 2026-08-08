@@ -1308,6 +1308,20 @@
     if (gameState.playingAs === 'p1') return;
     gameState.p2NameChangeVisible = !gameState.p2NameChangeVisible;
   }
+
+  function displayBonusCardIcons(card): string {
+    return $cardDetails[card].image;
+  }
+
+  // Converts race card bg to legendary if player is holding the leader of that race.
+  function determineRarity(player, card): '' |  'common' | 'uncommon' | 'rare' | 'amazing' | 'epic' | 'legendary' {
+    if (player.hand.includes('emperor') && ($cardDetails[card].race === 'human' || card === 'hobbit')) return 'legendary';
+    if (player.hand.includes('goblinLord') && $cardDetails[card].race === 'goblin') return 'legendary';
+    if (player.hand.includes('elfKing') && ($cardDetails[card].race === 'elf' || card === 'faeBot')) return 'legendary';
+    if (player.hand.includes('longbeardLeader') && $cardDetails[card].race === 'dwarf') return 'legendary';
+    if (player.hand.includes('ai') && $cardDetails[card].race === 'bot') return 'legendary';
+    return $cardDetails[card].rarity;
+  }
 </script>
 
 <!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -1566,7 +1580,7 @@
         {/if}
 
         <div class="card-section card-section__ally" class:section-active={gameState.playingAs === 'p1' && $player1.turn} class:enemy-section-active={gameState.playingAs === 'p2' && $player1.turn}>
-          <div class="player-scores-wrapper player-scores-wrapper__ally">
+          <div class="player-scores-wrapper player-scores-wrapper__ally" class:player-scores-wrapper__ally_adjusted={gameState.playingAs === 'p2'}>
             {#if gameState.playingAs === 'p1'}
               <div class="player-scores">
                 <span>HUM <span class="color-blue">{$player1.points.humans} </span></span>
@@ -1576,14 +1590,27 @@
                 <span>| BST <span class="color-brown">{$player1.points.beasts}</span></span>
                 <span>| BOT <span class="color-grey">{$player1.points.bots}</span></span>
                 <span>| XNO <span class="color-yellow">{$player1.points.xenos} </span>| </span>
-                {#if $player1.isExposed}
-                  <span class="color-red">🔍<strong>EXPOSED</strong>🔍</span>
-                {/if}
-                {#if $player1.hasVision}
-                  <span class="color-purple">👁️<strong>VISION</strong>👁️</span>
-                {/if}
-                <!-- TODO: view all/more option to show curses and blessings and a full summary TODO: -->
-                <!-- <span class="text-12px"><strong>View More</strong></span> -->
+
+                <!-- Displays all bonus cards (boost/trap/neutral) player currently has in effect -->
+                <div class="bonus-card-icons-section-wrapper">
+                  <div class="bonus-card-icons-section bonus-card-icons-section__boosts">
+                    {#each $player1.boosts as boost}
+                      <img src={displayBonusCardIcons(boost)} alt={displayBonusCardIcons(boost)} class="bonus-card-icon">
+                    {/each}
+                  </div>
+                  
+                  <div class="bonus-card-icons-section bonus-card-icons-section__traps">
+                    {#each $player1.traps as trap}
+                      <img src={displayBonusCardIcons(trap)} alt={displayBonusCardIcons(trap)} class="bonus-card-icon">
+                    {/each}
+                  </div>
+                    
+                  <div class="bonus-card-icons-section bonus-card-icons-section__neutrals">
+                    {#each $player1.neutrals as neutral}
+                      <img src={displayBonusCardIcons(neutral)} alt={displayBonusCardIcons(neutral)} class="bonus-card-icon">
+                    {/each}
+                  </div>
+                </div>
               </div>
             {/if}
 
@@ -1605,14 +1632,14 @@
               traitTitle={$cardDetails[card].traitTitle}
               description={$cardDetails[card].description}
               race={$cardDetails[card].race}
-              rarity={$cardDetails[card].rarity}
+              rarity={determineRarity($player1, card)}
               points={(['voidRunner', 'warpstalker'].includes(card) && gameState.playingAs === 'p2') ? remoteCardDetails[card].points : $cardDetails[card].points}
             />
           {/each}
         </div>
 
         <div class="card-section card-section__enemy" class:section-active={gameState.playingAs === 'p2' && $player2.turn} class:enemy-section-active={gameState.playingAs === 'p1' && $player2.turn}>
-          <div class="player-scores-wrapper player-scores-wrapper__enemy">
+          <div class="player-scores-wrapper player-scores-wrapper__enemy" class:player-scores-wrapper__enemy_adjusted={gameState.playingAs === 'p1'}>
             {#if gameState.playingAs === 'p2'}
               <div class="player-scores">
                 <span>HUM <span class="color-blue">{$player2.points.humans} </span></span>
@@ -1622,14 +1649,27 @@
                 <span>| BST <span class="color-brown">{$player2.points.beasts}</span></span>
                 <span>| BOT <span class="color-grey">{$player2.points.bots}</span></span>
                 <span>| XNO <span class="color-yellow">{$player2.points.xenos} </span>| </span>
-                {#if $player2.isExposed}
-                  <span class="color-red">🔍<strong>EXPOSED</strong>🔍</span>
-                {/if}
-                {#if $player2.hasVision}
-                  <span class="color-purple">👁️<strong>VISION</strong>👁️</span>
-                {/if}
-                <!-- TODO: view all/more option to show curses and blessings and a full summary TODO: -->
-                <!-- <span class="text-12px"><strong>View More</strong></span> -->
+                
+                 <!-- Displays all bonus cards (boost/trap/neutral) player currently has in effect -->
+                <div class="bonus-card-icons-section-wrapper">
+                  <div class="bonus-card-icons-section bonus-card-icons-section__boosts">
+                    {#each $player2.boosts as boost}
+                      <img src={displayBonusCardIcons(boost)} alt={displayBonusCardIcons(boost)} class="bonus-card-icon">
+                    {/each}
+                  </div>
+                  
+                  <div class="bonus-card-icons-section bonus-card-icons-section__traps">
+                    {#each $player2.traps as trap}
+                      <img src={displayBonusCardIcons(trap)} alt={displayBonusCardIcons(trap)} class="bonus-card-icon">
+                    {/each}
+                  </div>
+                    
+                  <div class="bonus-card-icons-section bonus-card-icons-section__neutrals">
+                    {#each $player2.neutrals as neutral}
+                      <img src={displayBonusCardIcons(neutral)} alt={displayBonusCardIcons(neutral)} class="bonus-card-icon">
+                    {/each}
+                  </div>
+                </div>
               </div>
             {/if}
 
@@ -1650,7 +1690,7 @@
               traitTitle={$cardDetails[card].traitTitle}
               description={$cardDetails[card].description}
               race={$cardDetails[card].race}
-              rarity={$cardDetails[card].rarity}
+              rarity={determineRarity($player2, card)}
               points={(['voidRunner', 'warpstalker'].includes(card) && gameState.playingAs === 'p1') ? remoteCardDetails[card].points : $cardDetails[card].points}
             />
           {/each}
@@ -1677,6 +1717,7 @@
   .main-content {
     position: relative;
     overflow-y: hidden;
+    padding: 16px;
   }
 
   .card-library-btn, .card-discards-btn {
@@ -1816,12 +1857,11 @@
   }
 
   /* Game board */
-
   .game-board {
     position: relative;
     height: 95dvh;
     width: 95dvw;
-    padding: 0.5rem;
+    padding: 8px;
     max-width: 1500px;
     margin: 0 auto;
     border-radius: 1rem;
@@ -1894,6 +1934,56 @@
     border: 2px solid #ff6f8740;
   }
 
+  .bonus-card-icons-section-wrapper {
+    margin-top: 2px;
+    padding-top: 4px;
+    border-top: 3px dashed #45240E;
+
+    display: flex;
+    gap: 12px;
+    justify-content: flex-start;
+    align-items: center;
+  }
+
+  .bonus-card-icons-section {
+    border-radius: 6px;
+    padding: 2px;
+    width: 33%;
+    height: 24px;
+    overflow-x: hidden;
+    
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+  }
+  
+  .bonus-card-icons-section__boosts {
+    background: linear-gradient(180deg, #b8ebf380, #90beff70 50%);
+    box-shadow: 0 2px 8px 2px #b8ebf331;
+    border-left: 4px double #90beff;
+    border-right: 4px double #90beff;
+  }
+  
+  .bonus-card-icons-section__traps {
+    background: linear-gradient(0deg, #0000001a, #ff404044 75%);
+    box-shadow: 0 2px 8px 2px #ff40402c;
+    border-left: 4px double #a32727;
+    border-right: 4px double #a32727;
+  }
+  
+  .bonus-card-icons-section__neutrals {
+    box-shadow: 0 2px 8px 2px #933ce93f;
+    background: linear-gradient(270deg,#31273e,#933ce94d 50%);
+    border-left: 4px double #933ce9;
+    border-right: 4px double #933ce9;
+  }
+
+  .bonus-card-icon {
+    width: 24px;
+    height: 20px;
+
+  }
+
   .turn-text {
     z-index: 1;
     position: absolute;
@@ -1928,14 +2018,18 @@
   }
 
   .player-scores-wrapper__ally {
-    top: -40px;
+    top: -65px;
     right: 0;
   }
-
+  
   .player-scores-wrapper__enemy {
-    bottom: -40px;
+    bottom: -65px;
     left: 0;
   }
+  
+  // These need to be adjusted since players see more overhead on their side.
+  .player-scores-wrapper__ally_adjusted { top: -30px; }
+  .player-scores-wrapper__enemy_adjusted { bottom: -30px; }
 
   .player-scores {
     width: 85%;
