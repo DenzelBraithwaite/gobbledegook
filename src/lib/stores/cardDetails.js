@@ -319,7 +319,7 @@ const cardDetails = writable({
     trait: 'If drawn, the next card will be a dwarf. Additionally, gain 5 points for every discarded dwarf.',
     description: 'The bravest and most feared amongst the dwarves.',
     race: 'dwarf',
-    image: '/dwarves/longbeard-leader.gif'
+    image: '/dwarves/longbeard-leader.png'
   },
   dwarfCommander:  {
     title: 'dwarfCommander',
@@ -331,7 +331,7 @@ const cardDetails = writable({
     trait: 'If drawn, the next card will be a dwarf. Has no effect if there are no remaining dwarves.',
     description: 'Right hand man to the longbeard leader himself.',
     race: 'dwarf',
-    image: '/dwarves/dwarf-commander.png'
+    image: '/dwarves/commander.png'
   },
   alchemist: {
     title: 'alchemist',
@@ -528,7 +528,7 @@ const cardDetails = writable({
     trait: 'All of your beasts are worth 12 points.',
     description: 'The fiercest creature in the animal kingdom.',
     race: 'beast',
-    image: '/beasts/dream-destroyer.gif'
+    image: '/beasts/dream-destroyer.png'
   },
   rhino: {
     title: 'rhino',
@@ -650,7 +650,7 @@ const cardDetails = writable({
     trait: 'When drawn, a random point value (7-13 inclusive) will be chosen, then applied to ALL ally warpstalkers.',
     description: 'A xeno capable of riftwalking, similar to teleporting over short distances. Sometimes riftwalks to the wrong place.',
     race: 'xeno',
-    image: '/xenos/xeno_placeholder.png'
+    image: '/xenos/warpstalker.png'
   },
   voidRunner: {
     title: 'voidRunner',
@@ -662,7 +662,7 @@ const cardDetails = writable({
     trait: "When drawn, ALL ally void Runners' points are set to the number of turns passed.",
     description: "A non sentient xeno who's only purpose is to run and grow stronger. If it ever stops it will die.",
     race: 'xeno',
-    image: '/xenos/xeno_placeholder.png'
+    image: '/xenos/void_runner.png'
   },
   nebulite: {
     title: 'nebulite',
@@ -674,7 +674,7 @@ const cardDetails = writable({
     trait: 'Buffs all xenos by +4, does not apply to self and does not stack with other Nebulites.',
     description: 'Artificially created xenos incapable of speech.',
     race: 'xeno',
-    image: '/xenos/xeno_placeholder.png'
+    image: '/xenos/nebulite.png'
   },
   celenial: {
     title: 'celenial',
@@ -862,6 +862,18 @@ const cardDetails = writable({
     race: 'neutral',
     image: '/neutrals/ticktock.png'
   },
+    tocktick: {
+    title: 'tocktick',
+    displayTitle: 'Tocktick',
+    points: 0,
+    amount: 1,
+    rarity: '',
+    traitTitle: 'Chrono Recharge',
+    trait: "If drawn, subtracts 5 turns.",
+    description: 'A curious sprite that briefly reverts time when it manifests.',
+    race: 'neutral',
+    image: '/neutrals/tocktick.png'
+  },
   vision: {
     title: 'vision',
     displayTitle: 'Vision',
@@ -885,6 +897,18 @@ const cardDetails = writable({
     description: 'A spirit that blesses xenos, it is believed to have been born from the countless deaths of xenos on earth.',
     race: 'neutral',
     image: '/neutrals/xeno_bloom.png'
+  },
+    xenoBlossom: {
+    title: 'xenoBlossom',
+    displayTitle: 'Xeno Blossom',
+    points: 0,
+    amount: 1,
+    rarity: '',
+    traitTitle: 'Blossom',
+    trait: "If drawn, both players receive +5 bonus xeno points at the end of the game.",
+    description: 'A hatchling spirit that blesses xenos, it is believed to have been born from the countless deaths of xenos on earth.',
+    race: 'neutral',
+    image: '/neutrals/xeno_blossom.png'
   },
 });
 

@@ -105,6 +105,9 @@
 
     // Increase turn count
     socket.on('turn-count-increased', () => gameState.turnCount += 3);
+    
+    // Decrease turn count
+    socket.on('turn-count-decreased', () => gameState.turnCount >= 5 ? gameState.turnCount -= 5 : gameState.turnCount = 0);
 
     // Handles card draw for all users
     socket.on('card-drawn', data => {
@@ -239,18 +242,18 @@
     // Reset p2
     player2.set({...$player2Reset, title: $player2.title});
 
-    // Reset Deck
+    // Reset Deck TODO:
     fullDeck = {
-      beasts: [...$beastDeck],
-      bots: [...$botDeck],
-      dwarves: [...$dwarfDeck],
+      // beasts: [...$beastDeck],
+      // bots: [...$botDeck],
+      // dwarves: [...$dwarfDeck],
       elves: [...$elfDeck],
-      goblins: [...$goblinDeck],
-      humans: [...$humanDeck],
-      xenos: [...$xenoDeck],
-      boosts: [...$boostDeck],
-      traps: [...$trapDeck],
-      neutrals: [...$neutralDeck]
+      // goblins: [...$goblinDeck],
+      // humans: [...$humanDeck],
+      // xenos: [...$xenoDeck],
+      // boosts: [...$boostDeck],
+      // traps: [...$trapDeck],
+      // neutrals: [...$neutralDeck]
     };
     $cardDetails['warpstalker'].points = 0;
     $cardDetails['voidRunner'].points = 0;
@@ -651,11 +654,13 @@
       
       socket.emit('end-game');
     } else {
-      socket.emit('gdg-declared');
       // Need to add turn count here otherwise it won't go up cuz it's usually triggered on card draw.
       const player = gameState.playingAs === 'p1' ? $player1 : $player2;
       calculateNewTurn(player);
       changeTurns();
+
+      // Have this last so if player gdg other player can still click the button.
+      socket.emit('gdg-declared');
     }
   }
 
@@ -861,7 +866,7 @@
     if (player.hand.includes('ai')) calculateAi(player, enemy, options);
 
     // Must be after A.I. since A.I. resets bot points. Quarantine all viruses adding +8 to their value and +1 bot point to Protectron per quarantined virus.
-    if (player.hand.includes('protectron')) calculateProtectron(player, enemy);
+    if (player.hand.includes('protectron')) calculateProtectron(player, enemy, options.calculateOpponentCards);
 
     // Calculates +5 dwarf points per discarded dwarf by any player.
     if (player.hand.includes('longbeardLeader')) calculateLongbeard(player, options.calculateOpponentCards);
@@ -911,9 +916,9 @@
   function calculateProtectron(player, enemy, calculateHackingAbility = false) {
     let numOfProtectrons = player.hand.filter(card => card === 'protectron').length;
     let numOfViruses = player.hand.filter(card => card === 'virus').length;
-      
+    
     player.hand.forEach(card => {
-      if (card === 'virus') player.points.bots += 8;
+      if (card === 'virus') player.points.bots += ((numOfProtectrons * 8));
 
       // Buffed for each virus, base points already calculated.
       if (card === 'protectron') player.points.bots += (numOfProtectrons * numOfViruses);
@@ -925,7 +930,7 @@
       let enemyNumOfViruses = enemy.hand.filter(card => card === 'virus').length;
       
       enemy.hand.forEach(card => {
-        if (card === 'virus') player.points.bots += 8;
+        if (card === 'virus') player.points.bots += (numOfProtectrons * 8);
         
         // Buffed for each virus, base points already calculated.
         if (card === 'protectron') player.points.bots += (enemyNumOfProtectrons * enemyNumOfViruses);
@@ -974,8 +979,7 @@
     // Checks if hand has only elves or faebots
     const fullElfHand = player.hand.every(card => $cardDetails[card].race === 'elf' || $cardDetails[card].title === 'faeBot');
     if (!calculateGoblinKing && fullElfHand) player.points.elves *= 3;
-    if (!calculateGoblinKing) player.points.elves *= 2;
-
+    if (!calculateGoblinKing && !fullElfHand) player.points.elves *= 2;
     if (calculateGoblinKing) {
       // Checks if enemy hand has only goblins
       const goblinHand = enemy.hand.every(card => { 
@@ -1167,11 +1171,20 @@
       socket.emit('display-event', 'ticktock');
     }
 
+    // Subtract turn from turnCount if card is Tocktick
+    if (card === 'tocktick') {
+      socket.emit('decrease-turn-count');
+      socket.emit('display-event', 'tocktick');
+    }
+
     // If card is neutralize, reset boosts and traps
     if (card === 'neutralize') socket.emit('neutralize-deck');
 
     // If card is xenoBloom, let both players know they received 15 xeno points
     if (card === 'xenoBloom') socket.emit('display-event', 'xenoBloom');
+
+    // If card is xenoBlossom, let both players know they received 5 xeno points
+    if (card === 'xenoBlossom') socket.emit('display-event', 'xenoBlossom');
 
     calculateCurrentPlayerPoints();
   }
@@ -1225,11 +1238,23 @@
           return $player2;
         })
       }
+
+      if (neutral === 'xenoBlossom') {
+        player1.update($player1 => {
+          $player1.points.xenos += 5;
+          return $player1;
+        })
+
+        player2.update($player2 => {
+          $player2.points.xenos += 5;
+          return $player2;
+        })
+      }
     });
   }
 
   // Show visual feedback for certain events
-  async function showEvent(trigger: 'neutralize' | 'switcharoo' | 'xenoBloom' | 'ticktock' | 'exposed' | 'vision' | 'echo' | 'turn-change') {
+  async function showEvent(trigger: 'neutralize' | 'switcharoo' | 'xenoBloom' | 'xenoBlossom' | 'ticktock' | 'tocktick' | 'exposed' | 'vision' | 'echo' | 'turn-change') {
     while (gameState.showEventMessage) await wait(100);
     let timer = 1500;
     gameState.showEventMessage = true;
@@ -1254,10 +1279,16 @@
           gameState.eventMessage = "Switcharoo 🔃!";
           break;
       case 'xenoBloom':
-        gameState.eventMessage = "XenoBloom 👽!";
+        gameState.eventMessage = "Xeno Bloom 👽!";
+        break;
+      case 'xenoBlossom':
+        gameState.eventMessage = "Xeno Blossom 👾!";
         break;
       case 'ticktock':
         gameState.eventMessage = "Tick Tock ⏰!";
+        break;
+      case 'tocktick':
+        gameState.eventMessage = "!⏰ Tock Tick";
         break;
     }
     setTimeout(() => gameState.showEventMessage = false, timer);
@@ -1320,7 +1351,62 @@
     if (player.hand.includes('elfKing') && ($cardDetails[card].race === 'elf' || card === 'faeBot')) return 'legendary';
     if (player.hand.includes('longbeardLeader') && $cardDetails[card].race === 'dwarf') return 'legendary';
     if (player.hand.includes('ai') && $cardDetails[card].race === 'bot') return 'legendary';
+    if (player.hand.includes('dreamDestroyer') && $cardDetails[card].race === 'beast') return 'legendary';
     return $cardDetails[card].rarity;
+  }
+
+  // Modifies card points depending on cards in player hand
+  function determinePoints(player, card): number {
+    const triggerTwinEffect = player.hand.includes('nelladan') && player.hand.includes('nadallen');
+    if (player.hand.includes('dreamDestroyer') && $cardDetails[card].race === 'beast') return 12;
+    if ((player.hand.includes('ai') || player.hand.includes('protectron')) && $cardDetails[card].race === 'bot') return determineBotPoints(player, card);
+    if (triggerTwinEffect || (player.hand.includes('elfKing') && ($cardDetails[card].race === 'elf' || card === 'faeBot'))) return determineElfPoints(player, card);
+    
+    // If this is being called on player 1/2's hand and the card is a voidrunner/warp and I'm player 2/1 return appropriate points.
+    const xenoCards = ['voidRunner', 'warpstalker'];
+    if (player.id === $player1.id) return (xenoCards.includes(card) && gameState.playingAs === 'p2') ? remoteCardDetails[card].points : $cardDetails[card].points;
+    if (player.id === $player2.id) return (xenoCards.includes(card) && gameState.playingAs === 'p1') ? remoteCardDetails[card].points : $cardDetails[card].points;
+  }
+
+  function determineBotPoints(player, card): number {
+    let numOfProtectrons = player.hand.filter(card => card === 'protectron').length;
+    let numOfViruses = player.hand.filter(card => card === 'virus').length;
+
+    if (player.hand.includes('ai') && player.hand.includes('protectron') && card === 'virus') return (numOfProtectrons * 8);
+    if (player.hand.includes('protectron') && card === 'virus') return (numOfProtectrons * 8) - 2; // $cardDetails[card].points -s a negative num here
+    if (player.hand.includes('ai') && card === 'virus') return $cardDetails[card].points + 2;
+    if (player.hand.includes('ai') && card === 'protectron') return $cardDetails[card].points + numOfViruses + 2;
+    if (card === 'protectron') return $cardDetails[card].points + numOfViruses;
+    if (player.hand.includes('ai')) return $cardDetails[card].points + 2;
+
+    return $cardDetails[card].points;
+  }
+
+  // Only called if twins OR elf king + full elf hand (including faeBot)
+  function determineElfPoints(player, card): number {
+    const hasElfKing = player.hand.includes('elfKing');
+    const numOfNelladans = player.hand.filter(c => c === 'nelladan').length;
+    const numOfNadallens = player.hand.filter(c => c === 'nadallen').length;
+    const fullElfHand = player.hand.every(c => $cardDetails[c].race === 'elf' || c === 'faeBot');
+    const triggerTwinEffect = numOfNelladans > 0 && numOfNadallens > 0;
+
+    // Elf king, full hand and twins
+    if ((hasElfKing && fullElfHand && triggerTwinEffect)) {
+      if (card === 'nadallen') return ($cardDetails[card].points + (numOfNelladans * 5) * 3);
+      if (card === 'nelladan') return (($cardDetails[card].points + 5) * 3);
+      
+      // Elf king and full hand
+    } else if (hasElfKing && fullElfHand) {
+      return $cardDetails[card].points * 3;
+      
+      // Twins
+    } else if (triggerTwinEffect) {
+      if (card === 'nadallen') return ($cardDetails[card].points + (numOfNelladans * 5) * 2);
+      if (card === 'nelladan') return (($cardDetails[card].points + 5) * 2);
+    }
+
+    // Default
+    return $cardDetails[card].points * 2;
   }
 </script>
 
@@ -1374,15 +1460,21 @@
               <span class="color-purple">{neutral} &nbsp;</span>
             {/each}
 
+            <p>Other Neutral Effects: 
+              {#each $player2.neutrals.filter(n => ['neutralize', 'switcharoo', 'ticktock', 'tocktick', 'xenoBloom', 'xenoBlossom'].includes(n)) as neutral}
+                <span class="color-purple">{neutral} &nbsp;</span>
+              {/each}
+            </p>
+
             <!-- Show all race points -->
             <RacePoints player={$player1}/>
 
             <h2 class="results-player-floating-header results-player-float-left">{$player1.title}</h2>
           </div>
+
           <div>
             <p>{$player1.title} Win/Lose/Draw: {$player1.wins}/{$player1.losses}/{$player1.draws}</p>
             <p class="margin-bottom-sm">{$player2.title} Win/Lose/Draw: {$player2.wins}/{$player2.losses}/{$player2.draws}</p>
-
 
             <p>Player2 Boosts: </p>
             <span>Boost cards: </span>
@@ -1403,6 +1495,12 @@
               <span class="color-purple">{neutral} &nbsp;</span>
             {/each}
 
+            <p>Other Neutral Effects: 
+              {#each $player1.neutrals.filter(n => ['neutralize', 'switcharoo', 'ticktock', 'tocktick', 'xenoBloom', 'xenoBlossom'].includes(n)) as neutral}
+                <span class="color-purple">{neutral} &nbsp;</span>
+              {/each}
+            </p>
+
             <!-- Show all race points -->
             <RacePoints player={$player2}/>
 
@@ -1411,7 +1509,7 @@
           </div>
         </div>
 
-        <div class="player-history-wrapper {$player1.highestPoints > $player2.highestPoints ? 'player-history-wrapper__winner' : 'player-history-wrapper__loser'}">
+        <div class="player-history-wrapper {$player1.highestPoints > $player2.highestPoints ? 'player-history-wrapper__winner' : 'player-history-wrapper__loser'}" class:player-history-wrapper__tie={$player1.highestPoints === $player2.highestPoints}>
           <!-- Cards Drawn -->
           <div class="history__cards-drawn">
             <!-- Starting hand, placed here so it's at the beginning, left side of parent -->
@@ -1488,7 +1586,7 @@
           </div>
         </div>
 
-        <div class="player-history-wrapper {$player2.highestPoints > $player1.highestPoints ? 'player-history-wrapper__winner' : 'player-history-wrapper__loser'}">
+        <div class="player-history-wrapper {$player2.highestPoints > $player1.highestPoints ? 'player-history-wrapper__winner' : 'player-history-wrapper__loser'}" class:player-history-wrapper__tie={$player1.highestPoints === $player2.highestPoints}>
           <!-- Cards Drawn -->
           <div class="history__cards-drawn">
             <!-- Starting hand, placed here so it's at the beginning, left side of parent -->
@@ -1633,7 +1731,7 @@
               description={$cardDetails[card].description}
               race={$cardDetails[card].race}
               rarity={determineRarity($player1, card)}
-              points={(['voidRunner', 'warpstalker'].includes(card) && gameState.playingAs === 'p2') ? remoteCardDetails[card].points : $cardDetails[card].points}
+              points={determinePoints($player1, card)}
             />
           {/each}
         </div>
@@ -1691,7 +1789,7 @@
               description={$cardDetails[card].description}
               race={$cardDetails[card].race}
               rarity={determineRarity($player2, card)}
-              points={(['voidRunner', 'warpstalker'].includes(card) && gameState.playingAs === 'p1') ? remoteCardDetails[card].points : $cardDetails[card].points}
+              points={determinePoints($player2, card)}
             />
           {/each}
         </div>
@@ -1844,6 +1942,10 @@
     background: linear-gradient(275deg, #ffd4d440, #391919);
   }
 
+  .player-history-wrapper__tie {
+    background: linear-gradient(275deg, #38464d7d, #656565);
+  }
+
   .history__card-wrapper {
     margin-bottom: 2rem;
   }
@@ -1883,15 +1985,18 @@
     border: 10px dotted #462e59;
 
     .game-event-message {
-      font-weight: bold;
-      font-size: 4rem;
-      color: #6a428b;
-      text-shadow: 2px 2px 4px #000000;
-      background: linear-gradient(214deg, #ddceee50, #855a2a50, #69c0ad50, #78c06950, #c0736950, #c2a84c50);
-      padding: 4rem;
-      border-radius: 100px;
-      z-index: 2;
       display: block;
+      z-index: 2;
+      padding: 4rem;
+      width: 70dvw;
+      font-weight: bold;
+      font-size: 3.5rem;
+      color: #6a428b;
+      background: linear-gradient(214deg, #ddceee50, #855a2a50, #69c0ad50, #78c06950, #c0736950, #c2a84c50);
+      text-align: center;
+      text-shadow: 2px 2px 4px #000000;
+      border-radius: 100px;
+
       position: absolute;
       bottom: 50%;
       right: 50%;

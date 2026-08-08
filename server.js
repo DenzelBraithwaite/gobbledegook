@@ -95,6 +95,9 @@ io.on('connection', socket => {
   // Increase turn count
   socket.on('increase-turn-count', () => io.emit('turn-count-increased'));
 
+  // Increase turn count
+  socket.on('decrease-turn-count', () => io.emit('turn-count-decreased'));
+
   // Card discarded
   socket.on('discard-card', data => socket.broadcast.emit('card-discarded', data));
 
