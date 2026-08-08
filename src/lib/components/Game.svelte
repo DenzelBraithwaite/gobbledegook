@@ -18,10 +18,10 @@
   // Websocket
   import { io } from 'socket.io-client';
 
-  let socket = io('http://10.3.144.90:6912'); // Work MacBook at work, changes a lot.
+  // let socket = io('http://10.3.144.90:6912'); // Work MacBook at work, changes a lot.
   // let socket = io('http://192.168.2.19:6912'); // Work MacBook at home
   // let socket = io('http://192.168.2.21:6912'); // Personal MacBook at home (ofc)
-  // let socket = io('http://192.168.2.10:6912'); // Thanos
+  let socket = io('http://192.168.2.10:6912'); // Thanos
   $: gameState = {
     gobbledegookDeclared: false,
     gobbledegookDisabled: false,
@@ -651,9 +651,11 @@
       
       socket.emit('end-game');
     } else {
-      changeTurns();
-      gameState.gobbledegookDeclared = true;
       socket.emit('gdg-declared');
+      // Need to add turn count here otherwise it won't go up cuz it's usually triggered on card draw.
+      const player = gameState.playingAs === 'p1' ? $player1 : $player2;
+      calculateNewTurn(player);
+      changeTurns();
     }
   }
 

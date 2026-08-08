@@ -99,7 +99,7 @@ io.on('connection', socket => {
   socket.on('discard-card', data => socket.broadcast.emit('card-discarded', data));
 
   // Gobbledegook declared
-  socket.on('gdg-declared', () => socket.broadcast.emit('gdg-declared'));
+  socket.on('gdg-declared', () => io.emit('gdg-declared'));
 
   // Game ended
   socket.on('end-game', data => io.emit('game-ended', data));
