@@ -1,7 +1,7 @@
-// @ts-ignore
 import { writable } from 'svelte/store';
+import type { Player } from './'
 
-export const player2 = writable({
+export const player2 = writable<Player>({
   id: undefined,
   title: 'Player 2',
   points: {
@@ -40,7 +40,7 @@ export const player2 = writable({
   infectPoints: 0,
 });
 
-export const player2Reset = writable({
+export const player2Reset = writable<Player>({
   id: undefined,
   title: 'Player 2',
   points: {
