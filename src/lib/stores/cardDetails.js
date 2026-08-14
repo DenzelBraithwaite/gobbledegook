@@ -13,6 +13,7 @@ const cardDetails = writable({
     trait: "Human points are doubled and all races in your hand except xenos will count towards your final score.",
     description: 'The leader of the human race.',
     race: 'human',
+    otherRaces: [],
     image: '/humans/emperor.png'
   },
   commander: {
@@ -25,8 +26,23 @@ const cardDetails = writable({
     trait: 'When the commander is in your hand, all humans you have will receive +1 point, including commanders. This effect also stacks with the emperor.',
     description: 'Powerful soldier second only to the emperor.',
     race: 'human',
+    otherRaces: [],
     image: '/humans/commander.png'
   },
+  // TODO:
+  // lupin: {
+  //   title: 'Lupin',
+  //   displayTitle: 'Lupin',
+  //   points: 6, // TODO: make assassin 5 after
+  //   amount: 2, // TODO: reduce assassin to 2 as well
+  //   rarity: 'amazing',
+  //   traitTitle: 'Full Moon',
+  //   trait: 'Lupin counts as both human and beast/wolf.',
+  //   description: 'A human who was bit by a strange wolf and now transforms on full moons.',
+  //   race: 'human',
+  //   otherRaces: ['beast'],
+  //   image: '/bots/werewolf.png' // TODO: get img
+  // },
   assassin: {
     title: 'assassin',
     displayTitle: 'Assassin',
@@ -37,6 +53,7 @@ const cardDetails = writable({
     trait: '',
     description: 'A highly skilled professional killer.',
     race: 'human',
+    otherRaces: [],
     image: '/humans/assassin.png'
   },
   knight: {
@@ -49,6 +66,7 @@ const cardDetails = writable({
     trait: '',
     description: 'A middle ranked soldier.',
     race: 'human',
+    otherRaces: [],
     image: '/humans/knight.png'
   },
   soldier: {
@@ -61,6 +79,7 @@ const cardDetails = writable({
     trait: '',
     description: 'A low ranked soldier.',
     race: 'human',
+    otherRaces: [],
     image: '/humans/soldier.png'
   },
   scout: {
@@ -73,6 +92,7 @@ const cardDetails = writable({
     trait: '',
     description: 'The lowest ranked in the human army.',
     race: 'human',
+    otherRaces: [],
     image: '/humans/scout.png'
   },
   villager: {
@@ -85,6 +105,7 @@ const cardDetails = writable({
     trait: '',
     description: 'An innocent villager.',
     race: 'human',
+    otherRaces: [],
     image: '/humans/villager.png'
   },
   villager2: {
@@ -97,6 +118,7 @@ const cardDetails = writable({
     trait: '',
     description: 'An innocent villager.',
     race: 'human',
+    otherRaces: [],
     image: '/humans/villager2.png'
   },
 
@@ -111,6 +133,7 @@ const cardDetails = writable({
     trait: "If your hand contains only goblins, you receive an insane amount of bonus points, doesn't count goblin lord's mark. Beware, the elf king can block this trait, resulting in a draw.",
     description: 'The leader of the goblins.',
     race: 'goblin',
+    otherRaces: [],
     image: '/goblins/goblin-lord.gif'
   },
   goblinLordsMark: {
@@ -123,6 +146,7 @@ const cardDetails = writable({
     trait: 'Draw the goblin lord next turn, only applies if this card is drawn. If no goblin lord, draw a goblin.',
     description: 'A sign that the goblin lord is near.',
     race: 'goblin-ish',
+    otherRaces: [],
     image: '/goblins/goblin-lord_mark.png'
   },
   warchief: {
@@ -135,6 +159,7 @@ const cardDetails = writable({
     trait: "The next card drawn will be the goblin lord's mark, if it's still in the deck.",
     description: 'Born in battle, this brutal war hungry goblin is second only to the goblin lord himself.',
     race: 'goblin',
+    otherRaces: [],
     image: '/goblins/warchief.png'
   },
   troll: {
@@ -147,6 +172,7 @@ const cardDetails = writable({
     trait: '',
     description: 'Loyal high ranked soldier in the goblin army.',
     race: 'goblin',
+    otherRaces: [],
     image: '/goblins/troll.png'
   },
   shaman: {
@@ -159,6 +185,7 @@ const cardDetails = writable({
     trait: '',
     description: 'A magic wielding goblin.',
     race: 'goblin',
+    otherRaces: [],
     image: '/goblins/shaman.png'
   },
   thief: {
@@ -171,6 +198,7 @@ const cardDetails = writable({
     trait: '',
     description: 'A quick, elusive but weak goblin.',
     race: 'goblin',
+    otherRaces: [],
     image: '/goblins/thief.png'
   },
   hobgoblin: {
@@ -183,6 +211,7 @@ const cardDetails = writable({
     trait: '',
     description: 'A low ranked goblin.',
     race: 'goblin',
+    otherRaces: [],
     image: '/goblins/hobgoblin.png'
   },
   bokoblin: {
@@ -195,6 +224,7 @@ const cardDetails = writable({
     trait: '',
     description: 'The weakest of goblins.',
     race: 'goblin',
+    otherRaces: [],
     image: '/goblins/bokoblin.png'
   },
 
@@ -209,6 +239,7 @@ const cardDetails = writable({
     trait: "If your hand contains only elves, they will have their points trippled, otherwise doubled! The elf king also prevents the enemy from using the goblin lord's special trait.",
     description: 'The purest, most powerful and respected leader of the elves.',
     race: 'elf',
+    otherRaces: [],
     image: '/elves/elf_king.png'
   },
   elfChampion: {
@@ -221,6 +252,7 @@ const cardDetails = writable({
     trait: 'The elf champion is always the first elf drawn.',
     description: 'Destined to be the next elf king, this elf champion lost an arm in battle and came back even more fierce.',
     race: 'elf',
+    otherRaces: [],
     image: '/elves/elf_champion.png'
   },
   darkElf: {
@@ -233,6 +265,7 @@ const cardDetails = writable({
     trait: '',
     description: 'High ranked powerful elf.',
     race: 'elf',
+    otherRaces: [],
     image: '/elves/dark_elf.png'
   },
   highElf: {
@@ -245,6 +278,7 @@ const cardDetails = writable({
     trait: '',
     description: "An elf in tune with nature, they're quite strong..",
     race: 'elf',
+    otherRaces: [],
     image: '/elves/high_elf.png'
   },
   nadallen: {
@@ -257,6 +291,7 @@ const cardDetails = writable({
     trait: 'If both Nelladan and Nadallen are in your hand, they both receive +5 bonus points. This effect stacks with each extra Nelladan and the elf king.',
     description: 'The stronger half of the rare elvan twins.',
     race: 'elf',
+    otherRaces: [],
     image: '/elves/nadallen.png'
   },
   nelladan: {
@@ -269,6 +304,7 @@ const cardDetails = writable({
     trait: 'If both Nelladan and Nadallen are in your hand, they both receive +5 bonus points. This effect stacks with the elf king.',
     description: 'A rare elvan twin.',
     race: 'elf',
+    otherRaces: [],
     image: '/elves/nelladan.png'
   },
   woodElf: {
@@ -281,6 +317,7 @@ const cardDetails = writable({
     trait: '',
     description: 'An elf who aspires to be a forest dwelling elf.',
     race: 'elf',
+    otherRaces: [],
     image: '/elves/wood_elf.png'
   },
   forestDweller: {
@@ -293,6 +330,7 @@ const cardDetails = writable({
     trait: '',
     description: 'An elf with no social status.',
     race: 'elf',
+    otherRaces: [],
     image: '/elves/forest_dweller.png'
   },
   bard: {
@@ -305,6 +343,7 @@ const cardDetails = writable({
     trait: '',
     description: 'A weak musician.',
     race: 'elf',
+    otherRaces: [],
     image: '/elves/bard.png'
   },
 
@@ -319,6 +358,7 @@ const cardDetails = writable({
     trait: 'If drawn, the next card will be a dwarf. Additionally, gain 5 points for every discarded dwarf.',
     description: 'The bravest and most feared amongst the dwarves.',
     race: 'dwarf',
+    otherRaces: [],
     image: '/dwarves/longbeard-leader.png'
   },
   dwarfCommander:  {
@@ -331,6 +371,7 @@ const cardDetails = writable({
     trait: 'If drawn, the next card will be a dwarf. Has no effect if there are no remaining dwarves.',
     description: 'Right hand man to the longbeard leader himself.',
     race: 'dwarf',
+    otherRaces: [],
     image: '/dwarves/commander.png'
   },
   alchemist: {
@@ -343,6 +384,7 @@ const cardDetails = writable({
     trait: '50% chance to draw a dwarf next turn when discarded, does not stack.',
     description: 'A dwarven warrior wielding science as magic.',
     race: 'dwarf',
+    otherRaces: [],
     image: '/dwarves/alchemist.png'
   },
   dwarfWarrior: {
@@ -355,6 +397,7 @@ const cardDetails = writable({
     trait: '',
     description: 'A strong and reliable dwarven warrior.',
     race: 'dwarf',
+    otherRaces: [],
     image: '/dwarves/warrior.png'
   },
   hunter: {
@@ -367,6 +410,7 @@ const cardDetails = writable({
     trait: '',
     description: 'A strong and capable hunter.',
     race: 'dwarf',
+    otherRaces: [],
     image: '/dwarves/hunter.png'
   },
   traveller: {
@@ -379,6 +423,7 @@ const cardDetails = writable({
     trait: '',
     description: 'An adventurous but feeble dwarf.',
     race: 'dwarf',
+    otherRaces: [],
     image: '/dwarves/traveller.png'
   },
   miner: {
@@ -391,6 +436,7 @@ const cardDetails = writable({
     trait: '',
     description: 'An average miner, not great in a fight.',
     race: 'dwarf',
+    otherRaces: [],
     image: '/dwarves/miner.png'
   },
   blacksmith: {
@@ -403,6 +449,7 @@ const cardDetails = writable({
     trait: '',
     description: 'A typical blacksmith, not very strong.',
     race: 'dwarf',
+    otherRaces: [],
     image: '/dwarves/blacksmith.png'
   },
   hobbit: {
@@ -415,6 +462,7 @@ const cardDetails = writable({
     trait: 'Hobbit points count towards both dwarves and humans.',
     description: "Half dwarf, half human. Although rare and different, they're generally accepted by all dwarves.",
     race: 'dwarf',
+    otherRaces: ['human'],
     image: '/dwarves/hobbit.png'
   },
   bartender: {
@@ -427,6 +475,7 @@ const cardDetails = writable({
     trait: '',
     description: 'A popular dwarf at the local pub, a serious drinker even amongst dwarves..',
     race: 'dwarf',
+    otherRaces: [],
     image: '/dwarves/bartender.png'
   },
 
@@ -442,6 +491,7 @@ const cardDetails = writable({
     trait: 'ALL bots will receive +2 points, effectively quarantining viruses. Additionally, A.I. will hack all bots and steal their points.',
     description: 'The core of the modern bot society, excels in probability computation and hacking.',
     race: 'bot',
+    otherRaces: [],
     image: '/bots/ai.png'
   },
   protectron: {
@@ -454,6 +504,7 @@ const cardDetails = writable({
     trait: 'Reprograms viruses into helpful programs, increasing their point value by 8. Protectron will also receive +1 point for every reprogrammed virus.',
     description: 'The most advanced battle bot and previous leader of the bots until A.I. took over, now second in command.',
     race: 'bot',
+    otherRaces: [],
     image: '/bots/protectron.png'
   },
   sawBot: {
@@ -466,6 +517,7 @@ const cardDetails = writable({
     trait: '',
     description: 'A bot designed to kill humans and trees, but mostly humans, beware.',
     race: 'bot',
+    otherRaces: [],
     image: '/bots/saw-bot.png'
   },
   faeBot: {
@@ -474,12 +526,27 @@ const cardDetails = writable({
     points: 6,
     amount: 3,
     rarity: 'amazing',
-    traitTitle: '',
-    trait: '',
-    description: 'Counts as both a bot and elf, created as a gift to the elves as a peace treaty.',
+    traitTitle: 'Fae Loader',
+    trait: 'Fae Bot counts as both bot and elf.',
+    description: 'Created as a gift to the elves as a peace treaty.',
     race: 'bot',
+    otherRaces: ['elf'],
     image: '/bots/fae-bot.png'
   },
+  // TODO:
+  // cyborg: {
+  //   title: 'Cyborg',
+  //   displayTitle: 'Cyborg',
+  //   points: 5,
+  //   amount: 2, // TODO: reduce faebot to 2 as well
+  //   rarity: 'amazing',
+  //   traitTitle: 'Human Loader',
+  //   trait: 'Cyborg counts as both bot and human.',
+  //   description: 'A human who underwent experiments to become half machine.',
+  //   race: 'bot',
+  //   otherRaces: ['human'],
+  //   image: '/bots/cyborg.png' // TODO: get img
+  // },
   killBot: {
     title: 'killBot',
     displayTitle: 'Kill Bot',
@@ -490,6 +557,7 @@ const cardDetails = writable({
     trait: '',
     description: 'An aggressive bot, known to attack on sight.',
     race: 'bot',
+    otherRaces: [],
     image: '/bots/kill-bot.png'
   },
   incuBot: {
@@ -502,6 +570,7 @@ const cardDetails = writable({
     trait: '',
     description: 'A weak incubator bot used to repair small bots.',
     race: 'bot',
+    otherRaces: [],
     image: '/bots/incu-bot.png'
   },
   virus: {
@@ -514,6 +583,7 @@ const cardDetails = writable({
     trait: '',
     description: 'A common computer virus, can be reprogrammed by protectron or quarantined A.I.',
     race: 'bot',
+    otherRaces: [],
     image: '/bots/virus.png'
   },
 
@@ -528,6 +598,7 @@ const cardDetails = writable({
     trait: 'All of your beasts are worth 12 points.',
     description: 'The fiercest creature in all of the animal kingdom.',
     race: 'beast',
+    otherRaces: [],
     image: '/beasts/dream-destroyer.png'
   },
   rhino: {
@@ -540,6 +611,7 @@ const cardDetails = writable({
     trait: 'If this card is in the player\'s hand at the end of the game, they will block all trap cards.',
     description: 'A feared beast at the top of the food chain.',
     race: 'beast',
+    otherRaces: [],
     image: '/beasts/rhino.png'
   },
   bear: {
@@ -552,6 +624,7 @@ const cardDetails = writable({
     trait: '',
     description: 'A powerful top level beast, matched by few.',
     race: 'beast',
+    otherRaces: [],
     image: '/beasts/bear.png'
   },
   lion: {
@@ -564,6 +637,7 @@ const cardDetails = writable({
     trait: '',
     description: 'The original kings of the jungle.',
     race: 'beast',
+    otherRaces: [],
     image: '/beasts/lion.png'
   },
   panther: {
@@ -576,6 +650,7 @@ const cardDetails = writable({
     trait: '',
     description: "A quick and efficient beast, known to stalk it's prey before pouncing.",
     race: 'beast',
+    otherRaces: [],
     image: '/beasts/panther.png'
   },
   wolf: {
@@ -585,9 +660,10 @@ const cardDetails = writable({
     amount: 3,
     rarity: 'rare',
     traitTitle: 'Wolf pack',
-    trait: 'Receive +2 points for every wolf in your hand, including this one.',
+    trait: 'Receive +2 points for every wolf in your hand, including this one and werewolves.',
     description: 'A lone wolf with the strength of a pack.',
     race: 'beast',
+    otherRaces: [],
     image: '/beasts/wolf.png'
   },
   fox: {
@@ -600,6 +676,7 @@ const cardDetails = writable({
     trait: '',
     description: 'A fox on steroids.',
     race: 'beast',
+    otherRaces: [],
     image: '/beasts/fox.png'
   },
   dog: {
@@ -612,6 +689,7 @@ const cardDetails = writable({
     trait: 'If ally hand contains humans (or hobbit), pawl receives + 10 points at the end of the game.',
     description: 'More bark than bite, recognized as the weakest beast since he obeys humans.',
     race: 'beast',
+    otherRaces: [],
     image: '/beasts/dog.png'
   },
 
@@ -626,6 +704,7 @@ const cardDetails = writable({
     trait: 'If this card is in the player\'s hand at the end of the game, they will not receive any boosts.',
     description: 'The xenoGuard is a highly intelligent and powerful creature, feared by many. It is the most feared creature in the xeno hive, tasked with the safety of the xeno overlord.',
     race: 'xeno',
+    otherRaces: [],
     image: '/xenos/xeno_guard.png'
   },
   abyssolarian: {
@@ -638,6 +717,7 @@ const cardDetails = writable({
     trait: '',
     description: 'A feral xeno born in the darkest depths of Xenopp. Produces light to lure prey.',
     race: 'xeno',
+    otherRaces: [],
     image: '/xenos/abyssolarian.png'
   },
   warpstalker: {
@@ -650,6 +730,7 @@ const cardDetails = writable({
     trait: 'When drawn, a random point value (7-13 inclusive) will be chosen, then applied to ALL ally warpstalkers.',
     description: 'A xeno capable of riftwalking, similar to teleporting over short distances. Sometimes riftwalks to the wrong place.',
     race: 'xeno',
+    otherRaces: [],
     image: '/xenos/warpstalker.png'
   },
   voidRunner: {
@@ -662,6 +743,7 @@ const cardDetails = writable({
     trait: "When drawn, ALL ally void Runners' points are set to the number of turns passed.",
     description: "A non sentient xeno who's only purpose is to run and grow stronger. If it ever stops it will die.",
     race: 'xeno',
+    otherRaces: [],
     image: '/xenos/void_runner.png'
   },
   nebulite: {
@@ -674,6 +756,7 @@ const cardDetails = writable({
     trait: 'Buffs all xenos by +4, does not apply to self and does not stack with other Nebulites.',
     description: 'Artificially created xenos incapable of speech.',
     race: 'xeno',
+    otherRaces: [],
     image: '/xenos/nebulite.png'
   },
   celenial: {
@@ -686,6 +769,7 @@ const cardDetails = writable({
     trait: '',
     description: 'The lowest of the xenos, often mistreated. Excluding the nebulites, celenials are the weakest of the xenos, often used as bait for the abyssolarians.',
     race: 'xeno',
+    otherRaces: [],
     image: '/xenos/xeno_placeholder.png'
   },
 
@@ -700,6 +784,7 @@ const cardDetails = writable({
     trait: 'Active immediately even if discarded. Blocks all trap cards except Corruption, only one exists in deck. If acquired by switcharoo, only active while in hand.',
     description: 'An intriguing artifact said to repel all evil.',
     race: 'boost',
+    otherRaces: [],
     image: '/boosts/rainbow_boost.png'
   },
   rejuvenate: {
@@ -712,6 +797,7 @@ const cardDetails = writable({
     trait: 'If drawn, player gains 10 points at the end of the game even after this card is discarded',
     description: 'An artifact that is believed to strengthen all being.',
     race: 'boost',
+    otherRaces: [],
     image: '/boosts/blue_boost.png'
   },
   feast: {
@@ -724,6 +810,7 @@ const cardDetails = writable({
     trait: 'If drawn, player gains +10 beast points at the end of the game even after this card is discarded',
     description: 'An small furry creature with a large appetite.',
     race: 'boost',
+    otherRaces: [],
     image: '/boosts/feast.png'
   },
   dwarvenCall: {
@@ -736,6 +823,7 @@ const cardDetails = writable({
     trait: 'If drawn, next card drawn is a dwarf. If no dwarves are left, draw random card.',
     description: 'It\'s really just a mug of ale, but guaranteed to summon a dwarf if one is nearby.',
     race: 'boost',
+    otherRaces: [],
     image: '/boosts/ale.png'
   },
   charge: {
@@ -748,6 +836,7 @@ const cardDetails = writable({
     trait: 'Only affects bots and humans. If drawn, at the end of the game, gain points equal to (amount of turns - turns passed since drawn * charge cards) even if discarded.',
     description: 'This curious electrified liquid seems to only benefit electronics and the human anatomy.',
     race: 'boost',
+    otherRaces: [],
     image: '/boosts/charge.png'
   },
     growth: {
@@ -760,6 +849,7 @@ const cardDetails = writable({
     trait: 'Only affects goblins, elves, and dwarves. If drawn, at the end of the game, gain points equal to (amount of turns - turns passed since drawn * growth cards) even if discarded.',
     description: 'This curious furry creature seems to promote growth in certain creatues.',
     race: 'boost',
+    otherRaces: [],
     image: '/boosts/growth.png'
   },
 
@@ -774,6 +864,7 @@ const cardDetails = writable({
     trait: 'Active immediately even if discarded. Blocks all boost cards except Chastity, only one exists in deck. If acquired by switcharoo, only active while in hand.',
     description: 'An ominous artifact feared for it\'s ability to prevent all that is good.',
     race: 'trap',
+    otherRaces: [],
     image: '/boosts/rainbow_boost.png'
   },
   sap: {
@@ -786,6 +877,7 @@ const cardDetails = writable({
     trait: 'If drawn, player loses 10 points at the end of the game even after this card is discarded.',
     description: 'A burning sticky substance that harms all who have the misfortune of touching it.',
     race: 'trap',
+    otherRaces: [],
     image: '/traps/red_trap.png'
   },
   xenophobia: {
@@ -798,6 +890,7 @@ const cardDetails = writable({
     trait: 'If drawn, xenos lose 10 points at the end of the game even after this card is discarded.',
     description: 'A curious artifact that repels the xenos, harmless to others.',
     race: 'trap',
+    otherRaces: [],
     image: '/traps/xeno_trap.png'
   },
   infect: {
@@ -810,6 +903,7 @@ const cardDetails = writable({
     trait: 'Does not affect bots. If drawn, at the end of the game, lose points equal to (amount of turns - turns passed since drawn * infect cards) even if discarded.',
     description: 'A contagious metastasizing virus that targets living hosts.',
     race: 'trap',
+    otherRaces: [],
     image: '/traps/green_trap.png'
   },
   lost: {
@@ -822,6 +916,7 @@ const cardDetails = writable({
     trait: 'If drawn, lose a turn because this card is useless.',
     description: 'A harmless sprite attracted to negative energy.',
     race: 'trap',
+    otherRaces: [],
     image: '/traps/white_trap.png'
   },
   exposed: {
@@ -834,6 +929,7 @@ const cardDetails = writable({
     trait: 'If drawn, your hand is exposed until your next turn, unless you have a card that blocks traps.',
     description: 'A spirit that briefly feeds on thoughts, making them temporarily tangible and visible to the naked eye.',
     race: 'trap',
+    otherRaces: [],
     image: '/traps/camo_trap.png'
   },
 
@@ -848,6 +944,7 @@ const cardDetails = writable({
     trait: "When drawn, all boosts and traps in effect are neutralized. Only 1 in deck.",
     description: 'A passive spirit that strives for balance in all things.',
     race: 'neutral',
+    otherRaces: [],
     image: '/neutrals/neutralize.png'
   },
   switcharoo: {
@@ -860,6 +957,7 @@ const cardDetails = writable({
     trait: "When discarded, players will swap hands unless player has over 6 cards or gobbledegook declared. For special xeno cards(e.g. Void Runner) they will receive the new player's point value for that card, not the previous value.",
     description: 'A trickster spirit who enjoys swapping the location of precious items.',
     race: 'neutral',
+    otherRaces: [],
     image: '/neutrals/switcharoo.png'
   },
   echo: {
@@ -872,6 +970,7 @@ const cardDetails = writable({
     trait: "If drawn, player can draw another card, maximum hand of 7. Discarding echos prolongs this, when you discard a non echo card, you will need to continue discarding down to 5 cards.",
     description: 'A self-multiplying rapidly decaying relic believed to have a soul, it appears randomly.',
     race: 'neutral',
+    otherRaces: [],
     image: '/neutrals/echo.png'
   },
   ticktock: {
@@ -884,6 +983,7 @@ const cardDetails = writable({
     trait: "If drawn, adds 3 turns.",
     description: 'A curious sprite that briefly accelerates time when it manifests.',
     race: 'neutral',
+    otherRaces: [],
     image: '/neutrals/ticktock.png'
   },
     tocktick: {
@@ -896,6 +996,7 @@ const cardDetails = writable({
     trait: "If drawn, subtracts 5 turns.",
     description: 'A curious sprite that briefly reverts time when it manifests.',
     race: 'neutral',
+    otherRaces: [],
     image: '/neutrals/tocktick.png'
   },
   vision: {
@@ -908,6 +1009,7 @@ const cardDetails = writable({
     trait: "If drawn, see the opponents cards for the duration of your turn.",
     description: 'An all seeing but passive spirit that shares its visions with others.',
     race: 'neutral',
+    otherRaces: [],
     image: '/neutrals/vision.png'
   },
   xenoBloom: {
@@ -920,6 +1022,7 @@ const cardDetails = writable({
     trait: "If drawn, both players receive +15 bonus xeno points at the end of the game.",
     description: 'A spirit that blesses xenos, it is believed to have been born from the countless deaths of xenos on earth.',
     race: 'neutral',
+    otherRaces: [],
     image: '/neutrals/xeno_bloom.png'
   },
     xenoBlossom: {
@@ -932,6 +1035,7 @@ const cardDetails = writable({
     trait: "If drawn, both players receive +5 bonus xeno points at the end of the game.",
     description: 'A hatchling spirit that blesses xenos, it is believed to have been born from the countless deaths of xenos on earth.',
     race: 'neutral',
+    otherRaces: [],
     image: '/neutrals/xeno_blossom.png'
   },
 });

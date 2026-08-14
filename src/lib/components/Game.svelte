@@ -436,13 +436,13 @@
       if (cardDrawn === 'warpstalker' || cardDrawn === 'voidRunner') calculateSpecialXenoCard(player, cardDrawn);
 
       // If the card is a trap, handle it.
-      if ($cardDetails[cardDrawn].race === 'trap') await addTrapCard(player, cardDrawn);
+      if (getRaces(cardDrawn).includes('trap')) await addTrapCard(player, cardDrawn);
 
       // If the card is a boost, handle it.
-      if ($cardDetails[cardDrawn].race === 'boost') addBoostCard(player, cardDrawn);
+      if (getRaces(cardDrawn).includes('boost')) addBoostCard(player, cardDrawn);
 
       // If the card is a neutral, handle it.
-      if ($cardDetails[cardDrawn].race === 'neutral') await addneutralCard(player, cardDrawn);
+      if (getRaces(cardDrawn).includes('neutral')) await addneutralCard(player, cardDrawn);
     }
 
     // Remove card from deck
@@ -669,22 +669,22 @@
   // Calculates up-to-date current player points, wipes each time to avoid adding points to previous ones.
   function calculateCurrentPlayerPoints(options = {calculateOpponentCards: false, swapPlayers: false, recursive: false}) {
     let player;
-    let enemy;
+    let otherPlayer;
     if (options.swapPlayers) {
       player = gameState.playingAs === 'p1' ? $player2 : $player1;
-      enemy = gameState.playingAs === 'p1' ? $player1 : $player2;
+      otherPlayer = gameState.playingAs === 'p1' ? $player1 : $player2;
     } else {
       player = gameState.playingAs === 'p1' ? $player1 : $player2;
-      enemy = gameState.playingAs === 'p1' ? $player2 : $player1;
+      otherPlayer = gameState.playingAs === 'p1' ? $player2 : $player1;
     }
 
     // Reset points each time for a clean calculation then calculates hand before special cards.
     setPlayerPointsToZero(player);
     calculateBasePoints(player);
-    calculateSpecialTraits(player, enemy, options);
+    calculateSpecialTraits(player, otherPlayer, options);
 
     // Handles end game boost, trap and neutral cards. These occur AFTER special traits are calculated.
-    endGameBoostHandler(player, enemy, options);
+    endGameBoostHandler(player, otherPlayer, options);
     endGameTrapHandler(player);
     addXenoBloomBonus(player);
     addXenoBlossomBonus(player);
@@ -700,76 +700,29 @@
     const otherPlayer = player.id === $player1.id ? $player2 : $player1;
 
     setPlayerPointsToZero(player);
-    // TODO: It makes less sense to calculate base points then special points and more sense to go by race
-    // Calculate their points including boosts e.g. in each race calc func they check if rejuvenate to add 10 to that race.
     calculateHumanPoints(player);
-    calculateGoblinPoints(player);
-    calculateElfPoints(player);
+    calculateGoblinPoints(player, otherPlayer);
+    calculateElfPoints(player, otherPlayer);
     calculateDwarfPoints(player);
     calculateBeastPoints(player);
-    calculateBotPoints(player);
-    calculateXenoPoints(player);
-    calculateBasePoints(player); // TODO: REMOVE
-    calculateSpecialTraits(player, otherPlayer, options); // TODO: REMOVE
-
-    // Handles end game boost, trap and neutral cards. These occur AFTER special traits are calculated.
-    endGameBoostHandler(player, otherPlayer, options); // TODO: revamp to be used in each calculateRacePoints()
-    endGameTrapHandler(player); // TODO: revamp to be used in each calculateRacePoints()
-    addXenoBloomBonus(player);  // TODO: INSIDE OF XENO CALC
-    addXenoBlossomBonus(player); // TODO: INSIDE OF XENO CALC
-
-    // Determines player's race with the most points to compare to other player.
+    calculateBotPoints(player, otherPlayer);
+    calculateXenoPoints(player, otherPlayer);
     calculatePlayerHighestPoints(player);
   }
 
   // Calculates card points by race, doesn't include special traits
   function calculateBasePoints(player: Player) {
     player.hand.forEach(card => {
-      const race = $cardDetails[card].race;
-      switch(race) {
-        // When calculating dreamdestroyer, it resets beast points
-        case 'beast':
-          player.points.beasts += $cardDetails[card].points;
-        break;
-
-        // When calculating A.I., it resets bot points
-        case 'bot':
-          if ($cardDetails[card].title === 'faeBot') player.points.elves += $cardDetails[card].points;
-          player.points.bots += $cardDetails[card].points;
-        break;
-
-        case 'elf':
-          player.points.elves += $cardDetails[card].points;
-        break;
-
-        case 'dwarf':
-          if ($cardDetails[card].title === 'hobbit') player.points.humans += $cardDetails[card].points;
-            player.points.dwarves += $cardDetails[card].points;
-        break;
-
-        case 'goblin':
-          player.points.goblins += $cardDetails[card].points;
-        break;
-
-        case 'human':
-          player.points.humans += $cardDetails[card].points;
-        break;
-
-        // This ensures that if this function runs on player client from the enemy perspective that it should use the remote cardDetails for xenos.
-        // This would happen because calculateCurrentPlayerPoints can run recursively, swapping perspective to enemy to calculate their points for end game for current player. // TODO: is this still true after calculateEndGamePlayerPoints() ?
-        case 'xeno':
-          player.points.xenos += ((gameState.playingAs === 'p1' && player === $player1) || (gameState.playingAs === 'p2' && player === $player2)) ? $cardDetails[card].points : remoteCardDetails[card].points;
-        break;
-
-        // Don't care about these
-        case 'boost':
-        case 'trap':
-        case 'neutral':
-          break;
-
-        default:
-          console.log(`Didn't match a race? This was the race of the card: ${race}`);
-      }
+      const races = getRaces(card);
+      if (races.includes('human')) player.points.humans += $cardDetails[card].points;
+      if (races.includes('goblin')) player.points.goblins += $cardDetails[card].points;
+      if (races.includes('elf')) player.points.elves += $cardDetails[card].points;
+      if (races.includes('dwarf')) player.points.dwarves += $cardDetails[card].points;
+      if (races.includes('beast')) player.points.beasts += $cardDetails[card].points;
+      if (races.includes('bot')) player.points.bots += $cardDetails[card].points;
+      // This ensures that if this function runs on player client from the other player perspective that it should use the remote cardDetails for xenos.
+      // This would happen because calculateCurrentPlayerPoints can run recursively, swapping perspective to other player to calculate their points for end game for current player.
+      if (races.includes('xeno')) player.points.xenos += ((gameState.playingAs === 'p1' && player === $player1) || (gameState.playingAs === 'p2' && player === $player2)) ? $cardDetails[card].points : remoteCardDetails[card].points;
 
       player.highestPoints = Math.max(
         player.points.beasts,
@@ -784,9 +737,9 @@
   }
 
   // Calculates all race card special traits
-  function calculateSpecialTraits(player: Player, enemy, options = {calculateOpponentCards: false, swapPlayers: false, recursive: false}): void {
-    // Only wipe player's bot points if they know enemy has AI
-    if (options.calculateOpponentCards && enemy.hand.includes('ai')) player.points.bots = 0;
+  function calculateSpecialTraits(player: Player, otherPlayer: Player, options = {calculateOpponentCards: false, swapPlayers: false, recursive: false}): void {
+    // Only wipe player's bot points if they know otherPlayer has AI
+    if (options.calculateOpponentCards && otherPlayer.hand.includes('ai')) player.points.bots = 0;
     
     // Must be before emperor calculation for proper result, adds bonus points to all humans.
     if (player.hand.includes('commander')) calculateCommander(player);
@@ -794,32 +747,32 @@
     // Multiplies human points by 2 then adds rest of hand as human points.
     if (player.hand.includes('emperor')) calculateEmperor(player);
 
-    // Determines if player has full goblin hand and if enemy has full elf hand with elf leader, assigns points accordingly.
-    if (player.hand.includes('goblinLord')) calculateGoblinLord(player, enemy, options.calculateOpponentCards);
+    // Determines if player has full goblin hand and if otherPlayer has full elf hand with elf leader, assigns points accordingly.
+    if (player.hand.includes('goblinLord')) calculateGoblinLord(player, otherPlayer, options.calculateOpponentCards);
 
     // If elf twins in hand player gains bonus points depending on how many. Must be before Elf king calculation for proper calculation.
     if (player.hand.includes('nelladan') && player.hand.includes('nadallen')) calculateElfTwins(player);
 
-    // Determines if enemy has full goblin hand and if player has full elf hand, assigns points accordingly.
-    if (player.hand.includes('elfKing')) calculateElfKing(player, enemy, options.calculateOpponentCards);
+    // Determines if otherPlayer has full goblin hand and if player has full elf hand, assigns points accordingly.
+    if (player.hand.includes('elfKing')) calculateElfKing(player, otherPlayer, options.calculateOpponentCards);
 
     // Calculates all beasts as if they are worth 12 points.
     if (player.hand.includes('dreamDestroyer')) calculateDreamDestroyer(player);
 
     // If player has humans/hobbits, pawl barkington gains +10 points.
-    if (player.hand.includes('dog') && (player.hand.includes('hobbit') || player.hand.some(card => $cardDetails[card].race === 'human'))) {
-      const numOfDogs = player.hand.filter(c => c === 'dog').length;
+    if (player.hand.includes('dog') && player.hand.some(card => getRaces(card).includes('human'))) {
+      const numOfDogs = player.hand.filter(card => card === 'dog').length;
       player.points.beasts += 10 * numOfDogs;
     }
 
     // Player gains +2 for every wolf on the field, including himself.
     if (player.hand.includes('wolf')) calculateWolfPack(player);
 
-    // Adds +2 to all bot cards (player + enemy) then steals all bot points.
-    if (player.hand.includes('ai')) calculateAi(player, enemy, options);
+    // Adds +2 to all bot cards (player + otherPlayer) then steals all bot points.
+    if (player.hand.includes('ai')) calculateAi(player, otherPlayer, options.calculateOpponentCards);
 
     // Must be after A.I. since A.I. resets bot points. Quarantine all viruses adding +8 to their value and +1 bot point to Protectron per quarantined virus.
-    if (player.hand.includes('protectron')) calculateProtectron(player, enemy, options.calculateOpponentCards);
+    if (player.hand.includes('protectron')) calculateProtectron(player, otherPlayer, options.calculateOpponentCards);
 
     // Calculates +5 dwarf points per discarded dwarf by any player.
     if (player.hand.includes('longbeardLeader')) calculateLongbeard(player, options.calculateOpponentCards);
@@ -844,14 +797,14 @@
   // Modifies card points depending on cards in player hand
   function displayCardPoints(player: Player, card): number {
     const triggerTwinEffect = player.hand.includes('nelladan') && player.hand.includes('nadallen');
-    if ((player.hand.includes('dreamDestroyer') || card === 'dog') && $cardDetails[card].race === 'beast') return displayBeastPoints(player, card);
-    if ((player.hand.includes('ai') || player.hand.includes('protectron')) && $cardDetails[card].race === 'bot') return displayBotPoints(player, card);
-    if (triggerTwinEffect || (player.hand.includes('elfKing') && ($cardDetails[card].race === 'elf' || card === 'faeBot'))) return displayElfPoints(player, card);
-    if ((player.hand.includes('emperor') || player.hand.includes('commander')) && ($cardDetails[card].race === 'human' || card === 'hobbit')) return displayHumanPoints(player, card);
+    if ((player.hand.includes('dreamDestroyer') || card === 'dog') && getRaces(card).includes('beast')) return displayBeastPoints(player, card);
+    if ((player.hand.includes('ai') || player.hand.includes('protectron')) && getRaces(card).includes('bot')) return displayBotPoints(player, card);
+    if (triggerTwinEffect || (player.hand.includes('elfKing') && getRaces(card).includes('elf'))) return displayElfPoints(player, card);
+    if ((player.hand.includes('emperor') || player.hand.includes('commander')) && getRaces(card).includes('human')) return displayHumanPoints(player, card);
     
     // If this is being called on player 1/2's hand and the card is a voidrunner/warp and I'm player 2/1 return appropriate points.
     const xenoCards = ['voidRunner', 'warpstalker', 'nebulite'];
-    if (player.hand.some(c => xenoCards.includes(c)) && $cardDetails[card].race === 'xeno') return determineXenoPoints(player, card);
+    if (player.hand.some(c => xenoCards.includes(c)) && getRaces(card).includes('xeno')) return determineXenoPoints(player, card);
 
     return $cardDetails[card].points;
   }
@@ -860,17 +813,16 @@
 
   // Calculates all human points including boosts, traps, etc.
   function calculateHumanPoints(player: Player): void {
-    const humanCards = player.hand.filter(card => $cardDetails[card].race === 'human' || card === 'hobbit');
+    const humanCards = player.hand.filter(card => getRaces(card).includes('human'));
     humanCards.forEach(card => player.points.humans += $cardDetails[card].points);
 
-    // Must be before emperor calculation for proper result, adds bonus points to all humans.
+    // Must calculate commander before emperor since emperor multiples * 2 then adds other races
     if (player.hand.includes('commander')) calculateCommander(player);
     if (player.hand.includes('emperor')) calculateEmperor(player);
 
+    // Currently no neutrals that affect human points
     calculateHumanBoosts(player);
     calculateHumanTraps(player);
-    calculateHumanNeutrals(player);
-    // TODO: neutrals
   }
 
   // Calculates all boosts that apply to humans and adds them to human points.
@@ -901,35 +853,68 @@
     player.points.humans -= (numOfSaps * 10);
   }
 
-  // Calculates all boosts that apply to humans and adds them to human points.
-  function calculateHumanNeutrals(player: Player): void {
-
-  }
-
   // Doubles human points and adds other races as well except Xenos.
   function calculateEmperor(player: Player) {
     player.points.humans *= 2;
-    const otherRaceCards = player.hand.filter(card => !['human', 'xeno'].includes($cardDetails[card].race) && card !== 'hobbit');
+    const otherRaceCards = player.hand.filter(card => !getRaces(card).includes('human') || !getRaces(card).includes('xeno'));
     otherRaceCards.forEach(card => player.points.humans += $cardDetails[card].points);
   }
 
   // Handles human commanders who buff their team
   function calculateCommander(player: Player) {
     let numOfCommanders = player.hand.filter(card => card === 'commander').length;
-    let humanCards = player.hand.filter(card => $cardDetails[card].race === 'human' || card === 'hobbit');
+    let humanCards = player.hand.filter(card => getRaces(card).includes('human'));
     let numOfHumanCards = humanCards.length;
     player.points.humans += numOfHumanCards * numOfCommanders;
   }
 
   function displayHumanPoints(player: Player, card): number {
     const hasEmperor = player.hand.includes('emperor');
-    const numOfCommanders = player.hand.filter(c => c === 'commander').length;
+    const numOfCommanders = player.hand.filter(card => card === 'commander').length;
 
     if (hasEmperor) return ($cardDetails[card].points + numOfCommanders) * 2;
     if (!hasEmperor) return ($cardDetails[card].points + numOfCommanders);
   }
 
   // --------------------- GOBLIN CALCULATIONS ----------------------- \\
+
+  function calculateGoblinPoints(player: Player, otherPlayer: Player): void {
+    const goblinCards = player.hand.filter(card => getRaces(card).includes('goblin'));
+    goblinCards.forEach(card => player.points.goblins += $cardDetails[card].points);
+    if (player.hand.includes('goblinLord')) calculateGoblinLord(player, otherPlayer, true);
+
+    // Currently no neutrals that affect goblin points
+    calculateGoblinBoosts(player);
+    calculateGoblinTraps(player);
+  }
+
+  // Calculates all boosts that apply to goblins and adds them to goblin points.
+  function calculateGoblinBoosts(player: Player): void {
+    if (areBoostsBlocked(player)) return;
+
+    // Add growth points
+    let growthPoints = 0;
+    for (let i = 0; i < player.growthDrawnTurns.length; i++) growthPoints += (gameState.turnCount - player.growthDrawnTurns[i]);
+    player.points.goblins += growthPoints;
+
+    // Add rejuvenate points
+    const numOfRejuvenates = player.boosts.filter(boost => boost === 'rejuvenate').length;
+    player.points.goblins += (numOfRejuvenates * 10);
+  }
+
+  // Calculates all traps that apply to goblins and deducts them from goblin points.
+  function calculateGoblinTraps(player: Player): void {
+    if (areTrapsBlocked(player)) return;
+
+    // Infects
+    let infectPoints = 0;
+    for (let i = 0; i < player.infectDrawnTurns.length; i++) infectPoints += (gameState.turnCount - player.infectDrawnTurns[i]);
+    player.points.goblins -= infectPoints;
+
+    // Saps
+    const numOfSaps = player.traps.filter(trap => trap === 'sap').length;
+    player.points.goblins -= (numOfSaps * 10);
+  }
   
   // Determins if goblin mark can be drawn.
   function canDrawGoblinLordMark(player: Player) {
@@ -937,28 +922,23 @@
     return (fullDeck['goblins'] && fullDeck['goblins'].includes('goblinLordsMark')) ? true : false;
   }
 
-  // Instant win for goblins unless enemy has full elf hand + elf king, if so, then instant draw.
-  function calculateGoblinLord(player: Player, enemy, calculateElfDefense = false) {
+  // Instant win for goblins unless otherPlayer has full elf hand + elf king, if so, then instant draw.
+  function calculateGoblinLord(player: Player, otherPlayer: Player, calculateElfDefense = false): void {
     // Checks if player hand has only goblins
-    const goblinHand = player.hand.every(card => { 
-      return $cardDetails[card].race === 'goblin';
-    });
+    const goblinHand = player.hand.every(card => getRaces(card).includes('goblin'));
     
-    // Ignore enemy cards if the game is still going on
+    // Ignore otherPlayer cards if the game is still going on
     if (!calculateElfDefense && goblinHand) {
       player.points.goblins = 1_000_000;
       return;
     }
     
-    // Checks if enemy has only elves
-    const enemyFullElf = enemy.hand.every(card => {
-      return $cardDetails[card].race === 'elf';
-    });
+    // Checks if otherPlayer has only elves
+    const otherPlayerFullElf = otherPlayer.hand.every(card => getRaces(card).includes('elf'));
+    // Checks if otherPlayer has the elf king
+    const otherPlayerElfKing = otherPlayer.hand.includes('elfKing');
 
-    // Checks if enemy has the elf king
-    const enemyElfKing = enemy.hand.includes('elfKing');
-
-    if (goblinHand && (enemyFullElf && enemyElfKing)) {
+    if (goblinHand && (otherPlayerFullElf && otherPlayerElfKing)) {
       player.points.goblins = 500_000;
     } else if (goblinHand) {
       player.points.goblins = 1_000_000;
@@ -967,30 +947,70 @@
 
   // --------------------- ELF CALCULATIONS ----------------------- \\
 
+  function calculateElfPoints(player: Player, otherPlayer: Player): void {
+    const elfCards = player.hand.filter(card => getRaces(card).includes('elf'));
+    elfCards.forEach(card => player.points.elves += $cardDetails[card].points);
+
+    // Handles elf twins. Must calculate before elf king since elf king multiples elf points *2/*3
+    if (player.hand.includes('nelladan') && player.hand.includes('nadallen')) calculateElfTwins(player);
+
+    // Determines if otherPlayer has full goblin hand and if player has full elf hand, assigns points accordingly.
+    if (player.hand.includes('elfKing')) calculateElfKing(player, otherPlayer, true);
+    
+    // Currently no neutrals that affect elf points
+    calculateElfBoosts(player);
+    calculateElfTraps(player);
+  }
+
+  // Calculates all boosts that apply to elves and adds them to elf points.
+  function calculateElfBoosts(player: Player): void {
+    if (areBoostsBlocked(player)) return;
+
+    // Add growth points
+    let growthPoints = 0;
+    for (let i = 0; i < player.growthDrawnTurns.length; i++) growthPoints += (gameState.turnCount - player.growthDrawnTurns[i]);
+    player.points.elves += growthPoints;
+
+    // Add rejuvenate points
+    const numOfRejuvenates = player.boosts.filter(boost => boost === 'rejuvenate').length;
+    player.points.elves += (numOfRejuvenates * 10);
+  }
+
+  // Calculates all traps that apply to elves and deducts them from elf points.
+  function calculateElfTraps(player: Player): void {
+    if (areTrapsBlocked(player)) return;
+
+    // Infects
+    let infectPoints = 0;
+    for (let i = 0; i < player.infectDrawnTurns.length; i++) infectPoints += (gameState.turnCount - player.infectDrawnTurns[i]);
+    player.points.elves -= infectPoints;
+
+    // Saps
+    const numOfSaps = player.traps.filter(trap => trap === 'sap').length;
+    player.points.elves -= (numOfSaps * 10);
+  }
+
   // Adds bonus points for matching elf twins
   function calculateElfTwins(player: Player) {
-    // Each Nelladan gets +5 points for matching with Nadallen and Nadallen gets +5 points per Nelladan. Amount * 5 * 2 
+    // Each Nelladan gets +5 points and Nadallen gets +5p for each Nelladan. So +10 per Nelladan.
     const bonusTwinPoints = player.hand.filter(card => card === 'nelladan').length * 10;
-
     player.points.elves += bonusTwinPoints;
   }
 
   // Calculates special elf king effects
-  function calculateElfKing(player: Player, enemy, calculateGoblinKing = false) {
+  function calculateElfKing(player: Player, otherPlayer: Player, calculateGoblinKing = false) {
     // Checks if hand has only elves or faebots
-    const fullElfHand = player.hand.every(card => $cardDetails[card].race === 'elf' || $cardDetails[card].title === 'faeBot');
+    const fullElfHand = player.hand.every(card => getRaces(card).includes('elf'));
     if (!calculateGoblinKing && fullElfHand) player.points.elves *= 3;
     if (!calculateGoblinKing && !fullElfHand) player.points.elves *= 2;
     if (calculateGoblinKing) {
-      // Checks if enemy hand has only goblins
-      const goblinHand = enemy.hand.every(card => { 
-        return $cardDetails[card].race === 'goblin';
-      });
+      // Checks if otherPlayer hand has only goblins
+      const goblinHand = otherPlayer.hand.every(card => getRaces(card).includes('goblin'));
 
-      // Checks if enemy has the goblin king
-      const enemyGoblinKing = enemy.hand.includes('goblinLord');
+      // Checks if otherPlayer has the goblin king
+      const otherPlayerGoblinKing = otherPlayer.hand.includes('goblinLord');
 
-      if (goblinHand && enemyGoblinKing && fullElfHand) {
+      if (goblinHand && otherPlayerGoblinKing && fullElfHand) {
         player.points.elves = 500_000;
       } else if (fullElfHand) {
         player.points.elves *= 3;
@@ -1003,9 +1023,9 @@
   // Only called if twins OR elf king + full elf hand (including faeBot)
   function displayElfPoints(player: Player, card): number {
     const hasElfKing = player.hand.includes('elfKing');
-    const numOfNelladans = player.hand.filter(c => c === 'nelladan').length;
-    const numOfNadallens = player.hand.filter(c => c === 'nadallen').length;
-    const fullElfHand = player.hand.every(c => $cardDetails[c].race === 'elf' || c === 'faeBot');
+    const numOfNelladans = player.hand.filter(card => card === 'nelladan').length;
+    const numOfNadallens = player.hand.filter(card => card === 'nadallen').length;
+    const fullElfHand = player.hand.every(c => getRaces(c).includes('elf'));
     const triggerTwinEffect = numOfNelladans > 0 && numOfNadallens > 0;
 
     // Elf king, full hand and twins
@@ -1029,6 +1049,46 @@
   }
 
   // --------------------- DWARF CALCULATIONS ----------------------- \\
+
+  function calculateDwarfPoints(player: Player): void {
+    const dwarfCards = player.hand.filter(card => getRaces(card).includes('dwarf'));
+    dwarfCards.forEach(card => player.points.dwarves += $cardDetails[card].points);
+
+    // Calculates +5 dwarf points per discarded dwarf by any player.
+    if (player.hand.includes('longbeardLeader')) calculateLongbeard(player, true);
+    
+    // Currently no neutrals that affect dwarf points
+    calculateDwarfBoosts(player);
+    calculateDwarfTraps(player);
+  }
+
+  // Calculates all boosts that apply to dwaves and adds them to dwarf points.
+  function calculateDwarfBoosts(player: Player): void {
+    if (areBoostsBlocked(player)) return;
+
+    // Add growth points
+    let growthPoints = 0;
+    for (let i = 0; i < player.growthDrawnTurns.length; i++) growthPoints += (gameState.turnCount - player.growthDrawnTurns[i]);
+    player.points.dwarves += growthPoints;
+
+    // Add rejuvenate points
+    const numOfRejuvenates = player.boosts.filter(boost => boost === 'rejuvenate').length;
+    player.points.dwarves += (numOfRejuvenates * 10);
+  }
+
+  // Calculates all traps that apply to dwarves and deducts them from dwarf points.
+  function calculateDwarfTraps(player: Player): void {
+    if (areTrapsBlocked(player)) return;
+
+    // Infects
+    let infectPoints = 0;
+    for (let i = 0; i < player.infectDrawnTurns.length; i++) infectPoints += (gameState.turnCount - player.infectDrawnTurns[i]);
+    player.points.dwarves -= infectPoints;
+
+    // Saps
+    const numOfSaps = player.traps.filter(trap => trap === 'sap').length;
+    player.points.dwarves -= (numOfSaps * 10);
+  }
   
   // Attempts to draw a dwarf next if there are dwarves remaining.
   function isDwarfNext(player: Player) {
@@ -1047,10 +1107,10 @@
   }
 
   // Player gains +5 points per discarded dwarf.
-  function calculateLongbeard(player: Player, calculateEnemyDiscards = false) {  
+  function calculateLongbeard(player: Player, calculateOtherPlayerDiscards = false) {  
     let discardedDwarvesCount = 0;
 
-    if (!calculateEnemyDiscards) {
+    if (!calculateOtherPlayerDiscards) {
       player.discards.forEach(card => {
         if ($dwarfDeck.includes(card)) discardedDwarvesCount += 1;
       });
@@ -1068,26 +1128,76 @@
 
   // --------------------- BEAST CALCULATIONS ----------------------- \\
 
+  function calculateBeastPoints(player: Player): void {
+    const beastCards = player.hand.filter(card => getRaces(card).includes('beast'));
+    beastCards.forEach(card => player.points.beasts += $cardDetails[card].points);
+
+    // If player has humans/hobbits, pawl barkington gains +10 points.
+    if (player.hand.includes('dog') && player.hand.some(card => getRaces(card).includes('human'))) {
+      const numOfDogs = player.hand.filter(card => card === 'dog').length;
+      player.points.beasts += (10 * numOfDogs);
+    }
+
+    // Player gains +2 for every wolf on the field, including himself.
+    if (player.hand.includes('wolf')) calculateWolfPack(player);
+    
+    // Currently no neutrals that affect beast points
+    calculateBeastBoosts(player);
+    calculateBeastTraps(player);
+  }
+
+  // Calculates all boosts that apply to dwaves and adds them to beast points.
+  function calculateBeastBoosts(player: Player): void {
+    if (areBoostsBlocked(player)) return;
+
+    // Add feast points
+    const numOfFeasts = player.boosts.filter(boost => boost === 'feast').length;
+    player.points.beasts += (numOfFeasts * 10);
+
+    // Add rejuvenate points
+    const numOfRejuvenates = player.boosts.filter(boost => boost === 'rejuvenate').length;
+    player.points.beasts += (numOfRejuvenates * 10);
+  }
+
+  // Calculates all traps that apply to beasts and deducts them from beast points.
+  function calculateBeastTraps(player: Player): void {
+    if (areTrapsBlocked(player)) return;
+
+    // Infects
+    let infectPoints = 0;
+    for (let i = 0; i < player.infectDrawnTurns.length; i++) infectPoints += (gameState.turnCount - player.infectDrawnTurns[i]);
+    player.points.beasts -= infectPoints;
+
+    // Saps
+    const numOfSaps = player.traps.filter(trap => trap === 'sap').length;
+    player.points.beasts -= (numOfSaps * 10);
+  }
+
   // Adds all card points in hand, regardless of race
   function calculateDreamDestroyer(player: Player) {
     // Need to reset since beast points are added in calculateBasePoints()
     player.points.beasts = 0;
     player.hand.forEach(card => {
-      if ($cardDetails[card].race === 'beast') player.points.beasts += 12;
+      if (getRaces(card).includes('beast')) player.points.beasts += 12;
     });
   }
 
   // +2 points for every wolf on the field, including himself (base wolf points already calculated in calculateBasePoints)
   function calculateWolfPack(player: Player) {
     const numOfWolves = player.hand.filter(card => card === 'wolf').length;
-    player.points.beasts += numOfWolves * (numOfWolves * 2);
+    const numOfWereWolves = player.hand.filter(card => card === 'lupin').length;
+    player.points.beasts += numOfWolves * (numOfWolves * 2) + (numOfWereWolves * 2);
   }
 
   function displayBeastPoints(player: Player, card): number {
-    const hasHumans = player.hand.some(c => $cardDetails[c].race === 'human' || c === 'hobbit');
+    const hasHumans = player.hand.some(c => getRaces(card).includes('human'));
     const hasDreamDestroyer = player.hand.includes('dreamDestroyer');
 
-    // TODO: wolf!
+    if (card === 'wolf') {
+      const numOfWolves = player.hand.filter(card => card === 'wolf').length;
+      const numOfWerewolves = player.hand.filter(card => card === 'lupin').length;
+      return $cardDetails[card].points + (numOfWolves * 2) + (numOfWerewolves * 2);
+    }
     if (card === 'dog' && hasHumans && hasDreamDestroyer) return 22;
     if (card === 'dog' && hasHumans) return 14;
     if (hasDreamDestroyer) return 12;
@@ -1096,45 +1206,86 @@
 
   // --------------------- BOT CALCULATIONS ----------------------- \\
 
+  function calculateBotPoints(player: Player, otherPlayer: Player): void {
+    const botCards = player.hand.filter(card => getRaces(card).includes('bot'));
+    botCards.forEach(card => player.points.bots += $cardDetails[card].points);
+
+    // Wipe points if other player has ai
+    if (otherPlayer.hand.includes('ai')) player.points.bots = 0;
+
+    // Adds +2 to all bot cards (player + otherPlayer) then steals all bot points.
+    if (player.hand.includes('ai')) calculateAi(player, otherPlayer, true);
+
+    // Must be after A.I. since A.I. resets bot points. Quarantine all viruses adding +8 to their value and +1 bot point to Protectron per quarantined virus.
+    if (player.hand.includes('protectron')) calculateProtectron(player, otherPlayer, true);
+    
+    // Currently no neutrals that affect bot points
+    calculateBotBoosts(player);
+    calculateBotTraps(player);
+  }
+
+  // Calculates all boosts that apply to bots and adds them to bot points.
+  function calculateBotBoosts(player: Player): void {
+    if (areBoostsBlocked(player)) return;
+
+    // Add charge points
+    let chargePoints = 0;
+    for (let i = 0; i < player.chargeDrawnTurns.length; i++) chargePoints += (gameState.turnCount - player.chargeDrawnTurns[i]);
+    player.points.bots += chargePoints;
+
+    // Add rejuvenate points
+    const numOfRejuvenates = player.boosts.filter(boost => boost === 'rejuvenate').length;
+    player.points.bots += (numOfRejuvenates * 10);
+  }
+
+  // Calculates all traps that apply to bots and deducts them from bot points.
+  function calculateBotTraps(player: Player): void {
+    if (areTrapsBlocked(player)) return;
+
+    // Saps
+    const numOfSaps = player.traps.filter(trap => trap === 'sap').length;
+    player.points.bots -= (numOfSaps * 10);
+  }
+
   // Handles Protectrons who negate viruses
-  function calculateProtectron(player: Player, enemy, calculateHackingAbility = false) {
+  function calculateProtectron(player: Player, otherPlayer: Player, calculateHackingAbility = false) {
     let numOfProtectrons = player.hand.filter(card => card === 'protectron').length;
     let numOfViruses = player.hand.filter(card => card === 'virus').length;
     
     player.hand.forEach(card => {
-      if (card === 'virus') player.points.bots += ((numOfProtectrons * 8));
+      if (card === 'virus') player.points.bots += (numOfProtectrons * 8);
 
       // Buffed for each virus, base points already calculated.
       if (card === 'protectron') player.points.bots += (numOfProtectrons * numOfViruses);
     });
 
-    // If player also has A.I. steal enemy bots too
+    // If player also has A.I. steal otherPlayer bots too
     if (calculateHackingAbility && player.hand.includes('ai')) {
-      let enemyNumOfProtectrons = enemy.hand.filter(card => card === 'protectron').length;
-      let enemyNumOfViruses = enemy.hand.filter(card => card === 'virus').length;
+      let otherPlayerNumOfProtectrons = otherPlayer.hand.filter(card => card === 'protectron').length;
+      let otherPlayerNumOfViruses = otherPlayer.hand.filter(card => card === 'virus').length;
       
-      enemy.hand.forEach(card => {
+      otherPlayer.hand.forEach(card => {
         if (card === 'virus') player.points.bots += (numOfProtectrons * 8);
         
         // Buffed for each virus, base points already calculated.
-        if (card === 'protectron') player.points.bots += (enemyNumOfProtectrons * enemyNumOfViruses);
+        if (card === 'protectron') player.points.bots += (otherPlayerNumOfProtectrons * otherPlayerNumOfViruses);
       });
     }
   }
 
   // Adds ALL bot card points on the field to players score, and bots have +2
-  function calculateAi(player: Player, enemy, options = {calculateOpponentCards: false, swapPlayers: false, recursive: false}) {  
-    // Need to reset since bot points are added in calculateBasePoints()
+  function calculateAi(player: Player, otherPlayer: Player, calculateOpponentCards = false) {  
+    // Need to reset since base bot points already calculated
     player.points.bots = 0;
     player.hand.forEach(card => {
-      if ($cardDetails[card].race === 'bot') player.points.bots += ($cardDetails[card].points + 2);
+      if (getRaces(card).includes('bot')) player.points.bots += ($cardDetails[card].points + 2);
     });
 
-    if (options.calculateOpponentCards) {
-      // Add all bot points from enemy hand as well
-      enemy.points.bots = 0;
-      enemy.hand.forEach(card => {
-        if ($cardDetails[card].race === 'bot') player.points.bots += ($cardDetails[card].points + 2);
+    if (calculateOpponentCards) {
+      // Add all bot points from otherPlayer hand as well
+      otherPlayer.points.bots = 0;
+      otherPlayer.hand.forEach(card => {
+        if (getRaces(card).includes('bot')) player.points.bots += ($cardDetails[card].points + 2);
       });
     }
   }
@@ -1156,9 +1307,56 @@
 
   // --------------------- XENO CALCULATIONS ----------------------- \\
 
+  // Calculates all xeno points including boosts, traps, etc.
+  function calculateXenoPoints(player: Player, otherPlayer: Player): void {
+    const xenoCards = player.hand.filter(card => getRaces(card).includes('xeno'));
+    xenoCards.forEach(card => player.points.xenos += $cardDetails[card].points);
+
+    // Nebulites buff xenos by 4 points
+    if (player.hand.includes('nebulite')) calculateSpecialXenoCard(player, 'nebulite');
+
+    calculateXenoBoosts(player);
+    calculateXenoTraps(player);
+    calculateXenoNeutrals(player, otherPlayer);
+  }
+
+  // Calculates all boosts that apply to xenos and adds them to xeno points.
+  function calculateXenoBoosts(player: Player): void {
+    if (areBoostsBlocked(player)) return;
+
+    // Add rejuvenate points
+    const numOfRejuvenates = player.boosts.filter(boost => boost === 'rejuvenate').length;
+    player.points.xenos += (numOfRejuvenates * 10);
+  }
+
+  // Calculates all traps that apply to xenos and deducts them from xeno points.
+  function calculateXenoTraps(player: Player): void {
+    if (areTrapsBlocked(player)) return;
+
+    // Infects
+    let infectPoints = 0;
+    for (let i = 0; i < player.infectDrawnTurns.length; i++) infectPoints += (gameState.turnCount - player.infectDrawnTurns[i]);
+    player.points.xenos -= infectPoints;
+
+    // Saps
+    const numOfSaps = player.traps.filter(trap => trap === 'sap').length;
+    player.points.xenos -= (numOfSaps * 10);
+
+    // Xenophobia
+    const numOfXenophobias = player.traps.filter(trap => trap === 'xenophobia').length;
+    player.points.xenos -= (numOfXenophobias * 10);
+  }
+
+  // Calculates all traps that apply to xenos and deducts them from xeno points.
+  function calculateXenoNeutrals(player: Player, otherPlayer: Player): void {
+    const numOfXenoBlooms = player.neutrals.filter(n => n === 'xenoBloom').length + otherPlayer.neutrals.filter(n => n === 'xenoBloom').length;
+    const numOfXenoBlossoms = player.neutrals.filter(n => n === 'xenoBlossom').length + otherPlayer.neutrals.filter(n => n === 'xenoBlossom').length;
+    player.points.xenos += ((numOfXenoBlooms * 15) + (numOfXenoBlossoms * 5));
+  }
+
   function determineXenoPoints(player: Player, card): number {
     const specialXenoCards = ['voidRunner', 'warpstalker'];
-    const numOfNebulites = player.hand.filter(c => c === 'nebulite').length;
+    const numOfNebulites = player.hand.filter(card => card === 'nebulite').length;
 
     if (player.id === $player1.id && (numOfNebulites > 0 && card !== 'nebulite')) {
       return (specialXenoCards.includes(card) && gameState.playingAs === 'p2') ? remoteCardDetails[card].points + 4 : $cardDetails[card].points + 4;
@@ -1174,19 +1372,15 @@
   // Calculates special xeno card points
   function calculateSpecialXenoCard(player: Player, card) {
     // If card drawn is warpstalker, generate point value for card between 7-13 inclusive.
-    if (card === 'warpstalker') {
-      $cardDetails[card].points = Math.ceil(Math.random() * 7) + 6;
-    }
+    if (card === 'warpstalker') $cardDetails[card].points = Math.ceil(Math.random() * 7);
 
     // If card drawn is voidRunner, set points equal to amount of turns passed
-    if (card === 'voidRunner') {
-      $cardDetails[card].points = gameState.turnCount;
-    }
+    if (card === 'voidRunner') $cardDetails[card].points = gameState.turnCount;
 
     // Nebulites buff xenos by 4 points
     if (card === 'nebulite') {
       player.hand.forEach(card => {
-        if ($cardDetails[card].race === 'xeno' && $cardDetails[card].title !== 'nebulite') player.points.xenos += 4;
+        if (getRaces(card).includes('xeno') && card !== 'nebulite') player.points.xenos += 4;
       });
     }
   }
@@ -1258,7 +1452,7 @@
 
   // TODO: still add chargePoints here but not to race, just to player.chargePoints
   // Handles boost cards at the end of the game
-  function endGameBoostHandler(player: Player, enemy, options = {calculateOpponentCards: false, swapPlayers: false, recursive: false}) {
+  function endGameBoostHandler(player: Player, otherPlayer: Player, options = {calculateOpponentCards: false, swapPlayers: false, recursive: false}) {
     // These cards block all boosts
     if (player.hand.includes('xenoGuard') ||
         (player.hand.includes('corruption') || player.discards.includes('corruption'))
@@ -1275,7 +1469,7 @@
     player.points.dwarves += player.growthPoints;
     
     // calculateAI runs before this, charge points should be stolen if a player has 'ai'
-    options.calculateOpponentCards && enemy.hand.includes('ai') ? enemy.points.bots += player.chargePoints : player.points.bots += player.chargePoints;
+    options.calculateOpponentCards && otherPlayer.hand.includes('ai') ? otherPlayer.points.bots += player.chargePoints : player.points.bots += player.chargePoints;
     player.points.humans += player.chargePoints;
 
     // Handles other boosts
@@ -1328,7 +1522,7 @@
       socket.emit('display-event', 'echo');
     }
 
-    // If vision card, player sees enemy's hand for one turn
+    // If vision card, player sees otherPlayer's hand for one turn
     if (card === 'vision' && drawn) {
       // Puts spinner while game while updating xenos, every .5s checks if done before continuing.
       updateClientsForSpecialXenoCards();
@@ -1420,12 +1614,12 @@
 
   // Converts race card bg to legendary if player is holding the leader of that race.
   function determineRarity(player: Player, card): '' |  'common' | 'uncommon' | 'rare' | 'amazing' | 'epic' | 'legendary' {
-    if (player.hand.includes('emperor') && ($cardDetails[card].race === 'human' || card === 'hobbit')) return 'legendary';
-    if (player.hand.includes('goblinLord') && $cardDetails[card].race === 'goblin') return 'legendary';
-    if (player.hand.includes('elfKing') && ($cardDetails[card].race === 'elf' || card === 'faeBot')) return 'legendary';
-    if (player.hand.includes('longbeardLeader') && $cardDetails[card].race === 'dwarf') return 'legendary';
-    if (player.hand.includes('ai') && $cardDetails[card].race === 'bot') return 'legendary';
-    if (player.hand.includes('dreamDestroyer') && $cardDetails[card].race === 'beast') return 'legendary';
+    if (player.hand.includes('emperor') && getRaces(card).includes('human')) return 'legendary';
+    if (player.hand.includes('goblinLord') && getRaces(card).includes('goblin')) return 'legendary';
+    if (player.hand.includes('elfKing') && getRaces(card).includes('elf')) return 'legendary';
+    if (player.hand.includes('longbeardLeader') && getRaces(card).includes('dwarf')) return 'legendary';
+    if (player.hand.includes('ai') && getRaces(card).includes('bot')) return 'legendary';
+    if (player.hand.includes('dreamDestroyer') && getRaces(card).includes('beast')) return 'legendary';
     return $cardDetails[card].rarity;
   }
 
@@ -1591,6 +1785,11 @@
   // Check if traps should be calculated or skipped
   function areTrapsBlocked(player: Player): boolean {
     return player.hand.includes('rhino') || (player.hand.includes('chastity') || player.hasChastity);
+  }
+
+  // Returns all races associated with a card
+  function getRaces(card: string): string[] {
+    return [$cardDetails[card].race, ...$cardDetails[card].otherRaces];
   }
 </script>
 
