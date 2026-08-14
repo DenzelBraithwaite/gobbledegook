@@ -886,7 +886,7 @@
     player.points.humans += (numOfRejuvenates * 10);
   }
 
-  // Calculates all boosts that apply to humans and adds them to human points.
+  // Calculates all traps that apply to humans and deducts them from human points.
   function calculateHumanTraps(player: Player): void {
     if (areTrapsBlocked(player)) return;
 
@@ -898,6 +898,11 @@
     // Saps
     const numOfSaps = player.traps.filter(trap => trap === 'sap').length;
     player.points.humans -= (numOfSaps * 10);
+  }
+
+  // Calculates all boosts that apply to humans and adds them to human points.
+  function calculateHumanNeutrals(player: Player): void {
+
   }
 
   // Doubles human points and adds other races as well except Xenos.

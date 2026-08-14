@@ -30,12 +30,14 @@ export const player1 = writable<Player>({
   traps: [],
   neutrals: [],
   chargeDrawnTurns: [],
+  growthDrawnTurns: [],
   infectDrawnTurns: [],
   hasChastity: false,
   hasCorruption: false,
   hasVision: false,
   isExposed: false,
   chargePoints: 0,
+  growthPoints: 0,
   infectPoints: 0,
 });
 
@@ -69,12 +71,14 @@ export const player1Reset = writable<Player>({
   traps: [],
   neutrals: [],
   chargeDrawnTurns: [],
+  growthDrawnTurns: [],
   infectDrawnTurns: [],
   hasChastity: false,
   hasCorruption: false,
   hasVision: false,
   isExposed: false,
   chargePoints: 0,
+  growthPoints: 0,
   infectPoints: 0,
 });
 
@@ -108,11 +112,13 @@ export type Player = {
   traps: string[]; // Log of all traps in effect (other cards may clear this e.g. chastity).
   neutrals: string[]; // Log of all neutrals in effect (other cards may clear this e.g. neutralize).
   chargeDrawnTurns: number[]; // Logs the exact turn each charge card was drawn.
+  growthDrawnTurns: number[]; // Logs the exact turn each growth card was drawn.
   infectDrawnTurns: number[]; // Logs the exact turn each infect card was drawn.
   hasChastity: boolean; // If dealt turn 1 or drawn, marks player. Blocks all traps unless neutralized.
   hasCorruption: boolean; // If dealt turn 1 or drawn, marks player. Blocks all boosts unless neutralized.
   hasVision: boolean; // When player draws vision, they briefly can see enemy cards.
   isExposed: boolean; // When player draws exposed, enemy can see their cards until next player card drawn.
   chargePoints: number; // Total num of charge points (for humans and bots).
+  growthPoints: number; // Total num of growth points (for goblins, elves and dwarves).
   infectPoints: number; // Total num of infect points (excludes bots).
 };
