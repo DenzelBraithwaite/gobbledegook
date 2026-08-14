@@ -31,12 +31,14 @@ export const player1 = writable({
   traps: [],
   neutrals: [],
   chargeDrawnTurns: [],
+  growthDrawnTurns: [],
   infectDrawnTurns: [],
   hasChastity: false,
   hasCorruption: false,
   hasVision: false,
   isExposed: false,
   chargePoints: 0,
+  growthPoints: 0,
   infectPoints: 0,
 });
 
@@ -70,11 +72,13 @@ export const player1Reset = writable({
   traps: [],
   neutrals: [],
   chargeDrawnTurns: [],
+  growthDrawnTurns: [],
   infectDrawnTurns: [],
   hasChastity: false,
   hasCorruption: false,
   hasVision: false,
   isExposed: false,
   chargePoints: 0,
+  growthPoints: 0,
   infectPoints: 0,
 });

@@ -714,6 +714,18 @@ const cardDetails = writable({
     race: 'boost',
     image: '/boosts/blue_boost.png'
   },
+  feast: {
+    title: 'feast',
+    displayTitle: 'Feast',
+    points: 0,
+    amount: 2,
+    rarity: '',
+    traitTitle: 'Feasting',
+    trait: 'If drawn, player gains +10 beast points at the end of the game even after this card is discarded',
+    description: 'An small furry creature with a large appetite.',
+    race: 'boost',
+    image: '/boosts/feast.png'
+  },
   dwarvenCall: {
     title: 'dwarvenCall',
     displayTitle: 'Dwarven Call',
@@ -737,6 +749,18 @@ const cardDetails = writable({
     description: 'This curious electrified liquid seems to only benefit electronics and the human anatomy.',
     race: 'boost',
     image: '/boosts/charge.png'
+  },
+    growth: {
+    title: 'growth',
+    displayTitle: 'Growth',
+    points: 0,
+    amount: 2,
+    rarity: '',
+    traitTitle: 'Stimulate',
+    trait: 'Only affects goblins, elves, and dwarves. If drawn, at the end of the game, gain points equal to (amount of turns - turns passed since drawn * growth cards) even if discarded.',
+    description: 'This curious furry creature seems to promote growth in certain creatues.',
+    race: 'boost',
+    image: '/boosts/growth.png'
   },
 
   // Trap Cards

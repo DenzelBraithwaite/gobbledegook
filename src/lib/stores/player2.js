@@ -35,8 +35,10 @@ export const player2 = writable({
   hasVision: false,
   isExposed: false,
   chargeDrawnTurns: [],
+  growthDrawnTurns: [],
   infectDrawnTurns: [],
   chargePoints: 0,
+  growthPoints: 0,
   infectPoints: 0,
 });
 
@@ -74,7 +76,9 @@ export const player2Reset = writable({
   hasVision: false,
   isExposed: false,
   chargeDrawnTurns: [],
+  growthDrawnTurns: [],
   infectDrawnTurns: [],
   chargePoints: 0,
+  growthPoints: 0,
   infectPoints: 0,
 });

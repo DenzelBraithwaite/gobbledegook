@@ -1093,17 +1093,25 @@
     
     if (card === 'chastity') player.hasChastity = true;
     if (card === 'charge') player.chargeDrawnTurns.push(gameState.turnCount);
+    if (card === 'growth') player.growthDrawnTurns.push(gameState.turnCount);
   }
 
   // Handles boost cards at the end of the game
   function endGameBoostHandler(player, enemy, options = {calculateOpponentCards: false, swapPlayers: false, recursive: false}) {
     // These cards block all boosts
     if (player.hand.includes('xenoGuard') ||
-        (player.hand.includes('corruption') || player.discards.includes('corruption'))
+      (player.hand.includes('corruption') || player.discards.includes('corruption'))
     ) return;
 
     // Add charge points to human and bot points
     for (let i = 0; i < player.chargeDrawnTurns.length; i++) player.chargePoints += (gameState.turnCount - player.chargeDrawnTurns[i]);
+
+    // FIXME: doesn't always show in the numbers? switcharoo fixed says elisa?
+    // Add growth points to goblins, elves and dwarves points
+    for (let i = 0; i < player.growthDrawnTurns.length; i++) player.growthPoints += (gameState.turnCount - player.growthDrawnTurns[i]);
+    player.points.goblins += player.growthPoints;
+    player.points.elves += player.growthPoints;
+    player.points.dwarves += player.growthPoints;
     
     // calculateAI runs before this, charge points should be stolen if a player has 'ai'
     options.calculateOpponentCards && enemy.hand.includes('ai') ? enemy.points.bots += player.chargePoints : player.points.bots += player.chargePoints;
@@ -1112,6 +1120,7 @@
     // Handles other boosts
     player.boosts.forEach(boost => {
       if (boost === 'rejuvenate') Object.entries(player.points).forEach(([deck, deckPoints]) => player.points[deck] += 10);
+      if (boost === 'feast') player.points.beasts += 10;
     });
   }
 
@@ -1201,12 +1210,14 @@
         $player1.neutrals = [];
         $player1.chargeDrawnTurns = [];
         $player1.infectDrawnTurns = [];
+        $player1.growthDrawnTurns = [];
         $player1.hasChastity = false;
         $player1.hasCorruption = false;
         $player1.hasVision = false;
         $player1.isExposed = false;
         $player1.chargePoints = 0;
         $player1.infectPoints = 0;
+        $player1.growthPoints = 0;
         return $player1;
       });
       player2.update($player2 => {
@@ -1215,12 +1226,14 @@
         $player2.neutrals = [];
         $player2.chargeDrawnTurns = [];
         $player2.infectDrawnTurns = [];
+        $player2.growthDrawnTurns = [];
         $player2.hasChastity = false;
         $player2.hasCorruption = false;
         $player2.hasVision = false;
         $player2.isExposed = false;
         $player2.chargePoints = 0;
         $player2.infectPoints = 0;
+        $player2.growthPoints = 0;
         return $player2;
       });
     calculateCurrentPlayerPoints();
@@ -1329,6 +1342,7 @@
     };
     player.highestPoints = 0;
     player.chargePoints = 0;
+    player.growthPoints = 0;
     player.infectPoints = 0;
   }
 
@@ -1363,11 +1377,7 @@
     const pointValue = determinePoints(player, card);
     const isPeakingAtOtherHand = ((gameState.playingAs === 'p1' && player.id === $player2.id) || gameState.playingAs === 'p2' && player.id === $player1.id);
 
-    
-    if (isPeakingAtOtherHand && specialXenoCards.includes(card)) console.log({pointValue, remoteDetails: remoteCardDetails[card].points});
     if (isPeakingAtOtherHand && specialXenoCards.includes(card)) return (pointValue > remoteCardDetails[card].points);
-    
-    console.log({pointValue, cardDetails: controlCopyOfCardDetails[card].points});
     return (pointValue > $cardDetails[card].points);
   }
 
@@ -1390,12 +1400,14 @@
     const hasHumans = player.hand.some(c => $cardDetails[c].race === 'human' || c === 'hobbit');
     const hasDreamDestroyer = player.hand.includes('dreamDestroyer');
 
+    // TODO: wolf!
     if (card === 'dog' && hasHumans && hasDreamDestroyer) return 22;
     if (card === 'dog' && hasHumans) return 14;
     if (hasDreamDestroyer) return 12;
     return $cardDetails[card].points;
   }
 
+  // FIXME: virus can end up -4? visually.
   function determineBotPoints(player, card): number {
     let numOfProtectrons = player.hand.filter(card => card === 'protectron').length;
     let numOfViruses = player.hand.filter(card => card === 'virus').length;
@@ -1429,9 +1441,11 @@
       
       // Twins
     } else if (triggerTwinEffect) {
-      if (card === 'nadallen') return ($cardDetails[card].points + (numOfNelladans * 5) * 2);
-      if (card === 'nelladan') return (($cardDetails[card].points + 5) * 2);
+      if (card === 'nadallen') return ($cardDetails[card].points + (numOfNelladans * 5));
+      if (card === 'nelladan') return ($cardDetails[card].points + 5);
     }
+
+    // FIXME: don't always multiply since fn called witrhout elf king, other races end up multipled.
 
     // Default
     return $cardDetails[card].points * 2;
@@ -1497,7 +1511,8 @@
             {#each $player1.boosts as boost}
               <span class="color-blue">{boost} &nbsp;</span>
             {/each}
-            <p class="margin-bottom-sm">Charge boost points: <span class="color-blue">{$player1.chargePoints}</span></p>
+            <p>Charge boost points: <span class="color-blue">{$player1.chargePoints}</span></p>
+            <p class="margin-bottom-sm">Growth boost points: <span class="color-blue">{$player1.growthPoints}</span></p>
 
             <p>Player1 Traps: </p>
             <span>Trap cards: </span>
@@ -1532,7 +1547,8 @@
             {#each $player2.boosts as boost}
               <span class="color-blue">{boost} &nbsp;</span>
             {/each}
-            <p class="margin-bottom-sm">Charge boost points: <span class="color-blue">{$player2.chargePoints}</span></p>
+            <p>Charge boost points: <span class="color-blue">{$player2.chargePoints}</span></p>
+            <p class="margin-bottom-sm">Growth boost points: <span class="color-blue">{$player2.growthPoints}</span></p>
 
             <p>Player2 Traps: </p>
             <span>Trap cards: </span>
