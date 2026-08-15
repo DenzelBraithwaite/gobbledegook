@@ -1,4 +1,6 @@
 <script lang="ts">
+  // @ts-nocheck - WAAAYYYYYY too many red squigglies TODO: remove if debugging
+
   // Hooks
   import { onMount } from 'svelte';
 
@@ -19,7 +21,7 @@
   import { io } from 'socket.io-client';
 
   // Thanos: http://192.168.2.10:6912; 
-  let socket = io('http://10.3.144.134:6912'); // Currently work
+  let socket = io('http://192.168.2.10:6912'); // Currently work
   $: gameState = {
     gobbledegookDeclared: false,
     gobbledegookDisabled: false,
@@ -36,7 +38,7 @@
     newPlayerTitle: 'Unknown Player',
     p1NameChangeVisible: false,
     p2NameChangeVisible: false,
-    playingAs: ''
+    playingAs: '' as 'p1' | 'p2'
   };
   let controlCopyOfCardDetails = {...$cardDetails};
   let remoteCardDetails = {...$cardDetails};
@@ -666,6 +668,7 @@
     if (($player1.playedFirst && $player1.turn) || ($player2.playedFirst && $player2.turn)) socket.emit('new-turn');
   }
 
+  // TODO: leverage new way to calculate points for the current points
   // Calculates up-to-date current player points, wipes each time to avoid adding points to previous ones.
   function calculateCurrentPlayerPoints(options = {calculateOpponentCards: false, swapPlayers: false, recursive: false}) {
     let player;
@@ -708,6 +711,11 @@
     calculateBotPoints(player, otherPlayer);
     calculateXenoPoints(player, otherPlayer);
     calculatePlayerHighestPoints(player);
+    
+    // Even though points are calculated, still need to set the infect/charge/growth points for end game results screen
+    for (let i = 0; i < player.infectDrawnTurns.length; i++) player.infectPoints += (gameState.turnCount - player.infectDrawnTurns[i]);
+    for (let i = 0; i < player.chargeDrawnTurns.length; i++) player.chargePoints += (gameState.turnCount - player.chargeDrawnTurns[i]);
+    for (let i = 0; i < player.growthDrawnTurns.length; i++) player.growthPoints += (gameState.turnCount - player.growthDrawnTurns[i]);
   }
 
   // Calculates card points by race, doesn't include special traits
@@ -795,9 +803,9 @@
   }
 
   // Modifies card points depending on cards in player hand
-  function displayCardPoints(player: Player, card): number {
+  function displayCardPoints(player: Player, card: string): number {
     const triggerTwinEffect = player.hand.includes('nelladan') && player.hand.includes('nadallen');
-    if ((player.hand.includes('dreamDestroyer') || card === 'dog') && getRaces(card).includes('beast')) return displayBeastPoints(player, card);
+    if ((player.hand.includes('dreamDestroyer') || card === 'dog' || card === 'wolf') && getRaces(card).includes('beast')) return displayBeastPoints(player, card);
     if ((player.hand.includes('ai') || player.hand.includes('protectron')) && getRaces(card).includes('bot')) return displayBotPoints(player, card);
     if (triggerTwinEffect || (player.hand.includes('elfKing') && getRaces(card).includes('elf'))) return displayElfPoints(player, card);
     if ((player.hand.includes('emperor') || player.hand.includes('commander')) && getRaces(card).includes('human')) return displayHumanPoints(player, card);
@@ -856,7 +864,7 @@
   // Doubles human points and adds other races as well except Xenos.
   function calculateEmperor(player: Player) {
     player.points.humans *= 2;
-    const otherRaceCards = player.hand.filter(card => !getRaces(card).includes('human') || !getRaces(card).includes('xeno'));
+    const otherRaceCards = player.hand.filter(card => !getRaces(card).includes('human') && !getRaces(card).includes('xeno'));
     otherRaceCards.forEach(card => player.points.humans += $cardDetails[card].points);
   }
 
@@ -868,7 +876,7 @@
     player.points.humans += numOfHumanCards * numOfCommanders;
   }
 
-  function displayHumanPoints(player: Player, card): number {
+  function displayHumanPoints(player: Player, card: string): number {
     const hasEmperor = player.hand.includes('emperor');
     const numOfCommanders = player.hand.filter(card => card === 'commander').length;
 
@@ -1021,7 +1029,7 @@
   }
 
   // Only called if twins OR elf king + full elf hand (including faeBot)
-  function displayElfPoints(player: Player, card): number {
+  function displayElfPoints(player: Player, card: string): number {
     const hasElfKing = player.hand.includes('elfKing');
     const numOfNelladans = player.hand.filter(card => card === 'nelladan').length;
     const numOfNadallens = player.hand.filter(card => card === 'nadallen').length;
@@ -1042,10 +1050,9 @@
       if (card === 'nadallen') return ($cardDetails[card].points + (numOfNelladans * 5));
       if (card === 'nelladan') return ($cardDetails[card].points + 5);
     }
-    // FIXME: don't always multiply since fn called witrhout elf king, other races end up multipled.
 
     // Default
-    return $cardDetails[card].points * 2;
+    return getRaces(card).includes('elf') ? $cardDetails[card].points * 2 : $cardDetails[card].points;
   }
 
   // --------------------- DWARF CALCULATIONS ----------------------- \\
@@ -1189,7 +1196,7 @@
     player.points.beasts += numOfWolves * (numOfWolves * 2) + (numOfWereWolves * 2);
   }
 
-  function displayBeastPoints(player: Player, card): number {
+  function displayBeastPoints(player: Player, card: string): number {
     const hasHumans = player.hand.some(c => getRaces(card).includes('human'));
     const hasDreamDestroyer = player.hand.includes('dreamDestroyer');
 
@@ -1211,27 +1218,31 @@
     botCards.forEach(card => player.points.bots += $cardDetails[card].points);
 
     // Wipe points if other player has ai
-    if (otherPlayer.hand.includes('ai')) player.points.bots = 0;
-
-    // Adds +2 to all bot cards (player + otherPlayer) then steals all bot points.
-    if (player.hand.includes('ai')) calculateAi(player, otherPlayer, true);
-
-    // Must be after A.I. since A.I. resets bot points. Quarantine all viruses adding +8 to their value and +1 bot point to Protectron per quarantined virus.
-    if (player.hand.includes('protectron')) calculateProtectron(player, otherPlayer, true);
+    if (otherPlayer.hand.includes('ai')) {
+      player.points.bots = 0;
+    } else {
+      // Adds +2 to all bot cards (player + otherPlayer) then steals all bot points.
+      if (player.hand.includes('ai')) calculateAi(player, otherPlayer, true);
+  
+      // Must be after A.I. since A.I. resets bot points. Quarantine all viruses adding +8 to their value and +1 bot point to Protectron per quarantined virus.
+      if (player.hand.includes('protectron')) calculateProtectron(player, otherPlayer, true);
+    }
     
     // Currently no neutrals that affect bot points
-    calculateBotBoosts(player);
+    calculateBotBoosts(player, otherPlayer);
     calculateBotTraps(player);
   }
 
   // Calculates all boosts that apply to bots and adds them to bot points.
-  function calculateBotBoosts(player: Player): void {
+  function calculateBotBoosts(player: Player, otherPlayer: Player): void {
     if (areBoostsBlocked(player)) return;
 
-    // Add charge points
-    let chargePoints = 0;
-    for (let i = 0; i < player.chargeDrawnTurns.length; i++) chargePoints += (gameState.turnCount - player.chargeDrawnTurns[i]);
-    player.points.bots += chargePoints;
+    if (!otherPlayer.hand.includes('ai')) {
+      // Add charge points
+      let chargePoints = 0;
+      for (let i = 0; i < player.chargeDrawnTurns.length; i++) chargePoints += (gameState.turnCount - player.chargeDrawnTurns[i]);
+      player.points.bots += chargePoints;
+    }
 
     // Add rejuvenate points
     const numOfRejuvenates = player.boosts.filter(boost => boost === 'rejuvenate').length;
@@ -1291,7 +1302,7 @@
   }
 
   // FIXME: virus can end up -4? visually.
-  function displayBotPoints(player: Player, card): number {
+  function displayBotPoints(player: Player, card: string): number {
     let numOfProtectrons = player.hand.filter(card => card === 'protectron').length;
     let numOfViruses = player.hand.filter(card => card === 'virus').length;
 
@@ -1354,7 +1365,7 @@
     player.points.xenos += ((numOfXenoBlooms * 15) + (numOfXenoBlossoms * 5));
   }
 
-  function determineXenoPoints(player: Player, card): number {
+  function determineXenoPoints(player: Player, card: string): number {
     const specialXenoCards = ['voidRunner', 'warpstalker'];
     const numOfNebulites = player.hand.filter(card => card === 'nebulite').length;
 
@@ -1366,13 +1377,15 @@
       return (specialXenoCards.includes(card) && gameState.playingAs === 'p1') ? remoteCardDetails[card].points + 4 : $cardDetails[card].points + 4;
     } else if (player.id === $player2.id) {
       return (specialXenoCards.includes(card) && gameState.playingAs === 'p1') ? remoteCardDetails[card].points : $cardDetails[card].points;
+    } else {
+      return 0; // SHould not run, just to appease the ts gods
     }
   }
 
   // Calculates special xeno card points
-  function calculateSpecialXenoCard(player: Player, card) {
+  function calculateSpecialXenoCard(player: Player, card: string) {
     // If card drawn is warpstalker, generate point value for card between 7-13 inclusive.
-    if (card === 'warpstalker') $cardDetails[card].points = Math.ceil(Math.random() * 7);
+    if (card === 'warpstalker') $cardDetails[card].points = Math.ceil(Math.random() * 7) + 6;
 
     // If card drawn is voidRunner, set points equal to amount of turns passed
     if (card === 'voidRunner') $cardDetails[card].points = gameState.turnCount;
@@ -1385,8 +1398,10 @@
     }
   }
 
+  // FIXME: one time in same game, p2 drew voidrunner turn 26 no problem, then 29 p1 drew voidrunner and it was 0? Is it being wiped somewhere, why only p1?
+  // FIXME: visual bug, calculation was still fine
   // For displaying special void points at the end of the game
-  function endGameXenoPointHandler(cardTitle, player: 'p1' | 'p2'): number {
+  function endGameXenoPointHandler(cardTitle: string, player: 'p1' | 'p2'): number {
     // Return regular points if it's not special xeno card
     if (!['warpstalker', 'voidRunner'].includes(cardTitle)) return $cardDetails[cardTitle].points;
     
@@ -1397,6 +1412,8 @@
       if (cardTitle === 'warpstalker') return remoteCardDetails['warpstalker'].points;
       if (cardTitle === 'voidRunner') return remoteCardDetails['voidRunner'].points;
     } 
+    
+    return 0; // Should not run, just to appease the ts gods
   }
 
     // Adds +15 points t players if xeno blossom in effect.
@@ -1442,7 +1459,7 @@
   // -------------- BOOST/TRAP/NEUTRAL CALCULATIONS ---------------- \\
 
   // Adds boost card to players boosts array
-  function addBoostCard(player: Player, card) {
+  function addBoostCard(player: Player, card: string) {
     player.boosts = [...player.boosts, card];
     
     if (card === 'chastity') player.hasChastity = true;
@@ -1450,18 +1467,19 @@
     if (card === 'growth') player.growthDrawnTurns.push(gameState.turnCount);
   }
 
+  // FIXME: doesn't always show in the numbers? switcharoo fixed says elisa?
+  // FIXME: I also noticed with elf king not doubled until switcharoo, woulda fixed next turn alone?
+  // FIXME: I also noticed with ai buffed num was still 11(base) and playing more turns did not fix.
+  // FIXME: CONFIRMED SWITCHAROO FIXED ISSUE consistently with buffed points showing base point value. p1 had bad points, p2 switcharoo, p2 had same cards good points, p1 still bad points future cards.
   // TODO: still add chargePoints here but not to race, just to player.chargePoints
   // Handles boost cards at the end of the game
   function endGameBoostHandler(player: Player, otherPlayer: Player, options = {calculateOpponentCards: false, swapPlayers: false, recursive: false}) {
     // These cards block all boosts
-    if (player.hand.includes('xenoGuard') ||
-        (player.hand.includes('corruption') || player.discards.includes('corruption'))
-    ) return;
+    if (areBoostsBlocked(player)) return;
 
     // Add charge points to human and bot points
     for (let i = 0; i < player.chargeDrawnTurns.length; i++) player.chargePoints += (gameState.turnCount - player.chargeDrawnTurns[i]);
     
-    // FIXME: doesn't always show in the numbers? switcharoo fixed says elisa?
     // Add growth points to goblins, elves and dwarves points
     for (let i = 0; i < player.growthDrawnTurns.length; i++) player.growthPoints += (gameState.turnCount - player.growthDrawnTurns[i]);
     player.points.goblins += player.growthPoints;
@@ -1497,9 +1515,7 @@
   // Handles trap cards at the end of the game
   function endGameTrapHandler(player: Player) {
     // Corruption card blocks all boosts, also checks for rhino in hand at end
-    if (player.hand.includes('rhino') ||
-        (player.hand.includes('chastity') || player.discards.includes('chastity'))
-    ) return;
+    if (areTrapsBlocked(player)) return;
 
     // Handles infect trap
     for (let i = 0; i < player.infectDrawnTurns.length; i++) player.infectPoints += (gameState.turnCount - player.infectDrawnTurns[i]);
@@ -1624,7 +1640,7 @@
   }
 
   // Conditionally displays card points as green if they are buffed.
-  function determineIfPointColorGreen(player: Player, card): boolean {
+  function determineIfPointColorGreen(player: Player, card: string): boolean {
     const specialXenoCards = ['voidRunner', 'warpstalker'];
     const pointValue = displayCardPoints(player, card);
     const isPeakingAtOtherHand = ((gameState.playingAs === 'p1' && player.id === $player2.id) || gameState.playingAs === 'p2' && player.id === $player1.id);
@@ -1640,16 +1656,18 @@
     socket.emit('username-changed', player.title);
   }
 
-  function updateUsernameForThisClient(newUsername): void {
+  function updateUsernameForThisClient(newUsername: string): void {
     gameState.playingAs === 'p1' ? $player2.title = newUsername : $player1.title = newUsername;
   }
 
   function toggleLibraryVisibility() {
+    gameState.discardsVisible = false;
     gameState.libraryVisible = !gameState.libraryVisible;
   }
 
   // Toggles card discards visibility
   function toggleDiscardVisibility() {
+    gameState.libraryVisible = false;
     gameState.discardsVisible = !gameState.discardsVisible;
   }
 
@@ -1695,13 +1713,24 @@
   }
 
   // Determines if card should be visible or not
-  function isCardVisible(playerSide) {
+  function isCardVisible(playerSide: string) {
     if (gameState.gameOver) return true;
     if (gameState.playingAs === 'p1' && playerSide === 'p1') return true;
     if (gameState.playingAs === 'p2' && playerSide === 'p2') return true;
 
     // player has vision?
     return false;
+  }
+
+  // Opens library to card clicked
+  function openLibraryToCard(race: 'human' | 'goblin' | 'elf' | 'dwarf' | 'beast' | 'bot' | 'xeno' | 'boost' | 'trap' | 'neutral'): void {
+    gameState.discardsVisible = false;
+    gameState.libraryVisible = true;
+    // So library has time to open and DOM can create elements
+    setTimeout(() => {
+      const element = document.getElementById(`${race}-section`);
+      if (element) element.scrollIntoView({ behavior: 'smooth' });
+    }, 0);
   }
 
   // ---------------------------------------------------------------- \\
@@ -1825,14 +1854,17 @@
             <p>{gameState.winMessage}</p>
             <p class="margin-bottom-sm">{gameState.loseMessage}</p>
 
-            <p>Player1 Boosts: </p>
+            <hr>
+
+            <h2>{$player1.title}</h2>
+            <p>{$player1.title} Boosts: </p>
             {#each $player1.boosts as boost}
               <span class="color-blue">{boost} &nbsp;</span>
             {/each}
             <p>Charge boost points: <span class="color-blue">{$player1.chargePoints}</span></p>
             <p class="margin-bottom-sm">Growth boost points: <span class="color-blue">{$player1.growthPoints}</span></p>
 
-            <p>Player1 Traps: </p>
+            <p>{$player1.title} Traps: </p>
             <span>Trap cards: </span>
             {#each $player1.traps as trap}
               <span class="color-red">{trap} &nbsp;</span>
@@ -1859,8 +1891,11 @@
           <div>
             <p>{$player1.title} Win/Lose/Draw: {$player1.wins}/{$player1.losses}/{$player1.draws}</p>
             <p class="margin-bottom-sm">{$player2.title} Win/Lose/Draw: {$player2.wins}/{$player2.losses}/{$player2.draws}</p>
+            
+            <hr>
 
-            <p>Player2 Boosts: </p>
+            <h2>{$player2.title}</h2>
+            <p>{$player2.title} Boosts: </p>
             <span>Boost cards: </span>
             {#each $player2.boosts as boost}
               <span class="color-blue">{boost} &nbsp;</span>
@@ -1868,7 +1903,7 @@
             <p>Charge boost points: <span class="color-blue">{$player2.chargePoints}</span></p>
             <p class="margin-bottom-sm">Growth boost points: <span class="color-blue">{$player2.growthPoints}</span></p>
 
-            <p>Player2 Traps: </p>
+            <p>{$player2.title} Traps: </p>
             <span>Trap cards: </span>
             {#each $player2.traps as trap}
               <span class="color-red">{trap} &nbsp;</span>
@@ -1911,6 +1946,7 @@
                 race={$cardDetails[card].race}
                 rarity={$cardDetails[card].rarity}
                 points={endGameXenoPointHandler(card, 'p1')}
+                modifiedPoints={displayCardPoints($player1, card)}
                 />
               </div>
             {/each}
@@ -1928,6 +1964,7 @@
               race={$cardDetails[card].race}
               rarity={$cardDetails[card].rarity}
               points={endGameXenoPointHandler(card, 'p1')}
+              modifiedPoints={displayCardPoints($player1, card)}
               />
             </div>
             {/each}
@@ -1947,6 +1984,7 @@
                   race={$cardDetails[card].race}
                   rarity={$cardDetails[card].rarity}
                   points={endGameXenoPointHandler(card, 'p1')}
+                  modifiedPoints={displayCardPoints($player1, card)}
                 />
               </div>
             {/each}
@@ -1965,6 +2003,7 @@
                 race={$cardDetails[card].race}
                 rarity={$cardDetails[card].rarity}
                 points={endGameXenoPointHandler(card, 'p1')}
+                modifiedPoints={displayCardPoints($player1, card)}
                 />
               </div>
             {/each}
@@ -1988,6 +2027,7 @@
                 race={$cardDetails[card].race}
                 rarity={$cardDetails[card].rarity}
                 points={endGameXenoPointHandler(card, 'p2')}
+                modifiedPoints={displayCardPoints($player2, card)}
                 />
               </div>
             {/each}
@@ -2005,6 +2045,7 @@
               race={$cardDetails[card].race}
               rarity={$cardDetails[card].rarity}
               points={endGameXenoPointHandler(card, 'p2')}
+              modifiedPoints={displayCardPoints($player2, card)}
               />
             </div>
             {/each}
@@ -2024,6 +2065,7 @@
                 race={$cardDetails[card].race}
                 rarity={$cardDetails[card].rarity}
                 points={endGameXenoPointHandler(card, 'p2')}
+                modifiedPoints={displayCardPoints($player2, card)}
                 />
               </div>
             {/each}
@@ -2042,6 +2084,7 @@
                 race={$cardDetails[card].race}
                 rarity={$cardDetails[card].rarity}
                 points={endGameXenoPointHandler(card, 'p2')}
+                modifiedPoints={displayCardPoints($player2, card)}
                 />
               </div>
             {/each}
@@ -2076,19 +2119,19 @@
 
                 <!-- Displays all bonus cards (boost/trap/neutral) player currently has in effect -->
                 <div class="bonus-card-icons-section-wrapper">
-                  <div class="bonus-card-icons-section bonus-card-icons-section__boosts">
+                  <div on:contextmenu|preventDefault={() => openLibraryToCard('boost')} class="bonus-card-icons-section bonus-card-icons-section__boosts" class:bonus-card-icons-section__blocked={areBoostsBlocked($player1)}>
                     {#each $player1.boosts as boost}
                       <img src={displayBonusCardIcons(boost)} alt={displayBonusCardIcons(boost)} class="bonus-card-icon">
                     {/each}
                   </div>
                   
-                  <div class="bonus-card-icons-section bonus-card-icons-section__traps">
+                  <div on:contextmenu|preventDefault={() => openLibraryToCard('trap')} class="bonus-card-icons-section bonus-card-icons-section__traps" class:bonus-card-icons-section__blocked={areTrapsBlocked($player1)}>
                     {#each $player1.traps as trap}
                       <img src={displayBonusCardIcons(trap)} alt={displayBonusCardIcons(trap)} class="bonus-card-icon">
                     {/each}
                   </div>
                     
-                  <div class="bonus-card-icons-section bonus-card-icons-section__neutrals">
+                  <div on:contextmenu|preventDefault={() => openLibraryToCard('neutral')} class="bonus-card-icons-section bonus-card-icons-section__neutrals">
                     {#each $player1.neutrals as neutral}
                       <img src={displayBonusCardIcons(neutral)} alt={displayBonusCardIcons(neutral)} class="bonus-card-icon">
                     {/each}
@@ -2106,7 +2149,8 @@
 
           {#each $player1.hand as card}
             <GGCard
-              on:cardClick={async (event) => await clickOnCard(event, $player1.hand)}
+              on:cardClick={async event => await clickOnCard(event, $player1.hand)}
+              on:contextmenu={() => openLibraryToCard($cardDetails[card].race)}        
               faceUp={isCardVisible('p1') || $player2.hasVision || $player1.isExposed}
               displayTitle={$cardDetails[card].displayTitle}
               title={$cardDetails[card].title}
@@ -2116,7 +2160,8 @@
               description={$cardDetails[card].description}
               race={$cardDetails[card].race}
               rarity={determineRarity($player1, card)}
-              points={displayCardPoints($player1, card)}
+              points={endGameXenoPointHandler(card, 'p2')}
+              modifiedPoints={displayCardPoints($player1, card)}
               buffed={determineIfPointColorGreen($player1, card)}
             />
           {/each}
@@ -2136,19 +2181,19 @@
                 
                  <!-- Displays all bonus cards (boost/trap/neutral) player currently has in effect -->
                 <div class="bonus-card-icons-section-wrapper">
-                  <div class="bonus-card-icons-section bonus-card-icons-section__boosts">
+                  <div on:contextmenu|preventDefault={() => openLibraryToCard('boost')} class="bonus-card-icons-section bonus-card-icons-section__boosts" class:bonus-card-icons-section__blocked={areBoostsBlocked($player2)}>
                     {#each $player2.boosts as boost}
                       <img src={displayBonusCardIcons(boost)} alt={displayBonusCardIcons(boost)} class="bonus-card-icon">
                     {/each}
                   </div>
                   
-                  <div class="bonus-card-icons-section bonus-card-icons-section__traps">
+                  <div on:contextmenu|preventDefault={() => openLibraryToCard('trap')} class="bonus-card-icons-section bonus-card-icons-section__traps" class:bonus-card-icons-section__blocked={areTrapsBlocked($player2)}>
                     {#each $player2.traps as trap}
                       <img src={displayBonusCardIcons(trap)} alt={displayBonusCardIcons(trap)} class="bonus-card-icon">
                     {/each}
                   </div>
                     
-                  <div class="bonus-card-icons-section bonus-card-icons-section__neutrals">
+                  <div on:contextmenu|preventDefault={() => openLibraryToCard('neutral')} class="bonus-card-icons-section bonus-card-icons-section__neutrals">
                     {#each $player2.neutrals as neutral}
                       <img src={displayBonusCardIcons(neutral)} alt={displayBonusCardIcons(neutral)} class="bonus-card-icon">
                     {/each}
@@ -2166,6 +2211,7 @@
           {#each $player2.hand as card}
             <GGCard
               on:cardClick={async (event) => await clickOnCard(event, $player2.hand)}
+              on:contextmenu={() => openLibraryToCard($cardDetails[card].race)}
               faceUp={isCardVisible('p2') || $player1.hasVision || $player2.isExposed}
               displayTitle={$cardDetails[card].displayTitle}
               title={$cardDetails[card].title}
@@ -2175,7 +2221,8 @@
               description={$cardDetails[card].description}
               race={$cardDetails[card].race}
               rarity={determineRarity($player2, card)}
-              points={displayCardPoints($player2, card)}
+              points={endGameXenoPointHandler(card, 'p2')}
+              modifiedPoints={displayCardPoints($player2, card)}
               buffed={determineIfPointColorGreen($player2, card)}
             />
           {/each}
@@ -2468,6 +2515,13 @@
     background: linear-gradient(270deg,#31273e,#933ce94d 50%);
     border-left: 4px double #933ce9;
     border-right: 4px double #933ce9;
+  }
+
+  .bonus-card-icons-section__blocked {
+    box-shadow: none;
+    background: #222;
+    border-left: 4px double #3d3d3d;
+    border-right: 4px double #3d3d3d;
   }
 
   .bonus-card-icon {

@@ -23,7 +23,7 @@
 
 <main class="main-content" transition:fade>
   <!-- Humans -->
-  <div class="deck-section human-section">
+  <div class="deck-section human-section" id="human-section">
     <h2 class="section-title">Humans</h2>
     {#each humanCards as keyValuePair}
       <div class="card-wrapper">
@@ -44,7 +44,7 @@
   </div>
 
   <!-- Goblins -->
-  <div class="deck-section goblin-section">
+  <div class="deck-section goblin-section" id="goblin-section">
     <h2 class="section-title">Goblins</h2>
     {#each goblinCards as keyValuePair}
       <div class="card-wrapper">
@@ -65,7 +65,7 @@
   </div>
 
   <!-- Elves -->
-  <div class="deck-section elf-section">
+  <div class="deck-section elf-section" id="elf-section">
     <h2 class="section-title">Elves</h2>
     {#each elfCards as keyValuePair}
       <div class="card-wrapper">
@@ -86,7 +86,7 @@
   </div>
 
   <!-- Dwarves -->
-  <div class="deck-section dwarf-section">
+  <div class="deck-section dwarf-section" id="dwarf-section">
     <h2 class="section-title">Dwarves</h2>
     {#each dwarfCards as keyValuePair}
       <div class="card-wrapper">
@@ -107,10 +107,10 @@
   </div>
 
   <!-- Beasts -->
-  <div class="deck-section beast-section">
+  <div class="deck-section beast-section" id="beast-section">
     <h2 class="section-title">Beasts</h2>
     {#each beastCards as keyValuePair}
-      <div class="card-wrapper beast-section">
+      <div class="card-wrapper">
         <!-- Card art -->
         <LibraryCard
           displayTitle={keyValuePair[1].displayTitle}
@@ -128,7 +128,7 @@
   </div>
 
   <!-- Bots -->
-  <div class="deck-section bot-section">
+  <div class="deck-section bot-section" id="bot-section">
     <h2 class="section-title">Bots</h2>
     {#each botCards as keyValuePair}
       <div class="card-wrapper">
@@ -149,7 +149,7 @@
   </div>
 
   <!-- Xenos -->
-  <div class="deck-section xeno-section">
+  <div class="deck-section xeno-section" id="xeno-section">
     <h2 class="section-title">Xenos</h2>
     {#each xenoCards as keyValuePair}
       <div class="card-wrapper">
@@ -170,7 +170,7 @@
   </div>
 
   <!-- Boosts -->
-  <div class="deck-section boost-section">
+  <div class="deck-section boost-section" id="boost-section">
     <h2 class="section-title">Boosts</h2>
     {#each boostCards as keyValuePair}
       <div class="card-wrapper">
@@ -191,7 +191,7 @@
   </div>
 
   <!-- Traps -->
-  <div class="deck-section trap-section">
+  <div class="deck-section trap-section" id="trap-section">
     <h2 class="section-title">Traps</h2>
     {#each trapCards as keyValuePair}
       <div class="card-wrapper">
@@ -212,7 +212,7 @@
   </div>
 
   <!-- Neutral -->
-  <div class="deck-section neutral-section">
+  <div class="deck-section neutral-section" id="neutral-section">
     <h2 class="section-title">Neutrals</h2>
     {#each neutralCards as keyValuePair}
       <div class="card-wrapper">
@@ -252,10 +252,20 @@
 </main>
 
 <style lang="scss">
+  ::-webkit-scrollbar {
+    width: 8px;
+    background-color: #0c0500d0;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: #003600;
+    border-radius: 5px;
+  }
+
   .main-content {
     z-index: 6;
     height: 90dvh;
-    width: 90dvw;
+    width: 80dvw;
     padding: 1rem;
     background-color: #000000be;
     overflow-y: scroll;

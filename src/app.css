@@ -41,4 +41,5 @@ p {
 
 body {
   min-height: 100dvh;
+  overflow: auto;
 }

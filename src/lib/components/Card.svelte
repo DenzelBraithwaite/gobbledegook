@@ -11,6 +11,7 @@
   export let title = '';
   export let img = '/card-bg.png';
   export let points = 0;
+  export let modifiedPoints = 0;
   export let race = 'none';
   export let rarity = 'common';
   export let description = '';
@@ -44,10 +45,13 @@
 {:else}
 <!-- If card is legendary, shows special race colors, otherwise matches race color -->
 <!-- svelte-ignore a11y-click-events-have-key-events -->
-<div on:click={cardClickHandler} class="card bg-{race}{rarity === 'legendary' ? '-rare' : ''}" in:fly={{x: 100}} out:fade>
+<div on:contextmenu|preventDefault on:click={cardClickHandler} class="card bg-{race}{rarity === 'legendary' ? '-rare' : ''}" in:fly={{x: 100}} out:fade>
   <img class="card-img" src={img} alt="img of card">
   <p class="race {race}-race">{capitalize(race)}</p>
-  <p class="points {race}-race" class:points-buffed={buffed}>{points}</p>
+  <p class="points {race}-race">{points}</p>
+  {#if buffed}
+    <p class="points__modified {race}-race">{modifiedPoints}</p>
+  {/if}
   <p class="card-title {race}-title">{displayTitle}</p>
   <div class="card-bottom-section">
     <div class="bottom-section-wrapper">
@@ -174,6 +178,26 @@
 
     position: absolute;
     top: 0;
+    left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .points__modified {
+    color: #2fdb2f;
+    font-weight: bold;
+    font-size: 0.9rem;
+    z-index: 10;
+    text-align: center;
+    letter-spacing: 1px;
+    height: 1.75rem;
+    width: 1.75rem;
+    border-radius: 0 0.75rem 0.75rem 0;
+    box-shadow: inset -2px -2px 8px #0000004d;
+
+    position: absolute;
+    top: 30px;
     left: 0;
     display: flex;
     align-items: center;
@@ -385,12 +409,6 @@
   }
 
   // Utility
-  .points-buffed {
-    color: #2fdb2f;
-    font-weight: bold;
-    scale: 1.25;
-  }
-
   @media only screen and (max-width: 1100px) {
     .card {
       width: 6.5rem;
@@ -432,6 +450,14 @@
       height: 0.9rem;
       width: 0.9rem;
       border-radius: 0 0 0.4rem 0;
+    }
+
+    .points__modified {
+      font-size: 0.4rem;
+      height: 0.9rem;
+      width: 0.9rem;
+      border-radius: 0 0.4rem 0.4rem 0;
+      top: 16px;
     }
   }
 
@@ -475,6 +501,14 @@
       height: 0.9rem;
       width: 0.9rem;
       border-radius: 0 0 0.4rem 0;
+    }
+
+    .points__modified {
+      font-size: 0.4rem;
+      height: 0.9rem;
+      width: 0.9rem;
+      border-radius: 0 0.4rem 0.4rem 0;
+      top: 16px;
     }
   }
 </style>
