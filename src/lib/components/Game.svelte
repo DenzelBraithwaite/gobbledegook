@@ -74,7 +74,10 @@
       player1.set(data.player1);
       player2.set(data.player2);
       fullDeck = {...data.fullDeck};
-      calculateCurrentPlayerPoints();
+
+      // Calculate points
+      const player = gameState.playingAs === 'p1' ? $player1 : $player2;
+      calculateCurrentPlayerPoints(player);
     });
 
     // Counts turns
@@ -96,7 +99,8 @@
         return $player2;
       });
       
-      calculateCurrentPlayerPoints();
+      const player = gameState.playingAs === 'p1' ? $player1 : $player2;
+      calculateCurrentPlayerPoints(player);
       const gdgButtonAvailable = (!gameState.gameOver && !gameState.gobbledegookDeclared && gameState.turnCount >= 10);
       if (gdgButtonAvailable && isPlayerTurn()) gameState.gobbledegookDisabled = false;
       if (isPlayerTurn()) showEvent('turn-change');
@@ -118,7 +122,8 @@
       player2.set(data.player2);
 
       // Recalculate points otherwise client gets stale points from other client (seems to fix weird point glitch)
-      calculateCurrentPlayerPoints();
+      const player = gameState.playingAs === 'p1' ? $player1 : $player2;
+      calculateCurrentPlayerPoints(player);
     });
 
     // Handles cards that make players swap hands, updates xenos too (client sending broadcast already updated)
@@ -207,7 +212,9 @@
     await dealCards($player1);
     await dealCards($player2);
     decideFirstPlayer();
-    calculateCurrentPlayerPoints();
+
+    const player = gameState.playingAs === 'p1' ? $player1 : $player2;
+    calculateCurrentPlayerPoints(player);
 
     // Send data to websocket server
     socket.emit('start-game', {player1: $player1, player2: $player2, fullDeck});
@@ -247,15 +254,15 @@
 
     fullDeck = {
       beasts: [...$beastDeck],
-      bots: [...$botDeck],
-      dwarves: [...$dwarfDeck],
-      elves: [...$elfDeck],
-      goblins: [...$goblinDeck],
+      // bots: [...$botDeck],
+      // dwarves: [...$dwarfDeck],
+      // elves: [...$elfDeck],
+      // goblins: [...$goblinDeck],
       humans: [...$humanDeck],
-      xenos: [...$xenoDeck],
+      // xenos: [...$xenoDeck],
       boosts: [...$boostDeck],
-      traps: [...$trapDeck],
-      neutrals: [...$neutralDeck]
+      // traps: [...$trapDeck],
+      // neutrals: [...$neutralDeck]
     };
 
     cardDetails.set({...controlCopyOfCardDetails});
@@ -470,7 +477,7 @@
         return $player2;
       });
     }
-    calculateCurrentPlayerPoints();
+    calculateCurrentPlayerPoints(player);
     
     // Emits to server that a card was drawn
     socket.emit('draw-card', {player1: $player1, player2: $player2, deckTypes: deckTypes, fullDeck: fullDeck});
@@ -666,38 +673,8 @@
     if (($player1.playedFirst && $player1.turn) || ($player2.playedFirst && $player2.turn)) socket.emit('new-turn');
   }
 
-  // TODO: leverage new way to calculate points for the current points
-  // Calculates up-to-date current player points, wipes each time to avoid adding points to previous ones.
-  function calculateCurrentPlayerPoints(options = {calculateOpponentCards: false, swapPlayers: false, recursive: false}) {
-    let player;
-    let otherPlayer;
-    if (options.swapPlayers) {
-      player = gameState.playingAs === 'p1' ? $player2 : $player1;
-      otherPlayer = gameState.playingAs === 'p1' ? $player1 : $player2;
-    } else {
-      player = gameState.playingAs === 'p1' ? $player1 : $player2;
-      otherPlayer = gameState.playingAs === 'p1' ? $player2 : $player1;
-    }
-
-    // Reset points each time for a clean calculation then calculates hand before special cards.
-    setPlayerPointsToZero(player);
-    calculateBasePoints(player);
-    calculateSpecialTraits(player, otherPlayer, options);
-
-    // Handles end game boost, trap and neutral cards. These occur AFTER special traits are calculated.
-    endGameBoostHandler(player, otherPlayer, options);
-    endGameTrapHandler(player);
-    addXenoBloomBonus(player);
-    addXenoBlossomBonus(player);
-
-    // Determines player's race with the most points to compare to other player.
-    calculatePlayerHighestPoints(player);
-
-    if (options.recursive) calculateCurrentPlayerPoints({calculateOpponentCards: true, swapPlayers: true, recursive: false});
-  }
-
-  // Calculates up-to-date current player points, wipes each time to avoid adding points to previous ones.
-  function calculateEndGamePlayerPoints(player: Player) {
+  // Calculates all player race points, used to determine the winner.
+  function calculateCurrentPlayerPoints(player: Player) {
     const otherPlayer = player.id === $player1.id ? $player2 : $player1;
 
     setPlayerPointsToZero(player);
@@ -710,81 +687,30 @@
     calculateXenoPoints(player, otherPlayer);
     calculatePlayerHighestPoints(player);
     
-    // Even though points are calculated, still need to set the infect/charge/growth points for end game results screen
+    // Even though points are calculated, still need to set the infect/charge/growth points for end game results screen.
     for (let i = 0; i < player.infectDrawnTurns.length; i++) player.infectPoints += (gameState.turnCount - player.infectDrawnTurns[i]);
     for (let i = 0; i < player.chargeDrawnTurns.length; i++) player.chargePoints += (gameState.turnCount - player.chargeDrawnTurns[i]);
     for (let i = 0; i < player.growthDrawnTurns.length; i++) player.growthPoints += (gameState.turnCount - player.growthDrawnTurns[i]);
   }
 
-  // Calculates card points by race, doesn't include special traits
-  function calculateBasePoints(player: Player) {
-    player.hand.forEach(card => {
-      const races = getRaces(card);
-      if (races.includes('human')) player.points.humans += $cardDetails[card].points;
-      if (races.includes('goblin')) player.points.goblins += $cardDetails[card].points;
-      if (races.includes('elf')) player.points.elves += $cardDetails[card].points;
-      if (races.includes('dwarf')) player.points.dwarves += $cardDetails[card].points;
-      if (races.includes('beast')) player.points.beasts += $cardDetails[card].points;
-      if (races.includes('bot')) player.points.bots += $cardDetails[card].points;
-      // This ensures that if this function runs on player client from the other player perspective that it should use the remote cardDetails for xenos.
-      // This would happen because calculateCurrentPlayerPoints can run recursively, swapping perspective to other player to calculate their points for end game for current player.
-      if (races.includes('xeno')) player.points.xenos += ((gameState.playingAs === 'p1' && player === $player1) || (gameState.playingAs === 'p2' && player === $player2)) ? $cardDetails[card].points : remoteCardDetails[card].points;
+  // Calculates all player race points, used to determine the winner.
+  function calculateEndGamePlayerPoints(player: Player) {
+    const otherPlayer = player.id === $player1.id ? $player2 : $player1;
 
-      player.highestPoints = Math.max(
-        player.points.beasts,
-        player.points.bots,
-        player.points.dwarves,
-        player.points.elves,
-        player.points.goblins,
-        player.points.humans,
-        player.points.xenos
-      );
-    });
-  }
-
-  // Calculates all race card special traits
-  function calculateSpecialTraits(player: Player, otherPlayer: Player, options = {calculateOpponentCards: false, swapPlayers: false, recursive: false}): void {
-    // Only wipe player's bot points if they know otherPlayer has AI
-    if (options.calculateOpponentCards && otherPlayer.hand.includes('ai')) player.points.bots = 0;
+    setPlayerPointsToZero(player);
+    calculateHumanPoints(player);
+    calculateGoblinPoints(player, otherPlayer, true);
+    calculateElfPoints(player, otherPlayer, true);
+    calculateDwarfPoints(player, true);
+    calculateBeastPoints(player);
+    calculateBotPoints(player, otherPlayer, true);
+    calculateXenoPoints(player, otherPlayer);
+    calculatePlayerHighestPoints(player);
     
-    // Must be before emperor calculation for proper result, adds bonus points to all humans.
-    if (player.hand.includes('commander')) calculateCommander(player);
-
-    // Multiplies human points by 2 then adds rest of hand as human points.
-    if (player.hand.includes('emperor')) calculateEmperor(player);
-
-    // Determines if player has full goblin hand and if otherPlayer has full elf hand with elf leader, assigns points accordingly.
-    if (player.hand.includes('goblinLord')) calculateGoblinLord(player, otherPlayer, options.calculateOpponentCards);
-
-    // If elf twins in hand player gains bonus points depending on how many. Must be before Elf king calculation for proper calculation.
-    if (player.hand.includes('nelladan') && player.hand.includes('nadallen')) calculateElfTwins(player);
-
-    // Determines if otherPlayer has full goblin hand and if player has full elf hand, assigns points accordingly.
-    if (player.hand.includes('elfKing')) calculateElfKing(player, otherPlayer, options.calculateOpponentCards);
-
-    // Calculates all beasts as if they are worth 12 points.
-    if (player.hand.includes('dreamDestroyer')) calculateDreamDestroyer(player);
-
-    // If player has humans/hobbits, pawl barkington gains +10 points.
-    if (player.hand.includes('dog') && player.hand.some(card => getRaces(card).includes('human'))) {
-      const numOfDogs = player.hand.filter(card => card === 'dog').length;
-      player.points.beasts += 10 * numOfDogs;
-    }
-
-    // Player gains +2 for every wolf on the field, including himself.
-    if (player.hand.includes('wolf')) calculateWolfPack(player);
-
-    // Adds +2 to all bot cards (player + otherPlayer) then steals all bot points.
-    if (player.hand.includes('ai')) calculateAi(player, otherPlayer, options.calculateOpponentCards);
-
-    // Must be after A.I. since A.I. resets bot points. Quarantine all viruses adding +8 to their value and +1 bot point to Protectron per quarantined virus.
-    if (player.hand.includes('protectron')) calculateProtectron(player, otherPlayer, options.calculateOpponentCards);
-
-    // Calculates +5 dwarf points per discarded dwarf by any player.
-    if (player.hand.includes('longbeardLeader')) calculateLongbeard(player, options.calculateOpponentCards);
-
-    // Nebulites buff xenos by 4 points
-    if (player.hand.includes('nebulite')) calculateSpecialXenoCard(player, 'nebulite');
+    // Even though points are calculated, still need to set the infect/charge/growth points for end game results screen.
+    for (let i = 0; i < player.infectDrawnTurns.length; i++) player.infectPoints += (gameState.turnCount - player.infectDrawnTurns[i]);
+    for (let i = 0; i < player.chargeDrawnTurns.length; i++) player.chargePoints += (gameState.turnCount - player.chargeDrawnTurns[i]);
+    for (let i = 0; i < player.growthDrawnTurns.length; i++) player.growthPoints += (gameState.turnCount - player.growthDrawnTurns[i]);
   }
 
   // Calculates and updates player's highest points among races.
@@ -884,10 +810,10 @@
 
   // --------------------- GOBLIN CALCULATIONS ----------------------- \\
 
-  function calculateGoblinPoints(player: Player, otherPlayer: Player): void {
+  function calculateGoblinPoints(player: Player, otherPlayer: Player, forEndGameCalculation = false): void {
     const goblinCards = player.hand.filter(card => getRaces(card).includes('goblin'));
     goblinCards.forEach(card => player.points.goblins += $cardDetails[card].points);
-    if (player.hand.includes('goblinLord')) calculateGoblinLord(player, otherPlayer, true);
+    if (player.hand.includes('goblinLord')) calculateGoblinLord(player, otherPlayer, forEndGameCalculation);
 
     // Currently no neutrals that affect goblin points
     calculateGoblinBoosts(player);
@@ -933,18 +859,16 @@
     // Checks if player hand has only goblins
     const goblinHand = player.hand.every(card => getRaces(card).includes('goblin'));
     
+    // Checks if otherPlayer has only elves
+    const otherPlayerFullElf = otherPlayer.hand.every(card => getRaces(card).includes('elf'));
+
+    // Checks if otherPlayer has the elf king
+    const otherPlayerElfKing = otherPlayer.hand.includes('elfKing');
+    
     // Ignore otherPlayer cards if the game is still going on
     if (!calculateElfDefense && goblinHand) {
       player.points.goblins = 1_000_000;
-      return;
-    }
-    
-    // Checks if otherPlayer has only elves
-    const otherPlayerFullElf = otherPlayer.hand.every(card => getRaces(card).includes('elf'));
-    // Checks if otherPlayer has the elf king
-    const otherPlayerElfKing = otherPlayer.hand.includes('elfKing');
-
-    if (goblinHand && (otherPlayerFullElf && otherPlayerElfKing)) {
+    } else if (calculateElfDefense && goblinHand && otherPlayerFullElf && otherPlayerElfKing) {
       player.points.goblins = 500_000;
     } else if (goblinHand) {
       player.points.goblins = 1_000_000;
@@ -953,7 +877,7 @@
 
   // --------------------- ELF CALCULATIONS ----------------------- \\
 
-  function calculateElfPoints(player: Player, otherPlayer: Player): void {
+  function calculateElfPoints(player: Player, otherPlayer: Player, forEndGameCalculation = false): void {
     const elfCards = player.hand.filter(card => getRaces(card).includes('elf'));
     elfCards.forEach(card => player.points.elves += $cardDetails[card].points);
 
@@ -961,7 +885,7 @@
     if (player.hand.includes('nelladan') && player.hand.includes('nadallen')) calculateElfTwins(player);
 
     // Determines if otherPlayer has full goblin hand and if player has full elf hand, assigns points accordingly.
-    if (player.hand.includes('elfKing')) calculateElfKing(player, otherPlayer, true);
+    if (player.hand.includes('elfKing')) calculateElfKing(player, otherPlayer, forEndGameCalculation);
     
     // Currently no neutrals that affect elf points
     calculateElfBoosts(player);
@@ -1055,12 +979,12 @@
 
   // --------------------- DWARF CALCULATIONS ----------------------- \\
 
-  function calculateDwarfPoints(player: Player): void {
+  function calculateDwarfPoints(player: Player, forEndGameCalculation = false): void {
     const dwarfCards = player.hand.filter(card => getRaces(card).includes('dwarf'));
     dwarfCards.forEach(card => player.points.dwarves += $cardDetails[card].points);
 
     // Calculates +5 dwarf points per discarded dwarf by any player.
-    if (player.hand.includes('longbeardLeader')) calculateLongbeard(player, true);
+    if (player.hand.includes('longbeardLeader')) calculateLongbeard(player, forEndGameCalculation);
     
     // Currently no neutrals that affect dwarf points
     calculateDwarfBoosts(player);
@@ -1137,6 +1061,8 @@
     const beastCards = player.hand.filter(card => getRaces(card).includes('beast'));
     beastCards.forEach(card => player.points.beasts += $cardDetails[card].points);
 
+    if (player.hand.includes('dreamDestroyer')) calculateDreamDestroyer(player);
+
     // If player has humans/hobbits, pawl barkington gains +10 points.
     if (player.hand.includes('dog') && player.hand.some(card => getRaces(card).includes('human'))) {
       const numOfDogs = player.hand.filter(card => card === 'dog').length;
@@ -1180,11 +1106,9 @@
 
   // Adds all card points in hand, regardless of race
   function calculateDreamDestroyer(player: Player) {
-    // Need to reset since beast points are added in calculateBasePoints()
+    const numOfBeastCards = player.hand.filter(card => getRaces(card).includes('beast')).length;
     player.points.beasts = 0;
-    player.hand.forEach(card => {
-      if (getRaces(card).includes('beast')) player.points.beasts += 12;
-    });
+    player.points.beasts += (numOfBeastCards * 12);
   }
 
   // +2 points for every wolf on the field, including himself (base wolf points already calculated in calculateBasePoints)
@@ -1195,13 +1119,13 @@
   }
 
   function displayBeastPoints(player: Player, cardTitle: string): number {
-    const hasHumans = player.hand.some(c => getRaces(cardTitle).includes('human'));
+    const hasHumans = player.hand.some(c => getRaces(c).includes('human'));
     const hasDreamDestroyer = player.hand.includes('dreamDestroyer');
 
     if (cardTitle === 'wolf') {
       const numOfWolves = player.hand.filter(card => card === 'wolf').length;
       const numOfWerewolves = player.hand.filter(card => card === 'lupin').length;
-      return $cardDetails[cardTitle].points + (numOfWolves * 2) + (numOfWerewolves * 2);
+      return $cardDetails[cardTitle].points + (numOfWolves * 2) + (numOfWerewolves * 2) + (hasDreamDestroyer ? 12 : 0);
     }
     if (cardTitle === 'dog' && hasHumans && hasDreamDestroyer) return 22;
     if (cardTitle === 'dog' && hasHumans) return 14;
@@ -1211,19 +1135,19 @@
 
   // --------------------- BOT CALCULATIONS ----------------------- \\
 
-  function calculateBotPoints(player: Player, otherPlayer: Player): void {
+  function calculateBotPoints(player: Player, otherPlayer: Player, forEndGameCalculation = false): void {
     const botCards = player.hand.filter(card => getRaces(card).includes('bot'));
     botCards.forEach(card => player.points.bots += $cardDetails[card].points);
 
     // Wipe points if other player has ai
-    if (otherPlayer.hand.includes('ai')) {
+    if (forEndGameCalculation && otherPlayer.hand.includes('ai')) {
       player.points.bots = 0;
     } else {
       // Adds +2 to all bot cards (player + otherPlayer) then steals all bot points.
-      if (player.hand.includes('ai')) calculateAi(player, otherPlayer, true);
+      if (player.hand.includes('ai')) calculateAi(player, otherPlayer, forEndGameCalculation);
   
       // Must be after A.I. since A.I. resets bot points. Quarantine all viruses adding +8 to their value and +1 bot point to Protectron per quarantined virus.
-      if (player.hand.includes('protectron')) calculateProtectron(player, otherPlayer, true);
+      if (player.hand.includes('protectron')) calculateProtectron(player, otherPlayer, forEndGameCalculation);
     }
     
     // Currently no neutrals that affect bot points
@@ -1299,7 +1223,6 @@
     }
   }
 
-  // FIXME: virus can end up -4? visually.
   function displayBotPoints(player: Player, cardTitle: string): number {
     let numOfProtectrons = player.hand.filter(card => card === 'protectron').length;
     let numOfViruses = player.hand.filter(card => card === 'virus').length;
@@ -1318,8 +1241,9 @@
 
   // Calculates all xeno points including boosts, traps, etc.
   function calculateXenoPoints(player: Player, otherPlayer: Player): void {
+    const calculatingForSelf = (player.id === $player1.id && gameState.playingAs === 'p1') || (player.id === $player2.id && gameState.playingAs === 'p2');
     const xenoCards = player.hand.filter(card => getRaces(card).includes('xeno'));
-    xenoCards.forEach(card => player.points.xenos += $cardDetails[card].points);
+    xenoCards.forEach(card => calculatingForSelf ? player.points.xenos += $cardDetails[card].points : player.points.xenos += remoteCardDetails[card].points);
 
     // Nebulites buff xenos by 4 points
     if (player.hand.includes('nebulite')) calculateSpecialXenoCard(player, 'nebulite');
@@ -1375,8 +1299,6 @@
       return (specialXenoCards.includes(cardTitle) && gameState.playingAs === 'p1') ? remoteCardDetails[cardTitle].points + 4 : $cardDetails[cardTitle].points + 4;
     } else if (player.id === $player2.id) {
       return (specialXenoCards.includes(cardTitle) && gameState.playingAs === 'p1') ? remoteCardDetails[cardTitle].points : $cardDetails[cardTitle].points;
-    } else {
-      return 0; // SHould not run, just to appease the ts gods
     }
   }
 
@@ -1390,17 +1312,13 @@
 
     // Nebulites buff xenos by 4 points
     if (cardTitle === 'nebulite') {
-      player.hand.forEach(card => {
-        if (getRaces(card).includes('xeno') && card !== 'nebulite') player.points.xenos += 4;
-      });
+      const numOfNonNebuliteXenos = player.hand.filter(card => getRaces(card).includes('xeno') && card !== 'nebulite').length;
+      player.points.xenos += (numOfNonNebuliteXenos * 4);
     }
   }
 
-  // FIXME: one time in same game, p2 drew voidrunner turn 26 no problem, then 29 p1 drew voidrunner and it was 0? Is it being wiped somewhere, why only p1?
-  // FIXME: visual bug, calculation was still fine
-  // For displaying special void points at the end of the game
+  // Return regular points if it's not special xeno card
   function endGameXenoPointHandler(cardTitle: string, player: 'p1' | 'p2'): number {
-    // Return regular points if it's not special xeno card
     if (!['warpstalker', 'voidRunner'].includes(cardTitle)) return $cardDetails[cardTitle].points;
     
     if (gameState.playingAs === player) {
@@ -1412,40 +1330,6 @@
     } 
     
     return 0; // Should not run, just to appease the ts gods
-  }
-
-    // Adds +15 points t players if xeno blossom in effect.
-  function addXenoBloomBonus(player: Player) {
-    player.neutrals.forEach(neutral => {
-      if (neutral === 'xenoBloom') {
-        player1.update($player1 => {
-          $player1.points.xenos += 15;
-          return $player1;
-        })
-
-        player2.update($player2 => {
-          $player2.points.xenos += 15;
-          return $player2;
-        })
-      }
-    });
-  }
-
-  // Adds +5 points t players if xeno blossom in effect.
-  function addXenoBlossomBonus(player: Player) {
-    player.neutrals.forEach(neutral => {
-      if (neutral === 'xenoBlossom') {
-        player1.update($player1 => {
-          $player1.points.xenos += 5;
-          return $player1;
-        })
-
-        player2.update($player2 => {
-          $player2.points.xenos += 5;
-          return $player2;
-        })
-      }
-    });
   }
 
   // Trades warpstalker and voidrunner client values before calculation
@@ -1465,36 +1349,6 @@
     if (cardTitle === 'growth') player.growthDrawnTurns.push(gameState.turnCount);
   }
 
-  // FIXME: doesn't always show in the numbers? switcharoo fixed says elisa?
-  // FIXME: I also noticed with elf king not doubled until switcharoo, woulda fixed next turn alone?
-  // FIXME: I also noticed with ai buffed num was still 11(base) and playing more turns did not fix.
-  // FIXME: CONFIRMED SWITCHAROO FIXED ISSUE consistently with buffed points showing base point value. p1 had bad points, p2 switcharoo, p2 had same cards good points, p1 still bad points future cards.
-  // TODO: still add chargePoints here but not to race, just to player.chargePoints
-  // Handles boost cards at the end of the game
-  function endGameBoostHandler(player: Player, otherPlayer: Player, options = {calculateOpponentCards: false, swapPlayers: false, recursive: false}) {
-    // These cards block all boosts
-    if (areBoostsBlocked(player)) return;
-
-    // Add charge points to human and bot points
-    for (let i = 0; i < player.chargeDrawnTurns.length; i++) player.chargePoints += (gameState.turnCount - player.chargeDrawnTurns[i]);
-    
-    // Add growth points to goblins, elves and dwarves points
-    for (let i = 0; i < player.growthDrawnTurns.length; i++) player.growthPoints += (gameState.turnCount - player.growthDrawnTurns[i]);
-    player.points.goblins += player.growthPoints;
-    player.points.elves += player.growthPoints;
-    player.points.dwarves += player.growthPoints;
-    
-    // calculateAI runs before this, charge points should be stolen if a player has 'ai'
-    options.calculateOpponentCards && otherPlayer.hand.includes('ai') ? otherPlayer.points.bots += player.chargePoints : player.points.bots += player.chargePoints;
-    player.points.humans += player.chargePoints;
-
-    // Handles other boosts
-    player.boosts.forEach(boost => {
-      if (boost === 'rejuvenate') Object.entries(player.points).forEach(([deck, deckPoints]) => player.points[deck] += 10);
-      if (boost === 'feast') player.points.beasts += 10;
-    });
-  }
-
   // Adds trap card to players traps array
   async function addTrapCard(player: Player, card) {
     player.traps = [...player.traps, card];
@@ -1508,22 +1362,6 @@
       player.id === $player1.id ? player1.set({...$player1, isExposed: true}) : player2.set({...$player2, isExposed: true});
       socket.emit('display-event', 'exposed');
     }
-  }
-
-  // Handles trap cards at the end of the game
-  function endGameTrapHandler(player: Player) {
-    // Corruption card blocks all boosts, also checks for rhino in hand at end
-    if (areTrapsBlocked(player)) return;
-
-    // Handles infect trap
-    for (let i = 0; i < player.infectDrawnTurns.length; i++) player.infectPoints += (gameState.turnCount - player.infectDrawnTurns[i]);
-    Object.entries(player.points).forEach(([deck, deckPoints]) => player.points[deck] -= player.infectPoints);
-
-    // Handles other traps
-    player.traps.forEach(trap => {
-      if (trap === 'sap') Object.entries(player.points).forEach(([deck, deckPoints]) => player.points[deck] -= 10);
-      if (trap === 'xenophobia') player.points.xenos -= 10;
-    });
   }
 
   // Adds neutral card to players neutrals array
@@ -1566,46 +1404,51 @@
     // If card is xenoBlossom, let both players know they received 5 xeno points
     if (card === 'xenoBlossom') socket.emit('display-event', 'xenoBlossom');
 
-    calculateCurrentPlayerPoints();
+    calculateCurrentPlayerPoints(player);
   }
 
-  // Neutralizes deeck (remove boosts / traps in effect)
+  // Neutralizes deck (remove boosts / traps in effect)
   function neutralizeDeck() {
     showEvent('neutralize');
 
-      player1.update($player1 => {
-        $player1.boosts = [];
-        $player1.traps = [];
-        $player1.neutrals = [];
-        $player1.chargeDrawnTurns = [];
-        $player1.growthDrawnTurns = [];
-        $player1.infectDrawnTurns = [];
-        $player1.hasChastity = false;
-        $player1.hasCorruption = false;
-        $player1.hasVision = false;
-        $player1.isExposed = false;
-        $player1.chargePoints = 0;
-        $player1.growthPoints = 0;
-        $player1.infectPoints = 0;
-        return $player1;
-      });
-      player2.update($player2 => {
-        $player2.boosts = [];
-        $player2.traps = [];
-        $player2.neutrals = [];
-        $player2.chargeDrawnTurns = [];
-        $player2.growthDrawnTurns = [];
-        $player2.infectDrawnTurns = [];
-        $player2.hasChastity = false;
-        $player2.hasCorruption = false;
-        $player2.hasVision = false;
-        $player2.isExposed = false;
-        $player2.chargePoints = 0;
-        $player2.growthPoints = 0;
-        $player2.infectPoints = 0;
-        return $player2;
-      });
-    calculateCurrentPlayerPoints();
+    player1.update($player1 => {
+      $player1.neutralizedCards = [...$player1.boosts, ...$player1.traps, ...$player1.neutrals];
+      $player1.boosts = [];
+      $player1.traps = [];
+      $player1.neutrals = [];
+      $player1.chargeDrawnTurns = [];
+      $player1.growthDrawnTurns = [];
+      $player1.infectDrawnTurns = [];
+      $player1.hasChastity = false;
+      $player1.hasCorruption = false;
+      $player1.hasVision = false;
+      $player1.isExposed = false;
+      $player1.chargePoints = 0;
+      $player1.growthPoints = 0;
+      $player1.infectPoints = 0;
+      return $player1;
+    });
+
+    player2.update($player2 => {
+      $player2.neutralizedCards = [...$player2.boosts, ...$player2.traps, ...$player2.neutrals];
+      $player2.boosts = [];
+      $player2.traps = [];
+      $player2.neutrals = [];
+      $player2.chargeDrawnTurns = [];
+      $player2.growthDrawnTurns = [];
+      $player2.infectDrawnTurns = [];
+      $player2.hasChastity = false;
+      $player2.hasCorruption = false;
+      $player2.hasVision = false;
+      $player2.isExposed = false;
+      $player2.chargePoints = 0;
+      $player2.growthPoints = 0;
+      $player2.infectPoints = 0;
+      return $player2;
+    });
+
+    const player = gameState.playingAs === 'p1' ? $player1 : $player2;
+    calculateCurrentPlayerPoints(player);
   }
 
   // ---------------------------------------------------------------- \\
@@ -1622,19 +1465,19 @@
     gameState.p2NameChangeVisible = !gameState.p2NameChangeVisible;
   }
 
-  function displayBonusCardIcons(card): string {
-    return $cardDetails[card].image;
+  function displayBonusCardIcons(cardTitle: string): string {
+    return $cardDetails[cardTitle].image;
   }
 
   // Converts race card bg to legendary if player is holding the leader of that race.
-  function determineRarity(player: Player, card): '' |  'common' | 'uncommon' | 'rare' | 'amazing' | 'epic' | 'legendary' {
-    if (player.hand.includes('emperor') && getRaces(card).includes('human')) return 'legendary';
-    if (player.hand.includes('goblinLord') && getRaces(card).includes('goblin')) return 'legendary';
-    if (player.hand.includes('elfKing') && getRaces(card).includes('elf')) return 'legendary';
-    if (player.hand.includes('longbeardLeader') && getRaces(card).includes('dwarf')) return 'legendary';
-    if (player.hand.includes('ai') && getRaces(card).includes('bot')) return 'legendary';
-    if (player.hand.includes('dreamDestroyer') && getRaces(card).includes('beast')) return 'legendary';
-    return $cardDetails[card].rarity;
+  function determineRarity(player: Player, cardTitle: string): '' |  'common' | 'uncommon' | 'rare' | 'amazing' | 'epic' | 'legendary' {
+    if (player.hand.includes('emperor') && getRaces(cardTitle).includes('human')) return 'legendary';
+    if (player.hand.includes('goblinLord') && getRaces(cardTitle).includes('goblin')) return 'legendary';
+    if (player.hand.includes('elfKing') && getRaces(cardTitle).includes('elf')) return 'legendary';
+    if (player.hand.includes('longbeardLeader') && getRaces(cardTitle).includes('dwarf')) return 'legendary';
+    if (player.hand.includes('ai') && getRaces(cardTitle).includes('bot')) return 'legendary';
+    if (player.hand.includes('dreamDestroyer') && getRaces(cardTitle).includes('beast')) return 'legendary';
+    return $cardDetails[cardTitle].rarity;
   }
 
   // Conditionally displays card points as green if they are buffed.
@@ -1818,8 +1661,16 @@
   function getRaces(cardTitle: string): string[] {
     return [$cardDetails[cardTitle].race, ...$cardDetails[cardTitle].otherRaces];
   }
+
+  // Determines if current player is the winner
+  function isPlayerWinner(): boolean {
+    return ((gameState.playingAs === 'p1' && $player1.highestPoints > $player2.highestPoints) ||
+             gameState.playingAs === 'p2' && $player2.highestPoints > $player1.highestPoints)
+  }
 </script>
 
+<!-- svelte-ignore a11y-no-static-element-interactions -->
+<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
 <!-- svelte-ignore a11y-click-events-have-key-events -->
  {#if ['p1', 'p2'].includes(gameState.playingAs)}
   <main class="main-content">
@@ -1849,27 +1700,31 @@
 
         <div class="results-messages-flex-wrapper">
           <div>
-            <p>{gameState.winMessage}</p>
-            <p class="margin-bottom-sm">{gameState.loseMessage}</p>
+            <p class:color-green={isPlayerWinner()}>{gameState.winMessage}</p>
+            <p class="margin-bottom-sm" class:color-red={!isPlayerWinner()}>{gameState.loseMessage}</p>
 
             <hr>
 
-            <h2>{$player1.title}</h2>
-            <p>{$player1.title} Boosts: </p>
+            <h2 class:player-name-bordered-yellow={gameState.playingAs === 'p1'}>
+              {#if gameState.playingAs === 'p1'}&rarr;{/if}
+              {$player1.title}
+              {#if gameState.playingAs === 'p1'}&larr;{/if}
+            </h2>
+
+            <span>Boosts: </span>
             {#each $player1.boosts as boost}
-              <span class="color-blue">{boost} &nbsp;</span>
+              <span class="color-blue" class:line-through={areBoostsBlocked($player1)}>{boost} &nbsp;</span>
             {/each}
-            <p>Charge boost points: <span class="color-blue">{$player1.chargePoints}</span></p>
-            <p class="margin-bottom-sm">Growth boost points: <span class="color-blue">{$player1.growthPoints}</span></p>
+            <p>Charge Points: <span class="color-blue" class:line-through={areBoostsBlocked($player1)}>{$player1.chargePoints}</span></p>
+            <p class="margin-bottom-sm">Growth Points: <span class="color-blue" class:line-through={areBoostsBlocked($player1)}>{$player1.growthPoints}</span></p>
 
-            <p>{$player1.title} Traps: </p>
-            <span>Trap cards: </span>
+            <span>Traps: </span>
             {#each $player1.traps as trap}
-              <span class="color-red">{trap} &nbsp;</span>
+              <span class="color-red" class:line-through={areTrapsBlocked($player1)}>{trap} &nbsp;</span>
             {/each}
-            <p class="margin-bottom-sm">Infect trap penalty: <span class="color-red">{$player1.infectPoints}</span></p>
+            <p class="margin-bottom-sm">Infect Penalty: <span class="color-red" class:strikethrough={areTrapsBlocked($player1)}>{$player1.infectPoints}</span></p>
 
-            <span>Neutral cards: </span>
+            <span>Neutral Cards: </span>
             {#each $player1.neutrals as neutral}
               <span class="color-purple">{neutral} &nbsp;</span>
             {/each}
@@ -1880,10 +1735,21 @@
               {/each}
             </p>
 
+            <p>Neutralized Cards: 
+              {#each $player2.neutralizedCards as card}
+                <span class="line-through"
+                  class:color-purple={getRaces(card).includes('neutral')}
+                  class:color-blue={getRaces(card).includes('boost')}
+                  class:color-red={getRaces(card).includes('trap')}>
+                    {card} &nbsp;
+                </span>
+              {/each}
+            </p>
+
             <!-- Show all race points -->
             <RacePoints player={$player1}/>
 
-            <h2 class="results-player-floating-header results-player-float-left">{$player1.title}</h2>
+            <h2 class="results-player-floating-header results-player-float-left" class:color-yellow__bright={gameState.playingAs === 'p1'}>{$player1.title}</h2>
           </div>
 
           <div>
@@ -1892,23 +1758,26 @@
             
             <hr>
 
-            <h2>{$player2.title}</h2>
-            <p>{$player2.title} Boosts: </p>
-            <span>Boost cards: </span>
+            <h2 class:player-name-bordered-yellow={gameState.playingAs === 'p2'}>
+              {#if gameState.playingAs === 'p2'}&rarr;{/if}
+              {$player2.title}
+              {#if gameState.playingAs === 'p2'}&larr;{/if}
+            </h2>
+
+            <span>Boosts: </span>
             {#each $player2.boosts as boost}
-              <span class="color-blue">{boost} &nbsp;</span>
+              <span class="color-blue" class:line-through={areBoostsBlocked($player2)}>{boost} &nbsp;</span>
             {/each}
-            <p>Charge boost points: <span class="color-blue">{$player2.chargePoints}</span></p>
-            <p class="margin-bottom-sm">Growth boost points: <span class="color-blue">{$player2.growthPoints}</span></p>
+            <p>Charge Points: <span class="color-blue" class:line-through={areBoostsBlocked($player2)}>{$player2.chargePoints}</span></p>
+            <p class="margin-bottom-sm">Growth Points: <span class="color-blue" class:line-through={areBoostsBlocked($player2)}>{$player2.growthPoints}</span></p>
 
-            <p>{$player2.title} Traps: </p>
-            <span>Trap cards: </span>
+            <span>Traps: </span>
             {#each $player2.traps as trap}
-              <span class="color-red">{trap} &nbsp;</span>
+              <span class="color-red" class:line-through={areTrapsBlocked($player2)}>{trap} &nbsp;</span>
             {/each}
-            <p class="margin-bottom-sm">Infect trap penalty: <span class="color-red">{$player2.infectPoints}</span></p>
+            <p class="margin-bottom-sm">Infect Penalty: <span class="color-red" class:line-through={areTrapsBlocked($player2)}>{$player2.infectPoints}</span></p>
 
-            <span>Neutral cards: </span>
+            <span>Neutral Cards: </span>
             {#each $player2.neutrals as neutral}
               <span class="color-purple">{neutral} &nbsp;</span>
             {/each}
@@ -1919,60 +1788,36 @@
               {/each}
             </p>
 
+            <p>Neutralized Cards: 
+              {#each $player1.neutralizedCards as card}
+                <span class="line-through"
+                  class:color-purple={getRaces(card).includes('neutral')}
+                  class:color-blue={getRaces(card).includes('boost')}
+                  class:color-red={getRaces(card).includes('trap')}>
+                    {card} &nbsp;
+                </span>
+              {/each}
+            </p>
+
             <!-- Show all race points -->
             <RacePoints player={$player2}/>
 
-            <h2 class="results-player-floating-header results-player-float-right">{$player2.title}</h2>
+            <h2 class="results-player-floating-header results-player-float-right" class:color-yellow__bright={gameState.playingAs === 'p2'}>{$player2.title}</h2>
             <h2 class="results-player-floating-header results-turn-count-float-middle">Turn count: {gameState.turnCount}</h2>
           </div>
         </div>
 
-        <div class="player-history-wrapper {$player1.highestPoints > $player2.highestPoints ? 'player-history-wrapper__winner' : 'player-history-wrapper__loser'}" class:player-history-wrapper__tie={$player1.highestPoints === $player2.highestPoints}>
-          <!-- Cards Drawn -->
-          <div class="history__cards-drawn">
-            <!-- Starting hand, placed here so it's at the beginning, left side of parent -->
-            <p class="history__small-header">Starting Hand:</p>
-            {#each $player1.startingHand as card}
-              <div class="history__card-wrapper">
-                <GGCard
-                displayTitle={$cardDetails[card].displayTitle}
-                title={$cardDetails[card].title}
-                img={$cardDetails[card].image}
-                trait={$cardDetails[card].trait}
-                traitTitle={$cardDetails[card].traitTitle}
-                description={$cardDetails[card].description}
-                race={$cardDetails[card].race}
-                rarity={$cardDetails[card].rarity}
-                points={endGameXenoPointHandler(card, 'p1')}
-                modifiedPoints={displayCardPoints($player1, card)}
-                />
-              </div>
-            {/each}
-
-            <p class="history__small-header">Cards drawn:</p>
-            {#each $player1.cardsDrawn as card}
-            <div class="history__card-wrapper">
-              <GGCard
-              displayTitle={$cardDetails[card].displayTitle}
-              title={$cardDetails[card].title}
-              img={$cardDetails[card].image}
-              trait={$cardDetails[card].trait}
-              traitTitle={$cardDetails[card].traitTitle}
-              description={$cardDetails[card].description}
-              race={$cardDetails[card].race}
-              rarity={$cardDetails[card].rarity}
-              points={endGameXenoPointHandler(card, 'p1')}
-              modifiedPoints={displayCardPoints($player1, card)}
-              />
-            </div>
-            {/each}
-          </div>
-          <div class="history__cards-discarded">
-            <!-- Final hand, placed here so it's at the beginning, right side of parent -->
-            <p class="history__small-header">Final Hand:</p>
-            {#each $player1.hand as card}
-              <div class="history__card-wrapper">
-                <GGCard
+        <div class="player-history-wrapper-container">
+          <div class="player-history-wrapper {$player1.highestPoints > $player2.highestPoints ? 'player-history-wrapper__winner' : 'player-history-wrapper__loser'}"
+            class:player-history-wrapper__tie={$player1.highestPoints === $player2.highestPoints}
+            class:border-yellow={gameState.playingAs === 'p1'}>
+            <!-- Cards Drawn -->
+            <div class="history__cards-drawn">
+              <!-- Starting hand, placed here so it's at the beginning, left side of parent -->
+              <p class="history__small-header">Starting Hand:</p>
+              {#each $player1.startingHand as card}
+                <div class="history__card-wrapper">
+                  <GGCard
                   displayTitle={$cardDetails[card].displayTitle}
                   title={$cardDetails[card].title}
                   img={$cardDetails[card].image}
@@ -1983,13 +1828,12 @@
                   rarity={$cardDetails[card].rarity}
                   points={endGameXenoPointHandler(card, 'p1')}
                   modifiedPoints={displayCardPoints($player1, card)}
-                />
-              </div>
-            {/each}
-
-            <!-- Cards Discarded -->
-            <p class="history__small-header">Cards discarded:</p>
-            {#each $player1.discards as card}
+                  />
+                </div>
+              {/each}
+  
+              <p class="history__small-header">Cards drawn:</p>
+              {#each $player1.cardsDrawn as card}
               <div class="history__card-wrapper">
                 <GGCard
                 displayTitle={$cardDetails[card].displayTitle}
@@ -2004,54 +1848,75 @@
                 modifiedPoints={displayCardPoints($player1, card)}
                 />
               </div>
-            {/each}
-          </div>
-        </div>
-
-        <div class="player-history-wrapper {$player2.highestPoints > $player1.highestPoints ? 'player-history-wrapper__winner' : 'player-history-wrapper__loser'}" class:player-history-wrapper__tie={$player1.highestPoints === $player2.highestPoints}>
-          <!-- Cards Drawn -->
-          <div class="history__cards-drawn">
-            <!-- Starting hand, placed here so it's at the beginning, left side of parent -->
-            <p class="history__small-header">Starting Hand:</p>
-            {#each $player2.startingHand as card}
-              <div class="history__card-wrapper">
-                <GGCard
-                displayTitle={$cardDetails[card].displayTitle}
-                title={$cardDetails[card].title}
-                img={$cardDetails[card].image}
-                trait={$cardDetails[card].trait}
-                traitTitle={$cardDetails[card].traitTitle}
-                description={$cardDetails[card].description}
-                race={$cardDetails[card].race}
-                rarity={$cardDetails[card].rarity}
-                points={endGameXenoPointHandler(card, 'p2')}
-                modifiedPoints={displayCardPoints($player2, card)}
-                />
-              </div>
-            {/each}
-
-            <p class="history__small-header">Cards drawn:</p>
-            {#each $player2.cardsDrawn as card}
-            <div class="history__card-wrapper">
-              <GGCard
-              displayTitle={$cardDetails[card].displayTitle}
-              title={$cardDetails[card].title}
-              img={$cardDetails[card].image}
-              trait={$cardDetails[card].trait}
-              traitTitle={$cardDetails[card].traitTitle}
-              description={$cardDetails[card].description}
-              race={$cardDetails[card].race}
-              rarity={$cardDetails[card].rarity}
-              points={endGameXenoPointHandler(card, 'p2')}
-              modifiedPoints={displayCardPoints($player2, card)}
-              />
+              {/each}
             </div>
-            {/each}
+            <div class="history__cards-discarded">
+              <!-- Final hand, placed here so it's at the beginning, right side of parent -->
+              <p class="history__small-header">Final Hand:</p>
+              {#each $player1.hand as card}
+                <div class="history__card-wrapper">
+                  <GGCard
+                    displayTitle={$cardDetails[card].displayTitle}
+                    title={$cardDetails[card].title}
+                    img={$cardDetails[card].image}
+                    trait={$cardDetails[card].trait}
+                    traitTitle={$cardDetails[card].traitTitle}
+                    description={$cardDetails[card].description}
+                    race={$cardDetails[card].race}
+                    rarity={$cardDetails[card].rarity}
+                    points={endGameXenoPointHandler(card, 'p1')}
+                    modifiedPoints={displayCardPoints($player1, card)}
+                  />
+                </div>
+              {/each}
+  
+              <!-- Cards Discarded -->
+              <p class="history__small-header">Cards discarded:</p>
+              {#each $player1.discards as card}
+                <div class="history__card-wrapper">
+                  <GGCard
+                  displayTitle={$cardDetails[card].displayTitle}
+                  title={$cardDetails[card].title}
+                  img={$cardDetails[card].image}
+                  trait={$cardDetails[card].trait}
+                  traitTitle={$cardDetails[card].traitTitle}
+                  description={$cardDetails[card].description}
+                  race={$cardDetails[card].race}
+                  rarity={$cardDetails[card].rarity}
+                  points={endGameXenoPointHandler(card, 'p1')}
+                  modifiedPoints={displayCardPoints($player1, card)}
+                  />
+                </div>
+              {/each}
+            </div>
           </div>
-          <div class="history__cards-discarded">
-            <!-- Final hand, placed here so it's at the beginning, right side of parent -->
-            <p class="history__small-header">Final Hand:</p>
-            {#each $player2.hand as card}
+  
+          <div class="player-history-wrapper {$player2.highestPoints > $player1.highestPoints ? 'player-history-wrapper__winner' : 'player-history-wrapper__loser'}"
+            class:player-history-wrapper__tie={$player1.highestPoints === $player2.highestPoints}
+            class:border-yellow={gameState.playingAs === 'p2'}>
+            <!-- Cards Drawn -->
+            <div class="history__cards-drawn">
+              <!-- Starting hand, placed here so it's at the beginning, left side of parent -->
+              <p class="history__small-header">Starting Hand:</p>
+              {#each $player2.startingHand as card}
+                <div class="history__card-wrapper">
+                  <GGCard
+                  displayTitle={$cardDetails[card].displayTitle}
+                  title={$cardDetails[card].title}
+                  img={$cardDetails[card].image}
+                  trait={$cardDetails[card].trait}
+                  traitTitle={$cardDetails[card].traitTitle}
+                  description={$cardDetails[card].description}
+                  race={$cardDetails[card].race}
+                  rarity={$cardDetails[card].rarity}
+                  points={endGameXenoPointHandler(card, 'p2')}
+                  modifiedPoints={displayCardPoints($player2, card)}
+                  />
+                </div>
+              {/each}
+  
+              <p class="history__small-header">Cards drawn:</p>
+              {#each $player2.cardsDrawn as card}
               <div class="history__card-wrapper">
                 <GGCard
                 displayTitle={$cardDetails[card].displayTitle}
@@ -2066,26 +1931,47 @@
                 modifiedPoints={displayCardPoints($player2, card)}
                 />
               </div>
-            {/each}
-
-            <!-- Cards Discarded -->
-            <p class="history__small-header">Cards discarded:</p>
-            {#each $player2.discards as card}
-              <div class="history__card-wrapper">
-                <GGCard
-                displayTitle={$cardDetails[card].displayTitle}
-                title={$cardDetails[card].title}
-                img={$cardDetails[card].image}
-                trait={$cardDetails[card].trait}
-                traitTitle={$cardDetails[card].traitTitle}
-                description={$cardDetails[card].description}
-                race={$cardDetails[card].race}
-                rarity={$cardDetails[card].rarity}
-                points={endGameXenoPointHandler(card, 'p2')}
-                modifiedPoints={displayCardPoints($player2, card)}
-                />
-              </div>
-            {/each}
+              {/each}
+            </div>
+            <div class="history__cards-discarded">
+              <!-- Final hand, placed here so it's at the beginning, right side of parent -->
+              <p class="history__small-header">Final Hand:</p>
+              {#each $player2.hand as card}
+                <div class="history__card-wrapper">
+                  <GGCard
+                  displayTitle={$cardDetails[card].displayTitle}
+                  title={$cardDetails[card].title}
+                  img={$cardDetails[card].image}
+                  trait={$cardDetails[card].trait}
+                  traitTitle={$cardDetails[card].traitTitle}
+                  description={$cardDetails[card].description}
+                  race={$cardDetails[card].race}
+                  rarity={$cardDetails[card].rarity}
+                  points={endGameXenoPointHandler(card, 'p2')}
+                  modifiedPoints={displayCardPoints($player2, card)}
+                  />
+                </div>
+              {/each}
+  
+              <!-- Cards Discarded -->
+              <p class="history__small-header">Cards discarded:</p>
+              {#each $player2.discards as card}
+                <div class="history__card-wrapper">
+                  <GGCard
+                  displayTitle={$cardDetails[card].displayTitle}
+                  title={$cardDetails[card].title}
+                  img={$cardDetails[card].image}
+                  trait={$cardDetails[card].trait}
+                  traitTitle={$cardDetails[card].traitTitle}
+                  description={$cardDetails[card].description}
+                  race={$cardDetails[card].race}
+                  rarity={$cardDetails[card].rarity}
+                  points={endGameXenoPointHandler(card, 'p2')}
+                  modifiedPoints={displayCardPoints($player2, card)}
+                  />
+                </div>
+              {/each}
+            </div>
           </div>
         </div>
       </div>
@@ -2097,7 +1983,6 @@
         <Spinner />
       {/if}
 
-      <!-- svelte-ignore a11y-click-events-have-key-events -->
       <div class="game-board" class:game-event={gameState.showEventMessage} class:gobble-declared={gameState.gobbledegookDeclared}>
         {#if gameState.showEventMessage}
           <p class="game-event-message">{gameState.eventMessage}</p>
@@ -2158,7 +2043,7 @@
               description={$cardDetails[card].description}
               race={$cardDetails[card].race}
               rarity={determineRarity($player1, card)}
-              points={endGameXenoPointHandler(card, 'p2')}
+              points={endGameXenoPointHandler(card, 'p1')}
               modifiedPoints={displayCardPoints($player1, card)}
               buffed={determineIfPointColorGreen($player1, card)}
             />
@@ -2358,9 +2243,17 @@
     transform: translateX(-50%);
   }
 
+  .player-history-wrapper-container {
+    grid-column: span 3; // So I can use flex with gap to separate player sections
+    display: flex;
+    justify-content: space-evenly;
+  }
+
   .player-history-wrapper {
+    padding: 20px;
     border-radius: 8px;
     margin-top: 2rem;
+
     display: flex;
     justify-content: center;
     gap: 2rem;
@@ -2637,6 +2530,26 @@
 
   .color-yellow {
     color: #8e7419;
+  }
+
+  .color-yellow__bright {
+    color: #ffd400;
+  }
+  
+  .line-through {
+    text-decoration: line-through;
+  }
+  
+  .border-yellow {
+    border: 2px dashed #ffd400;
+  }
+  
+  .player-name-bordered-yellow {
+    color: #ffd400;
+    border: 1px dotted #ffd400;
+    border-radius: 4px;
+    text-align: center;
+    margin-bottom: 2px;
   }
 
   /* For smaller devices */

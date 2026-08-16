@@ -43,24 +43,25 @@
   <!-- svelte-ignore a11y-click-events-have-key-events -->
   <div on:click class="card facedown bottom-deck" in:fly={{x: 100}} out:fade></div>
 {:else}
-<!-- If card is legendary, shows special race colors, otherwise matches race color -->
-<!-- svelte-ignore a11y-click-events-have-key-events -->
-<div on:contextmenu|preventDefault on:click={cardClickHandler} class="card bg-{race}{rarity === 'legendary' ? '-rare' : ''}" in:fly={{x: 100}} out:fade>
-  <img class="card-img" src={img} alt="img of card">
-  <p class="race {race}-race">{capitalize(race)}</p>
-  <p class="points {race}-race">{points}</p>
-  {#if buffed}
-    <p class="points__modified {race}-race">{modifiedPoints}</p>
-  {/if}
-  <p class="card-title {race}-title">{displayTitle}</p>
-  <div class="card-bottom-section">
-    <div class="bottom-section-wrapper">
-      <p class="description">{description}</p>
-      {#if trait}<p class="special-trait">{traitTitle}</p>{/if}
-      <p>{trait}</p>
+  <!-- svelte-ignore a11y-click-events-have-key-events -->
+  <!-- svelte-ignore a11y-no-static-element-interactions -->
+  <!-- If card is legendary, shows special race colors, otherwise matches race color -->
+  <div on:contextmenu|preventDefault on:click={cardClickHandler} class="card bg-{race}{rarity === 'legendary' ? '-rare' : ''}" in:fly={{x: 100}} out:fade>
+    <img class="card-img" src={img} alt="img of card">
+    <p class="race {race}-race">{capitalize(race)}</p>
+    <p class="points {race}-race" class:line-through={buffed}>{points}</p>
+    {#if buffed}
+      <p class="points__modified {race}-race">{modifiedPoints}</p>
+    {/if}
+    <p class="card-title {race}-title">{displayTitle}</p>
+    <div class="card-bottom-section">
+      <div class="bottom-section-wrapper">
+        <p class="description">{description}</p>
+        {#if trait}<p class="special-trait">{traitTitle}</p>{/if}
+        <p>{trait}</p>
+      </div>
     </div>
   </div>
-</div>
 {/if}
 
 <style lang="scss">
@@ -230,6 +231,9 @@
   }
 
   /* Utility classes */
+  .line-through {
+    text-decoration: line-through;
+  }
   
   .flip-180 {
     transform: rotate(0.5turn);

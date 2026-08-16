@@ -29,6 +29,7 @@ export const player1 = writable<Player>({
   boosts: [],
   traps: [],
   neutrals: [],
+  neutralizedCards: [],
   chargeDrawnTurns: [],
   growthDrawnTurns: [],
   infectDrawnTurns: [],
@@ -70,6 +71,7 @@ export const player1Reset = writable<Player>({
   boosts: [],
   traps: [],
   neutrals: [],
+  neutralizedCards: [],
   chargeDrawnTurns: [],
   growthDrawnTurns: [],
   infectDrawnTurns: [],
@@ -111,6 +113,7 @@ export type Player = {
   boosts: string[]; // Log of all boosts in effect (other cards may clear this e.g. corruption).
   traps: string[]; // Log of all traps in effect (other cards may clear this e.g. chastity).
   neutrals: string[]; // Log of all neutrals in effect (other cards may clear this e.g. neutralize).
+  neutralizedCards: string[]; // Logs all neutralized cards since they disappear from other logs.
   chargeDrawnTurns: number[]; // Logs the exact turn each charge card was drawn.
   growthDrawnTurns: number[]; // Logs the exact turn each growth card was drawn.
   infectDrawnTurns: number[]; // Logs the exact turn each infect card was drawn.

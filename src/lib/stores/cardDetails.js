@@ -1,5 +1,11 @@
-// @ts-ignore
 import { writable } from 'svelte/store';
+
+// TODO: New race - Card that is always exposed.
+// TODO: New race - Card that exposes both players hand while in player's hand.
+// TODO: New race - Card that has 10 in deck, 0 points. If player holds 5 they get + 100 points.
+// TODO: Boost - Removes a race from the game (draw pile) Eradicate, 1 in deck.
+// TODO: Boost - Lets you pick next race card, 1 in deck .
+// TODO: Boost - Gives +50 points to all races if card is in hand and no race cards in hand. Cookie jar? :)
 
 const cardDetails = writable({
   // Humans

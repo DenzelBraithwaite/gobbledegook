@@ -4,33 +4,39 @@
 
 <h2>Race Points:</h2>
 <div class="race-points">
-  <div>
+  <div class="race-point-wrapper">
     <p class="race-point__blue bold ">H</p>
     <p class="race-point__blue">{player.points.humans}</p>
   </div>
-  <div>
+
+  <div class="race-point-wrapper">
     <p class="race-point__green bold">G</p>
     <p class="race-point__green">{player.points.goblins}</p>
   </div>
-  <div>
+
+  <div class="race-point-wrapper">
     <p class="race-point__maroon bold">D</p>
     <p class="race-point__maroon">{player.points.dwarves}</p>
   </div>
-  <div>
+
+  <div class="race-point-wrapper">
     <p class="race-point__silver bold">E</p>
     <p class="race-point__silver">{player.points.elves}</p>
   </div>
-  <div>
+
+  <div class="race-point-wrapper">
     <!-- Bots -->
     <p class="race-point__grey bold">B</p>
     <p class="race-point__grey">{player.points.bots}</p>
   </div>
-  <div>
+
+  <div class="race-point-wrapper">
     <!-- Beasts -->
     <p class="race-point__brown bold">B</p>
     <p class="race-point__brown">{player.points.beasts}</p>
   </div>
-  <div>
+
+  <div class="race-point-wrapper">
     <p class="race-point__yellow bold">X</p>
     <p class="race-point__yellow">{player.points.xenos}</p>
   </div>
@@ -40,6 +46,10 @@
   h2 {
     margin-top: 1rem;
     font-size: 1rem;
+  }
+
+  .race-point-wrapper {
+    flex: 1 1 auto;
   }
   
   .race-points {
