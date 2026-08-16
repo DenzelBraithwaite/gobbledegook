@@ -1,6 +1,4 @@
 <script lang="ts">
-  // @ts-nocheck - WAAAYYYYYY too many red squigglies TODO: remove if debugging
-
   // Hooks
   import { onMount } from 'svelte';
 
@@ -803,18 +801,18 @@
   }
 
   // Modifies card points depending on cards in player hand
-  function displayCardPoints(player: Player, card: string): number {
+  function displayCardPoints(player: Player, cardTitle: string): number {
     const triggerTwinEffect = player.hand.includes('nelladan') && player.hand.includes('nadallen');
-    if ((player.hand.includes('dreamDestroyer') || card === 'dog' || card === 'wolf') && getRaces(card).includes('beast')) return displayBeastPoints(player, card);
-    if ((player.hand.includes('ai') || player.hand.includes('protectron')) && getRaces(card).includes('bot')) return displayBotPoints(player, card);
-    if (triggerTwinEffect || (player.hand.includes('elfKing') && getRaces(card).includes('elf'))) return displayElfPoints(player, card);
-    if ((player.hand.includes('emperor') || player.hand.includes('commander')) && getRaces(card).includes('human')) return displayHumanPoints(player, card);
+    if ((player.hand.includes('dreamDestroyer') || cardTitle === 'dog' || cardTitle === 'wolf') && getRaces(cardTitle).includes('beast')) return displayBeastPoints(player, cardTitle);
+    if ((player.hand.includes('ai') || player.hand.includes('protectron')) && getRaces(cardTitle).includes('bot')) return displayBotPoints(player, cardTitle);
+    if (triggerTwinEffect || (player.hand.includes('elfKing') && getRaces(cardTitle).includes('elf'))) return displayElfPoints(player, cardTitle);
+    if ((player.hand.includes('emperor') || player.hand.includes('commander')) && getRaces(cardTitle).includes('human')) return displayHumanPoints(player, cardTitle);
     
     // If this is being called on player 1/2's hand and the card is a voidrunner/warp and I'm player 2/1 return appropriate points.
     const xenoCards = ['voidRunner', 'warpstalker', 'nebulite'];
-    if (player.hand.some(c => xenoCards.includes(c)) && getRaces(card).includes('xeno')) return determineXenoPoints(player, card);
+    if (player.hand.some(c => xenoCards.includes(c)) && getRaces(cardTitle).includes('xeno')) return determineXenoPoints(player, cardTitle);
 
-    return $cardDetails[card].points;
+    return $cardDetails[cardTitle].points;
   }
 
   // --------------------- HUMAN CALCULATIONS ----------------------- \\
@@ -876,12 +874,12 @@
     player.points.humans += numOfHumanCards * numOfCommanders;
   }
 
-  function displayHumanPoints(player: Player, card: string): number {
+  function displayHumanPoints(player: Player, cardTitle: string): number {
     const hasEmperor = player.hand.includes('emperor');
     const numOfCommanders = player.hand.filter(card => card === 'commander').length;
 
-    if (hasEmperor) return ($cardDetails[card].points + numOfCommanders) * 2;
-    if (!hasEmperor) return ($cardDetails[card].points + numOfCommanders);
+    if (hasEmperor) return ($cardDetails[cardTitle].points + numOfCommanders) * 2;
+    if (!hasEmperor) return ($cardDetails[cardTitle].points + numOfCommanders);
   }
 
   // --------------------- GOBLIN CALCULATIONS ----------------------- \\
@@ -1029,7 +1027,7 @@
   }
 
   // Only called if twins OR elf king + full elf hand (including faeBot)
-  function displayElfPoints(player: Player, card: string): number {
+  function displayElfPoints(player: Player, cardTitle: string): number {
     const hasElfKing = player.hand.includes('elfKing');
     const numOfNelladans = player.hand.filter(card => card === 'nelladan').length;
     const numOfNadallens = player.hand.filter(card => card === 'nadallen').length;
@@ -1038,21 +1036,21 @@
 
     // Elf king, full hand and twins
     if ((hasElfKing && fullElfHand && triggerTwinEffect)) {
-      if (card === 'nadallen') return ($cardDetails[card].points + (numOfNelladans * 5) * 3);
-      if (card === 'nelladan') return (($cardDetails[card].points + 5) * 3);
+      if (cardTitle === 'nadallen') return ($cardDetails[cardTitle].points + (numOfNelladans * 5) * 3);
+      if (cardTitle === 'nelladan') return (($cardDetails[cardTitle].points + 5) * 3);
       
       // Elf king and full hand
     } else if (hasElfKing && fullElfHand) {
-      return $cardDetails[card].points * 3;
+      return $cardDetails[cardTitle].points * 3;
       
       // Twins
     } else if (triggerTwinEffect) {
-      if (card === 'nadallen') return ($cardDetails[card].points + (numOfNelladans * 5));
-      if (card === 'nelladan') return ($cardDetails[card].points + 5);
+      if (cardTitle === 'nadallen') return ($cardDetails[cardTitle].points + (numOfNelladans * 5));
+      if (cardTitle === 'nelladan') return ($cardDetails[cardTitle].points + 5);
     }
 
     // Default
-    return getRaces(card).includes('elf') ? $cardDetails[card].points * 2 : $cardDetails[card].points;
+    return getRaces(cardTitle).includes('elf') ? $cardDetails[cardTitle].points * 2 : $cardDetails[cardTitle].points;
   }
 
   // --------------------- DWARF CALCULATIONS ----------------------- \\
@@ -1196,19 +1194,19 @@
     player.points.beasts += numOfWolves * (numOfWolves * 2) + (numOfWereWolves * 2);
   }
 
-  function displayBeastPoints(player: Player, card: string): number {
-    const hasHumans = player.hand.some(c => getRaces(card).includes('human'));
+  function displayBeastPoints(player: Player, cardTitle: string): number {
+    const hasHumans = player.hand.some(c => getRaces(cardTitle).includes('human'));
     const hasDreamDestroyer = player.hand.includes('dreamDestroyer');
 
-    if (card === 'wolf') {
+    if (cardTitle === 'wolf') {
       const numOfWolves = player.hand.filter(card => card === 'wolf').length;
       const numOfWerewolves = player.hand.filter(card => card === 'lupin').length;
-      return $cardDetails[card].points + (numOfWolves * 2) + (numOfWerewolves * 2);
+      return $cardDetails[cardTitle].points + (numOfWolves * 2) + (numOfWerewolves * 2);
     }
-    if (card === 'dog' && hasHumans && hasDreamDestroyer) return 22;
-    if (card === 'dog' && hasHumans) return 14;
+    if (cardTitle === 'dog' && hasHumans && hasDreamDestroyer) return 22;
+    if (cardTitle === 'dog' && hasHumans) return 14;
     if (hasDreamDestroyer) return 12;
-    return $cardDetails[card].points;
+    return $cardDetails[cardTitle].points;
   }
 
   // --------------------- BOT CALCULATIONS ----------------------- \\
@@ -1302,18 +1300,18 @@
   }
 
   // FIXME: virus can end up -4? visually.
-  function displayBotPoints(player: Player, card: string): number {
+  function displayBotPoints(player: Player, cardTitle: string): number {
     let numOfProtectrons = player.hand.filter(card => card === 'protectron').length;
     let numOfViruses = player.hand.filter(card => card === 'virus').length;
 
-    if (player.hand.includes('ai') && player.hand.includes('protectron') && card === 'virus') return (numOfProtectrons * 8);
-    if (player.hand.includes('protectron') && card === 'virus') return (numOfProtectrons * 8) - 2; // $cardDetails[card].points -s a negative num here
-    if (player.hand.includes('ai') && card === 'virus') return $cardDetails[card].points + 2;
-    if (player.hand.includes('ai') && card === 'protectron') return $cardDetails[card].points + numOfViruses + 2;
-    if (card === 'protectron') return $cardDetails[card].points + numOfViruses;
-    if (player.hand.includes('ai')) return $cardDetails[card].points + 2;
+    if (player.hand.includes('ai') && player.hand.includes('protectron') && cardTitle === 'virus') return (numOfProtectrons * 8);
+    if (player.hand.includes('protectron') && cardTitle === 'virus') return (numOfProtectrons * 8) - 2; // $cardDetails[card].points -s a negative num here
+    if (player.hand.includes('ai') && cardTitle === 'virus') return $cardDetails[cardTitle].points + 2;
+    if (player.hand.includes('ai') && cardTitle === 'protectron') return $cardDetails[cardTitle].points + numOfViruses + 2;
+    if (cardTitle === 'protectron') return $cardDetails[cardTitle].points + numOfViruses;
+    if (player.hand.includes('ai')) return $cardDetails[cardTitle].points + 2;
 
-    return $cardDetails[card].points;
+    return $cardDetails[cardTitle].points;
   }
 
   // --------------------- XENO CALCULATIONS ----------------------- \\
@@ -1365,33 +1363,33 @@
     player.points.xenos += ((numOfXenoBlooms * 15) + (numOfXenoBlossoms * 5));
   }
 
-  function determineXenoPoints(player: Player, card: string): number {
+  function determineXenoPoints(player: Player, cardTitle: string): number {
     const specialXenoCards = ['voidRunner', 'warpstalker'];
     const numOfNebulites = player.hand.filter(card => card === 'nebulite').length;
 
-    if (player.id === $player1.id && (numOfNebulites > 0 && card !== 'nebulite')) {
-      return (specialXenoCards.includes(card) && gameState.playingAs === 'p2') ? remoteCardDetails[card].points + 4 : $cardDetails[card].points + 4;
+    if (player.id === $player1.id && (numOfNebulites > 0 && cardTitle !== 'nebulite')) {
+      return (specialXenoCards.includes(cardTitle) && gameState.playingAs === 'p2') ? remoteCardDetails[cardTitle].points + 4 : $cardDetails[cardTitle].points + 4;
     } else if (player.id === $player1.id) {
-      return (specialXenoCards.includes(card) && gameState.playingAs === 'p2') ? remoteCardDetails[card].points : $cardDetails[card].points;
-    } else if (player.id === $player2.id && (numOfNebulites > 0 && card !== 'nebulite')) {
-      return (specialXenoCards.includes(card) && gameState.playingAs === 'p1') ? remoteCardDetails[card].points + 4 : $cardDetails[card].points + 4;
+      return (specialXenoCards.includes(cardTitle) && gameState.playingAs === 'p2') ? remoteCardDetails[cardTitle].points : $cardDetails[cardTitle].points;
+    } else if (player.id === $player2.id && (numOfNebulites > 0 && cardTitle !== 'nebulite')) {
+      return (specialXenoCards.includes(cardTitle) && gameState.playingAs === 'p1') ? remoteCardDetails[cardTitle].points + 4 : $cardDetails[cardTitle].points + 4;
     } else if (player.id === $player2.id) {
-      return (specialXenoCards.includes(card) && gameState.playingAs === 'p1') ? remoteCardDetails[card].points : $cardDetails[card].points;
+      return (specialXenoCards.includes(cardTitle) && gameState.playingAs === 'p1') ? remoteCardDetails[cardTitle].points : $cardDetails[cardTitle].points;
     } else {
       return 0; // SHould not run, just to appease the ts gods
     }
   }
 
   // Calculates special xeno card points
-  function calculateSpecialXenoCard(player: Player, card: string) {
+  function calculateSpecialXenoCard(player: Player, cardTitle: string) {
     // If card drawn is warpstalker, generate point value for card between 7-13 inclusive.
-    if (card === 'warpstalker') $cardDetails[card].points = Math.ceil(Math.random() * 7) + 6;
+    if (cardTitle === 'warpstalker') $cardDetails[cardTitle].points = Math.ceil(Math.random() * 7) + 6;
 
     // If card drawn is voidRunner, set points equal to amount of turns passed
-    if (card === 'voidRunner') $cardDetails[card].points = gameState.turnCount;
+    if (cardTitle === 'voidRunner') $cardDetails[cardTitle].points = gameState.turnCount;
 
     // Nebulites buff xenos by 4 points
-    if (card === 'nebulite') {
+    if (cardTitle === 'nebulite') {
       player.hand.forEach(card => {
         if (getRaces(card).includes('xeno') && card !== 'nebulite') player.points.xenos += 4;
       });
@@ -1459,12 +1457,12 @@
   // -------------- BOOST/TRAP/NEUTRAL CALCULATIONS ---------------- \\
 
   // Adds boost card to players boosts array
-  function addBoostCard(player: Player, card: string) {
-    player.boosts = [...player.boosts, card];
+  function addBoostCard(player: Player, cardTitle: string) {
+    player.boosts = [...player.boosts, cardTitle];
     
-    if (card === 'chastity') player.hasChastity = true;
-    if (card === 'charge') player.chargeDrawnTurns.push(gameState.turnCount);
-    if (card === 'growth') player.growthDrawnTurns.push(gameState.turnCount);
+    if (cardTitle === 'chastity') player.hasChastity = true;
+    if (cardTitle === 'charge') player.chargeDrawnTurns.push(gameState.turnCount);
+    if (cardTitle === 'growth') player.growthDrawnTurns.push(gameState.turnCount);
   }
 
   // FIXME: doesn't always show in the numbers? switcharoo fixed says elisa?
@@ -1640,13 +1638,13 @@
   }
 
   // Conditionally displays card points as green if they are buffed.
-  function determineIfPointColorGreen(player: Player, card: string): boolean {
+  function determineIfPointColorGreen(player: Player, cardTitle: string): boolean {
     const specialXenoCards = ['voidRunner', 'warpstalker'];
-    const pointValue = displayCardPoints(player, card);
+    const pointValue = displayCardPoints(player, cardTitle);
     const isPeakingAtOtherHand = ((gameState.playingAs === 'p1' && player.id === $player2.id) || gameState.playingAs === 'p2' && player.id === $player1.id);
 
-    if (isPeakingAtOtherHand && specialXenoCards.includes(card)) return (pointValue > remoteCardDetails[card].points);
-    return (pointValue > $cardDetails[card].points);
+    if (isPeakingAtOtherHand && specialXenoCards.includes(cardTitle)) return (pointValue > remoteCardDetails[cardTitle].points);
+    return (pointValue > $cardDetails[cardTitle].points);
   }
 
   function updateUsernameForOtherClient(): void {
@@ -1817,8 +1815,8 @@
   }
 
   // Returns all races associated with a card
-  function getRaces(card: string): string[] {
-    return [$cardDetails[card].race, ...$cardDetails[card].otherRaces];
+  function getRaces(cardTitle: string): string[] {
+    return [$cardDetails[cardTitle].race, ...$cardDetails[cardTitle].otherRaces];
   }
 </script>
 
@@ -2530,19 +2528,6 @@
 
   }
 
-  .turn-text {
-    z-index: 1;
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    font-size: 1.75rem;
-    color: #af4819;
-
-    span {
-      color: #CAB097;
-    }
-  }
-
   .turn-count {
     font-size: 1.25rem;
     font-weight: bold;
@@ -2618,14 +2603,6 @@
     margin-bottom: 1rem;
   }
 
-  .hide {
-    display: none;
-  }
-
-  .bold {
-    font-weight: bold;
-  }
-
   .color-red {
     color: #d32929;
   }
@@ -2660,10 +2637,6 @@
 
   .color-yellow {
     color: #8e7419;
-  }
-
-  .text-12px {
-    font-size: 0.75rem;
   }
 
   /* For smaller devices */
@@ -2713,10 +2686,6 @@
     
     .card-section__enemy {
       border-radius: 0 0 0.75rem 0.75rem;
-    }
-
-    .turn-text {
-      font-size: 1rem;
     }
 
     .turn-count {
@@ -2789,10 +2758,6 @@
     .card-section {
       padding: 0.25rem 0;
       gap: 0.5rem;
-    }
-
-    .turn-text {
-      font-size: 0.75rem;
     }
 
     .turn-count {
