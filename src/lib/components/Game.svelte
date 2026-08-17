@@ -504,6 +504,11 @@
     // Who's playing?
     const player = gameState.playingAs === 'p1' ? $player1 : $player2;
 
+    // So player doesn't get free hand of beasts as giraffe grows.
+    if (player.hand.includes('eggGiraffe')) card = 'eggGiraffe';
+    if (player.hand.includes('kidGiraffe')) card = 'kidGiraffe';
+    if (player.hand.includes('adultGiraffe')) card = 'adultGiraffe';
+
     // Using store update methods instead of player var ^
     if ($player1.turn) {
       const index = $player1.hand.indexOf(card);

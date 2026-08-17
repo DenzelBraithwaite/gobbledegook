@@ -710,46 +710,7 @@ const cardDetails = writable({
     otherRaces: [],
     image: '/beasts/night_terror.png'
   },
-  eggGiraffe: {
-    title: 'eggGiraffe',
-    displayTitle: '🦒Egg🦒',
-    points: 0,
-    amount: 1,
-    rarity: 'amazing',
-    traitTitle: 'Hatch',
-    trait: "Grows into a more powerful card.",
-    description: 'This egg is destined for greatness.',
-    race: 'beast',
-    otherRaces: [],
-    image: '/beasts/egg_giraffe.png'
-  },
-    kidGiraffe: {
-    title: 'kidGiraffe',
-    displayTitle: 'Calfy',
-    points: 1,
-    amount: 1,
-    rarity: 'amazing',
-    traitTitle: 'Grow',
-    trait: "Grows into a more powerful card.",
-    description: 'This calf is destined for greatness.',
-    race: 'beast',
-    otherRaces: [],
-    image: '/beasts/kid_giraffe.png'
-  },
-    adultGiraffe: {
-    title: 'adultGiraffe',
-    displayTitle: 'Giraffey',
-    points: 2,
-    amount: 1,
-    rarity: 'amazing',
-    traitTitle: 'Age',
-    trait: "Grows into a more powerful card.",
-    description: '',
-    race: 'beast',
-    otherRaces: [],
-    image: '/beasts/adult_giraffe.png'
-  },
-    elderGiraffe: {
+  elderGiraffe: {
     title: 'elderGiraffe',
     displayTitle: 'Granffey',
     points: 3,
@@ -761,6 +722,45 @@ const cardDetails = writable({
     race: 'beast',
     otherRaces: [],
     image: '/beasts/elder_giraffe.png'
+  },
+  adultGiraffe: {
+    title: 'adultGiraffe',
+    displayTitle: 'Giraffey',
+    points: 2,
+    amount: 1,
+    rarity: 'amazing',
+    traitTitle: 'Age',
+    trait: "Grows into a more powerful card. Blocks card draw and discards until grown.",
+    description: '',
+    race: 'beast',
+    otherRaces: [],
+    image: '/beasts/adult_giraffe.png'
+  },
+  kidGiraffe: {
+    title: 'kidGiraffe',
+    displayTitle: 'Calfy',
+    points: 1,
+    amount: 1,
+    rarity: 'amazing',
+    traitTitle: 'Grow',
+    trait: "Grows into a more powerful card. Blocks card draw and discards until grown.",
+    description: 'This calf is destined for greatness.',
+    race: 'beast',
+    otherRaces: [],
+    image: '/beasts/kid_giraffe.png'
+  },
+  eggGiraffe: {
+    title: 'eggGiraffe',
+    displayTitle: '🦒Egg🦒',
+    points: 0,
+    amount: 1,
+    rarity: 'amazing',
+    traitTitle: 'Hatch',
+    trait: "Grows into a more powerful card. Blocks card draw and discards until grown.",
+    description: 'This egg is destined for greatness.',
+    race: 'beast',
+    otherRaces: [],
+    image: '/beasts/egg_giraffe.png'
   },
 
   // Xenos (Alien hive colony)
