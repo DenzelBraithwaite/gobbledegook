@@ -16,6 +16,7 @@
   const botCards = Object.entries($cardDetails).filter(([card, details]) => details.race === 'bot');
   const beastCards = Object.entries($cardDetails).filter(([card, details]) => details.race === 'beast');
   const xenoCards = Object.entries($cardDetails).filter(([card, details]) => details.race === 'xeno');
+  const spiritCards = Object.entries($cardDetails).filter(([card, details]) => details.race === 'spirit');
   const boostCards = Object.entries($cardDetails).filter(([card, details]) => details.race === 'boost');
   const trapCards = Object.entries($cardDetails).filter(([card, details]) => details.race === 'trap');
   const neutralCards = Object.entries($cardDetails).filter(([card, details]) => details.race === 'neutral');
@@ -152,6 +153,27 @@
   <div class="deck-section xeno-section" id="xeno-section">
     <h2 class="section-title">Xenos</h2>
     {#each xenoCards as keyValuePair}
+      <div class="card-wrapper">
+        <!-- Card art -->
+        <LibraryCard
+          displayTitle={keyValuePair[1].displayTitle}
+          title={keyValuePair[1].title}
+          img={keyValuePair[1].image}
+          description={keyValuePair[1].description}
+          trait={keyValuePair[1].trait}
+          traitTitle={keyValuePair[1].traitTitle}
+          race={keyValuePair[1].race}
+          rarity={keyValuePair[1].rarity}
+          points={keyValuePair[1].points}
+        />
+      </div>
+    {/each}
+  </div>
+
+  <!-- Spirits -->
+  <div class="deck-section spirit-section" id="spirit-section">
+    <h2 class="section-title">Spirits</h2>
+    {#each spiritCards as keyValuePair}
       <div class="card-wrapper">
         <!-- Card art -->
         <LibraryCard
@@ -337,6 +359,10 @@
     background: linear-gradient(to top left, #776832b4, #c2a84cb4, #776832b4);
   }
 
+  .spirit-section {
+    background: linear-gradient(to top left, #b63bacb4, #b390b7b4, #b63bacb4);
+  }
+
   .boost-section {
     background: linear-gradient(to top left, #90beffb4, #8bc8d1b4, #90beffb4);
   }
@@ -350,7 +376,7 @@
   }
 
   .bg-rainbow {
-    background: linear-gradient(to bottom, #324277b4, #327738b4, #ddceeeb4, #c07369b4, #7e7e7eb4, #855a2ab4, #c2a84c99);
+    background: linear-gradient(to bottom, #324277b4, #327738b4, #ddceeeb4, #c07369b4, #7e7e7eb4, #855a2ab4, #c2a84c99, #b63bac99);
   }
 
   /* Breakpoints */

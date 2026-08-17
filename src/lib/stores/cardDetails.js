@@ -1,11 +1,11 @@
 import { writable } from 'svelte/store';
 
-// TODO: New race - Card that is always exposed.
-// TODO: New race - Card that exposes both players hand while in player's hand.
-// TODO: New race - Card that has 10 in deck, 0 points. If player holds 5 they get + 100 points.
-// TODO: Boost - Removes a race from the game (draw pile) Eradicate, 1 in deck.
-// TODO: Boost - Lets you pick next race card, 1 in deck.
+// TODO: Boost Eradicate - Removes a race from the game (draw pile) Eradicate, 1 in deck.
+// TODO: Boost Gaze - Lets you pick next race card, 1 in deck.
 // TODO: Boost - Gives +50 points to all races if card is in hand and no race cards in hand. Cookie jar? :)
+// TODO: Boost Chest - 
+// TODO: Trap Mimic - 
+// TODO: Neutral Magni - Card that exposes both players hand while in player's hand.
 
 const cardDetails = writable({
   // Humans
@@ -610,7 +610,7 @@ const cardDetails = writable({
     displayTitle: 'Rhinestone',
     points: 10,
     amount: 2,
-    rarity: 'amazing',
+    rarity: 'epic',
     traitTitle: 'Thick skin',
     trait: 'If this card is in the player\'s hand at the end of the game, they will block all trap cards.',
     description: 'A feared beast at the top of the food chain.',
@@ -618,12 +618,38 @@ const cardDetails = writable({
     otherRaces: [],
     image: '/beasts/rhino.png'
   },
+  wolf: {
+    title: 'wolf',
+    displayTitle: 'Alpha Wolfbane',
+    points: 6,
+    amount: 4,
+    rarity: 'amazing',
+    traitTitle: 'Wolf pack',
+    trait: 'Receive +2 points for every wolf in your hand, including this one and werewolves.',
+    description: 'A lone wolf with the strength of a pack.',
+    race: 'beast',
+    otherRaces: [],
+    image: '/beasts/wolf.png'
+  },
+    dog: {
+    title: 'dog',
+    displayTitle: 'Pawl Barkington',
+    points: 4,
+    amount: 2,
+    rarity: 'amazing',
+    traitTitle: "Man's best friend",
+    trait: 'If ally hand contains humans (or hobbit), pawl receives + 10 points at the end of the game.',
+    description: 'More bark than bite, recognized as the weakest beast since he obeys humans.',
+    race: 'beast',
+    otherRaces: [],
+    image: '/beasts/dog.png'
+  },
   bear: {
     title: 'bear',
     displayTitle: 'Theo Thunderpaw',
     points: 9,
     amount: 2,
-    rarity: 'amazing',
+    rarity: 'rare',
     traitTitle: '',
     trait: '',
     description: 'A powerful top level beast, matched by few.',
@@ -636,7 +662,7 @@ const cardDetails = writable({
     displayTitle: 'Goldenmane',
     points: 8,
     amount: 3,
-    rarity: 'rare',
+    rarity: 'uncommon',
     traitTitle: '',
     trait: '',
     description: 'The original kings of the jungle.',
@@ -649,7 +675,7 @@ const cardDetails = writable({
     displayTitle: 'Panth Nocturna',
     points: 7,
     amount: 2,
-    rarity: 'rare',
+    rarity: 'common',
     traitTitle: '',
     trait: '',
     description: "A quick and efficient beast, known to stalk it's prey before pouncing.",
@@ -657,44 +683,18 @@ const cardDetails = writable({
     otherRaces: [],
     image: '/beasts/panther.png'
   },
-  wolf: {
-    title: 'wolf',
-    displayTitle: 'Alpha Wolfbane',
-    points: 6,
-    amount: 4,
-    rarity: 'rare',
-    traitTitle: 'Wolf pack',
-    trait: 'Receive +2 points for every wolf in your hand, including this one and werewolves.',
-    description: 'A lone wolf with the strength of a pack.',
-    race: 'beast',
-    otherRaces: [],
-    image: '/beasts/wolf.png'
-  },
   fox: {
     title: 'fox',
     displayTitle: 'Finn Foxglove',
     points: 5,
     amount: 2,
-    rarity: 'uncommon',
+    rarity: 'common',
     traitTitle: '',
     trait: '',
     description: 'A fox on steroids.',
     race: 'beast',
     otherRaces: [],
     image: '/beasts/fox.png'
-  },
-  dog: {
-    title: 'dog',
-    displayTitle: 'Pawl Barkington',
-    points: 4,
-    amount: 2,
-    rarity: 'uncommon',
-    traitTitle: "Man's best friend",
-    trait: 'If ally hand contains humans (or hobbit), pawl receives + 10 points at the end of the game.',
-    description: 'More bark than bite, recognized as the weakest beast since he obeys humans.',
-    race: 'beast',
-    otherRaces: [],
-    image: '/beasts/dog.png'
   },
   // Giraffes
   nightTerror: {
@@ -715,10 +715,10 @@ const cardDetails = writable({
     displayTitle: 'Granffey',
     points: 3,
     amount: 1,
-    rarity: 'amazing',
+    rarity: 'epic',
     traitTitle: 'Unicorn Pact🦄',
     trait: "Summons a very powerful ally.",
-    description: '',
+    description: 'This defender giraffe has gained the respect and trust of the royal family. Other beasts treat him as an extension of royalty.',
     race: 'beast',
     otherRaces: [],
     image: '/beasts/elder_giraffe.png'
@@ -731,7 +731,7 @@ const cardDetails = writable({
     rarity: 'amazing',
     traitTitle: 'Age',
     trait: "Grows into a more powerful card. Blocks card draw and discards until grown.",
-    description: '',
+    description: 'This giraffe is a loyal personal guard of the royal family.',
     race: 'beast',
     otherRaces: [],
     image: '/beasts/adult_giraffe.png'
@@ -741,7 +741,7 @@ const cardDetails = writable({
     displayTitle: 'Calfy',
     points: 1,
     amount: 1,
-    rarity: 'amazing',
+    rarity: 'rare',
     traitTitle: 'Grow',
     trait: "Grows into a more powerful card. Blocks card draw and discards until grown.",
     description: 'This calf is destined for greatness.',
@@ -754,7 +754,7 @@ const cardDetails = writable({
     displayTitle: '🦒Egg🦒',
     points: 0,
     amount: 1,
-    rarity: 'amazing',
+    rarity: 'uncommon',
     traitTitle: 'Hatch',
     trait: "Grows into a more powerful card. Blocks card draw and discards until grown.",
     description: 'This egg is destined for greatness.',
@@ -782,7 +782,7 @@ const cardDetails = writable({
     displayTitle: 'Abyssolarian',
     points: 10,
     amount: 3,
-    rarity: 'epic',
+    rarity: 'amazing',
     traitTitle: '',
     trait: '',
     description: 'A feral xeno born in the darkest depths of Xenopp. Produces light to lure prey.',
@@ -793,9 +793,9 @@ const cardDetails = writable({
   warpstalker: {
     title: 'warpstalker',
     displayTitle: 'Warpstalker',
-    points: 0, // random between 7-13
+    points: 0, // random between 10-20
     amount: 3,
-    rarity: 'epic',
+    rarity: 'amazing',
     traitTitle: 'Hive Resonance',
     trait: 'When drawn, a random point value (7-13 inclusive) will be chosen, then applied to ALL ally warpstalkers.',
     description: 'A xeno capable of riftwalking, similar to teleporting over short distances. Sometimes riftwalks to the wrong place.',
@@ -808,7 +808,7 @@ const cardDetails = writable({
     displayTitle: 'Void Runner',
     points: 0, // increases by 1 per turn passed
     amount: 3,
-    rarity: 'epic',
+    rarity: 'amazing',
     traitTitle: 'Hive Unity',
     trait: "When drawn, ALL ally void Runners' points are set to the number of turns passed.",
     description: "A non sentient xeno who's only purpose is to run and grow stronger. If it ever stops it will die.",
@@ -821,7 +821,7 @@ const cardDetails = writable({
     displayTitle: 'Nebulite',
     points: 0,
     amount: 3,
-    rarity: 'epic',
+    rarity: 'amazing',
     traitTitle: 'Hive Blossom',
     trait: 'Buffs all xenos by +4, does not apply to self and does not stack with other Nebulites.',
     description: 'Artificially created xenos incapable of speech.',
@@ -832,15 +832,160 @@ const cardDetails = writable({
   celenial: {
     title: 'celenial',
     displayTitle: 'Celenial',
-    points: 5,
+    points: 7,
     amount: 3,
-    rarity: 'amazing',
+    rarity: 'common',
     traitTitle: '',
     trait: '',
     description: 'The lowest of the xenos, often mistreated. Excluding the nebulites, celenials are the weakest of the xenos, often used as bait for the abyssolarians.',
     race: 'xeno',
     otherRaces: [],
     image: '/xenos/xeno_placeholder.png'
+  },
+
+  // Spirits
+  spiritKing: {
+    title: 'spiritKing',
+    displayTitle: 'Spirit King',
+    points: 25,
+    amount: 1,
+    rarity: 'legendary',
+    traitTitle: 'Seance',
+    trait: 'Reveals both player\'s hands while this is in your hand.', // TODO: Both hands exposed
+    description: 'A powerful ancient spirit who represents life and death.',
+    race: 'spirit',
+    otherRaces: [],
+    image: '/spirits/spirit_king.png'
+  },
+  lightSpirit: {
+    title: 'lightSpirit',
+    displayTitle: 'Brite',
+    points: 20,
+    amount: 1,
+    rarity: 'epic',
+    traitTitle: 'Reveal',
+    trait: 'This card is always exposd to the other player.',  // TODO: Always exposed.
+    description: 'A spirit born from all things pure.',
+    race: 'spirit',
+    otherRaces: [],
+    image: '/spirits/light_spirit.png'
+  },
+  darkSpirit: {
+    title: 'darkSpirit',
+    displayTitle: 'Darqnos',
+    points: 15,
+    amount: 1,
+    rarity: 'epic',
+    traitTitle: 'Enshrouded',
+    trait: 'Prevents any of your cards from being exposed in any way (protects Brite and Spirit king).',
+    description: 'A spirit born from all things impure.', // TODO: prevents exposed/vision/light_spirit/spirit king
+    race: 'spirit',
+    otherRaces: [],
+    image: '/spirits/dark_spirit.png'
+  },
+  earthSpirit: {
+    title: 'earthSpirit',
+    displayTitle: 'Pangee',
+    points: 10,
+    amount: 1,
+    rarity: 'rare',
+    traitTitle: '',
+    trait: '',
+    description: 'The spiritual embodiment of nature.',
+    race: 'spirit',
+    otherRaces: [],
+    image: '/spirits/earth_spirit.png'
+  },
+  waterSpirit: {
+    title: 'waterSpirit',
+    displayTitle: 'Aqueous',
+    points: 10,
+    amount: 1,
+    rarity: 'rare',
+    traitTitle: '',
+    trait: '',
+    description: 'The spiritual embodiment of the ocean and rain.',
+    race: 'spirit',
+    otherRaces: [],
+    image: '/spirits/water_spirit.png'
+  },
+  iceSpirit: {
+    title: 'iceSpirit',
+    displayTitle: 'Glacos',
+    points: 10,
+    amount: 1,
+    rarity: 'rare',
+    traitTitle: '',
+    trait: '',
+    description: 'The spiritual embodiment of all things lacking energy.',
+    race: 'spirit',
+    otherRaces: [],
+    image: '/spirits/ice_spirit.png'
+  },
+  fireSpirit: {
+    title: 'fireSpirit',
+    displayTitle: 'Ifrit',
+    points: 10,
+    amount: 1,
+    rarity: 'rare',
+    traitTitle: '',
+    trait: '',
+    description: 'The spiritual embodiment of fire and life.',
+    race: 'spirit',
+    otherRaces: [],
+    image: '/spirits/fire_spirit.png'
+  },
+  lightningSpirit: {
+    title: 'lightningSpirit',
+    displayTitle: 'Lighthor',
+    points: 10,
+    amount: 1,
+    rarity: 'rare',
+    traitTitle: '',
+    trait: '',
+    description: 'The spiritual embodiment of energy and electricity.',
+    race: 'spirit',
+    otherRaces: [],
+    image: '/spirits/lightning_spirit.png'
+  },
+  windSpirit: {
+    title: 'windSpirit',
+    displayTitle: 'Tailwos',
+    points: 10,
+    amount: 1,
+    rarity: 'rare',
+    traitTitle: '',
+    trait: '',
+    description: 'The spiritual embodiment of wind and the weather.',
+    race: 'spirit',
+    otherRaces: [],
+    image: '/spirits/wind_spirit.png'
+  },
+    blueSpirit: {
+    title: 'blueSpirit',
+    displayTitle: 'Bluejinn',
+    points: 0,
+    amount: 10,
+    rarity: 'uncommon',
+    traitTitle: 'Blue Cluster',
+    trait: 'If player holds 5 Bluejinns, they receive +200 spirit points (must be in hand, cannot discard).',
+    description: 'A small blue spirit, thousands are manifested from woeful energy every day.',
+    race: 'spirit',
+    otherRaces: [],
+    image: '/spirits/blue_spirit.png'
+  },
+  redSpirit: {
+    title: 'redSpirit',
+    displayTitle: 'Redjinn',
+    points: 0,
+    amount: 15,
+    rarity: 'common',
+    traitTitle: 'Red Cluster',
+    trait: 'If player holds 5 Redjinns, they receive +100 spirit points (must be in hand, cannot discard).',
+    description: 'A small red spirit, millions are manifested from hostile energy every day.',
+    race: 'spirit',
+    otherRaces: [],
+    image: '/spirits/red_spirit.png'
   },
 
   // Boosts Cards:
@@ -970,7 +1115,7 @@ const cardDetails = writable({
     amount: 2,
     rarity: '',
     traitTitle: 'Infection',
-    trait: 'Does not affect bots. If drawn, at the end of the game, lose points equal to (amount of turns - turns passed since drawn * infect cards) even if discarded.',
+    trait: 'Does not affect bots or spirits. If drawn, at the end of the game, lose points equal to (amount of turns - turns passed since drawn * infect cards) even if discarded.',
     description: 'A contagious metastasizing virus that targets living hosts.',
     race: 'trap',
     otherRaces: [],

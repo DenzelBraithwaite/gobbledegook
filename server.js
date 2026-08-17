@@ -92,6 +92,12 @@ io.on('connection', socket => {
   // Neutralize deck
   socket.on('neutralize-deck', () => io.emit('deck-neutralized'));
 
+  // Reveal both player hands
+  socket.on('reveal-players', () => io.emit('players-revealed'));
+
+  // Conceal both player hands
+  socket.on('conceal-players', () => io.emit('players-concealed'));
+
   // Increase turn count
   socket.on('increase-turn-count', () => io.emit('turn-count-increased'));
 

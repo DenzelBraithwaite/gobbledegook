@@ -4,13 +4,14 @@ export const player1 = writable<Player>({
   id: undefined,
   title: 'Player 1',
   points: {
-    beasts: 0,
-    bots: 0,
-    dwarves: 0,
-    elves: 0,
     humans: 0,
     goblins: 0,
+    elves: 0,
+    dwarves: 0,
+    beasts: 0,
+    bots: 0,
     xenos: 0,
+    spirits: 0
   },
   highestPoints: 0,
   wins: 0,
@@ -47,13 +48,14 @@ export const player1Reset = writable<Player>({
   id: undefined,
   title: 'Player 1',
   points: {
-    beasts: 0,
-    bots: 0,
-    dwarves: 0,
-    elves: 0,
     humans: 0,
     goblins: 0,
+    elves: 0,
+    dwarves: 0,
+    beasts: 0,
+    bots: 0,
     xenos: 0,
+    spirits: 0
   },
   highestPoints: 0,
   wins: 0,
@@ -90,13 +92,14 @@ export type Player = {
   id: undefined | string; // Used to confirm who user is playing as
   title: string; // For UI, no logic attached.
   points: {
-    beasts: number;
-    bots: number;
-    dwarves: number;
-    elves: number;
     humans: number;
     goblins: number;
+    elves: number;
+    dwarves: number;
+    beasts: number;
+    bots: number;
     xenos: number;
+    spirits: number;
   },
   highestPoints: number; // Determines winner
   wins: number;

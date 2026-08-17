@@ -8,6 +8,7 @@ import elfDeck from "./elfDeck";
 import goblinDeck from "./goblinDeck";
 import humanDeck from "./humanDeck";
 import xenoDeck from "./xenoDeck";
+import spiritDeck from "./spiritDeck";
 import boostDeck from "./boostDeck";
 import trapDeck from "./trapDeck";
 import neutralDeck from "./neutralDeck";
@@ -27,6 +28,7 @@ export {
   goblinDeck,
   humanDeck,
   xenoDeck,
+  spiritDeck,
   boostDeck,
   trapDeck,
   neutralDeck,

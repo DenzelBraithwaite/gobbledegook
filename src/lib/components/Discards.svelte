@@ -9,17 +9,36 @@
   import { Card } from './index';
   
   // Props
+  export let draws: string[] = [];
   export let discards: string[] = [];
 
   // These will result in a multi-dimensional array [[card, details], [card, details]...]
+  let drawsWithCardDetails: any[] = [];
   let discardsWithCardDetails: any[] = [];
+  draws.forEach(d => drawsWithCardDetails.push($cardDetails[d]));
   discards.forEach(d => discardsWithCardDetails.push($cardDetails[d]));
 </script>
 
 <main class="main-content" transition:fade>
-  <!-- Card Grid -->
-  <h2 class="section-title">Discards</h2>
   <div class="flex">
+    <h2 class="section-title">Draws</h2>
+    {#each drawsWithCardDetails as card}
+        <Card
+        displayTitle={card.displayTitle}
+        title={card.title}
+        img={card.image}
+        description={card.description}
+        traitTitle={card.traitTitle}
+        trait={card.trait}
+        race={card.race}
+        rarity={card.rarity}
+        points={card.points}
+        />
+    {/each}
+  </div>
+
+  <div class="flex">
+    <h2 class="section-title">Discards</h2>
     {#each discardsWithCardDetails as card}
         <Card
         displayTitle={card.displayTitle}
@@ -52,7 +71,7 @@
     height: 90dvh;
     width: 80dvw;
     padding: 1rem;
-    background: linear-gradient(to bottom, #32427757, #32773857, #ddceee57, #c0736957, #7e7e7e57, #855a2a57, #c2a84c57);
+    background: linear-gradient(to bottom, #324277a1, #327738a1, #ddceeea1, #c07369a1, #7e7e7ea1, #855a2aa1, #c2a84ca1, #b63baca1);
     overflow-y: auto;
     border-radius: 0.5rem;
     box-shadow: 0 0.5rem 2rem #00000080;
@@ -62,6 +81,9 @@
     bottom: 50%;
     right: 50%;
     transform: translate(50%, 50%);
+
+    display: flex;
+    justify-content: space-around;
   }
 
   .grid {  

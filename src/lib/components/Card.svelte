@@ -9,7 +9,7 @@
   export let faceUp = true;
   export let displayTitle = 'Title here...';
   export let title = '';
-  export let img = '/card-bg.png';
+  export let img = '/card-bg-goblin.png';
   export let points = 0;
   export let modifiedPoints = 0;
   export let race = 'none';
@@ -215,10 +215,11 @@
   }
 
   .facedown {
-    background: url('/card-bg.png');
+    background: url('/card-bg-goblin.png');
     background-repeat: no-repeat;
     background-position: center;
     background-size: cover;
+    border: 3px double #c5a88a94;
    
     &:hover {
       scale: 1.05;
@@ -240,6 +241,46 @@
   }
   
   /* bg color based on race */
+  .bg-human {
+    background: linear-gradient(to top left, #324277, #69c0ad 50%);
+    outline: 4px solid #324277a8;
+  }
+
+  .bg-human-rare {
+    background: linear-gradient(to top left, #324277 5%, #e0de69, #69c0ad 90%);
+    outline: 4px solid #324277a8;
+  }
+
+  .bg-goblin {
+    background: linear-gradient(to top left, #327738, #78c069 50%);
+    outline: 4px solid #327738a8;
+  }
+  
+  .bg-goblin-rare {
+    background: linear-gradient(to top left, #327738 5%, #e0de69, #78c069 90%);
+    outline: 4px solid #327738a8;
+  }
+  
+  .bg-elf {
+    background: linear-gradient(to top left, #726b7a, #ddceee 50%);
+    outline: 4px solid #726b7a;
+  }
+  
+  .bg-elf-rare {
+    background: linear-gradient(to top left, #726b7a 5%, #e0de69, #ddceee 90%);
+    outline: 4px solid #726b7a;
+  }
+
+  .bg-dwarf {
+    background: linear-gradient(to top left, #774b32, #c07369 50%);
+    outline: 4px solid #774b32a8;
+  }
+  
+  .bg-dwarf-rare {
+    background: linear-gradient(to top left, #774b32 5%, #e0de69, #c07369 90%);
+    outline: 4px solid #774b32a8;
+  }
+
   .bg-beast {
     background: linear-gradient(to top left, #55431e, #855a2a 50%);
     outline: 4px solid #55431e;
@@ -259,50 +300,20 @@
     background: linear-gradient(to top left, #424242 5%, #e0de69, #7e7e7e 90%);
     outline: 4px solid #424242;
   }
-  
-  .bg-dwarf {
-    background: linear-gradient(to top left, #774b32, #c07369 50%);
-    outline: 4px solid #774b32a8;
-  }
-  
-  .bg-dwarf-rare {
-    background: linear-gradient(to top left, #774b32 5%, #e0de69, #c07369 90%);
-    outline: 4px solid #774b32a8;
-  }
-  
-  .bg-elf {
-    background: linear-gradient(to top left, #726b7a, #ddceee 50%);
-    outline: 4px solid #726b7a;
-  }
-  
-  .bg-elf-rare {
-    background: linear-gradient(to top left, #726b7a 5%, #e0de69, #ddceee 90%);
-    outline: 4px solid #726b7a;
-  }
-  
-  .bg-goblin {
-    background: linear-gradient(to top left, #327738, #78c069 50%);
-    outline: 4px solid #327738a8;
-  }
-  
-  .bg-goblin-rare {
-    background: linear-gradient(to top left, #327738 5%, #e0de69, #78c069 90%);
-    outline: 4px solid #327738a8;
-  }
-  
-  .bg-human {
-    background: linear-gradient(to top left, #324277, #69c0ad 50%);
-    outline: 4px solid #324277a8;
-  }
-
-  .bg-human-rare {
-    background: linear-gradient(to top left, #324277 5%, #e0de69, #69c0ad 90%);
-    outline: 4px solid #324277a8;
-  }
 
   .bg-xeno {
     background: linear-gradient(to top left,#776832,#c2a84c 50%);
     outline: 4px solid #957c1e;
+  }
+
+  .bg-spirit {
+    background: linear-gradient(to top left, #b63bac, #b390b7 50%);
+    outline: 4px solid #b63baca8;
+  }
+  
+  .bg-spirit-rare {
+    background: linear-gradient(to top left, #b63bac 5%, #e0de69, #b390b7 90%);
+    outline: 4px solid #b63baca8;
   }
 
   .bg-boost {
@@ -321,6 +332,26 @@
 }
 
   /* Race text color */  
+  .human-race {
+    background-color: #324277;
+    border: 2px solid #324277;
+  }
+  
+  .goblin-race {
+    background-color: #327738;
+    border: 2px solid #327738;
+  }
+
+  .elf-race {
+    background-color: #726b7a;
+    border: 2px solid #726b7a;
+  }
+  
+  .dwarf-race {
+    background-color: #774b32;
+    border: 2px solid #774b32;
+  }
+
   .beast-race {
     background-color: #55431e;
     border: 2px solid #55431e;
@@ -331,29 +362,14 @@
     border: 2px solid #424242;
   }
   
-  .dwarf-race {
-    background-color: #774b32;
-    border: 2px solid #774b32;
-  }
-  
-  .elf-race {
-    background-color: #726b7a;
-    border: 2px solid #726b7a;
-  }
-  
-  .goblin-race {
-    background-color: #327738;
-    border: 2px solid #327738;
-  }
-  
-  .human-race {
-    background-color: #324277;
-    border: 2px solid #324277;
-  }
-  
   .xeno-race {
     background-color: #8e7419;
     border: 2px solid #8e7419;
+  }
+
+  .spirit-race {
+    background-color: #b63bac;
+    border: 2px solid #b63bac;
   }
 
   .boost-race {
@@ -372,6 +388,22 @@
   }
 
   /* race title color */
+  .human-title {
+    background-color: #3242775e;
+  }
+  
+  .goblin-title {
+    background-color: #3277385e;
+  }
+  
+  .elf-title {
+    background-color: #726b7a5e;
+  }
+  
+  .dwarf-title {
+    background-color: #774b325e;
+  }
+  
   .beast-title {
     background-color: #55431e5e;
   }
@@ -379,25 +411,13 @@
   .bot-title {
     background-color: #4242425e;
   }
-  
-  .dwarf-title {
-    background-color: #774b325e;
-  }
-  
-  .elf-title {
-    background-color: #726b7a5e;
-  }
-  
-  .goblin-title {
-    background-color: #3277385e;
-  }
-  
-  .human-title {
-    background-color: #3242775e;
-  }
-  
+
   .xeno-title {
     background-color: #8e74195e;
+  }
+
+  .spirit-title {
+    background-color: #b63bac5e;
   }
 
   .boost-title {
@@ -463,6 +483,10 @@
       border-radius: 0 0.4rem 0.4rem 0;
       top: 16px;
     }
+  }
+
+  .facedown {
+    border: 3px double #c5a98a76;
   }
 
   @media only screen and (max-width: 800px) {

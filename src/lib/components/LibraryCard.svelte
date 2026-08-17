@@ -133,6 +133,38 @@
   }
 
   /* bg color based on race */
+  .bg-human {
+    background: linear-gradient(to top left, #324277, #69c0ad 50%);
+  }
+  
+  .bg-human-rare {
+    background: linear-gradient(to top left, #324277 5%, #e0de69, #69c0ad 90%);
+  }
+  
+  .bg-goblin {
+    background: linear-gradient(to top left, #327738, #78c069 50%);
+  }
+  
+  .bg-goblin-rare {
+    background: linear-gradient(to top left, #327738 5%, #e0de69, #78c069 90%);
+  }
+  
+  .bg-elf {
+    background: linear-gradient(to top left, #726b7a, #ddceee 50%);
+  }
+  
+  .bg-elf-rare {
+    background: linear-gradient(to top left, #726b7a 5%, #e0de69, #ddceee 90%);
+  }
+
+  .bg-dwarf {
+    background: linear-gradient(to top left, #774b32, #c07369 50%);
+  }
+
+  .bg-dwarf-rare {
+    background: linear-gradient(to top left, #774b32 5%, #e0de69, #c07369 90%);
+  }
+
   .bg-beast {
     background: linear-gradient(to top left, #55431e, #855a2a 50%);
   }
@@ -149,40 +181,16 @@
     background: linear-gradient(to top left, #424242 5%, #e0de69, #7e7e7e 90%);
   }
 
-  .bg-dwarf {
-    background: linear-gradient(to top left, #774b32, #c07369 50%);
-  }
-
-  .bg-dwarf-rare {
-    background: linear-gradient(to top left, #774b32 5%, #e0de69, #c07369 90%);
-  }
-
-  .bg-elf {
-    background: linear-gradient(to top left, #726b7a, #ddceee 50%);
-  }
-
-  .bg-elf-rare {
-    background: linear-gradient(to top left, #726b7a 5%, #e0de69, #ddceee 90%);
-  }
-
-  .bg-goblin {
-    background: linear-gradient(to top left, #327738, #78c069 50%);
-  }
-
-  .bg-goblin-rare {
-    background: linear-gradient(to top left, #327738 5%, #e0de69, #78c069 90%);
-  }
-
-  .bg-human {
-    background: linear-gradient(to top left, #324277, #69c0ad 50%);
-  }
-
-  .bg-human-rare {
-    background: linear-gradient(to top left, #324277 5%, #e0de69, #69c0ad 90%);
-  }
-
   .bg-xeno {
     background: linear-gradient(to top left,#776832,#c2a84c 50%);
+  }
+
+  .bg-spirit {
+    background: linear-gradient(to top left, #b63bac, #b390b7 50%);
+  }
+  
+  .bg-spirit-rare {
+    background: linear-gradient(to top left, #b63bac 5%, #e0de69, #b390b7 90%);
   }
 
   .bg-boost {
@@ -198,6 +206,38 @@
   }
 
   /* border color based on race */
+  .border-human {
+    outline: 4px solid #324277a8;
+  }
+  
+  .border-human-rare {
+    border: 4px solid #324277a8;
+  }
+  
+  .border-goblin {
+    outline: 4px solid #327738a8;
+  }
+  
+  .border-goblin-rare {
+    outline: 4px solid #327738a8;
+  }
+  
+  .border-elf {
+    outline: 4px solid #726b7a;
+  }
+  
+  .border-elf-rare {
+    outline: 4px solid #726b7a;
+  }
+  
+  .border-dwarf {
+    outline: 4px solid #774b32a8;
+  }
+  
+  .border-dwarf-rare {
+    outline: 4px solid #774b32a8;
+  }
+  
   .border-beast {
     outline: 4px solid #55431e;
   }
@@ -213,41 +253,17 @@
   .border-bot-rare {
     outline: 4px solid #424242;
   }
-  
-  .border-dwarf {
-    outline: 4px solid #774b32a8;
-  }
-  
-  .border-dwarf-rare {
-    outline: 4px solid #774b32a8;
-  }
-  
-  .border-elf {
-    outline: 4px solid #726b7a;
-  }
-  
-  .border-elf-rare {
-    outline: 4px solid #726b7a;
-  }
-  
-  .border-goblin {
-    outline: 4px solid #327738a8;
-  }
-  
-  .border-goblin-rare {
-    outline: 4px solid #327738a8;
-  }
-  
-  .border-human {
-    outline: 4px solid #324277a8;
-  }
-
-  .border-human-rare {
-    border: 4px solid #324277a8;
-  }
 
   .border-xeno {
     outline: 4px solid #957c1e;
+  }
+
+  .border-spirit {
+    outline: 4px solid #b63bac;
+  }
+
+  .border-spirit-rare {
+    outline: 4px solid #b63bac;
   }
 
   .border-boost {
@@ -263,6 +279,26 @@
 }
 
   /* Race text color */  
+  .human-race {
+    background-color: #324277;
+    border: 2px solid #324277;
+  }
+  
+  .goblin-race {
+    background-color: #327738;
+    border: 2px solid #327738;
+  }
+  
+  .elf-race {
+    background-color: #726b7a;
+    border: 2px solid #726b7a;
+  }
+  
+  .dwarf-race {
+    background-color: #774b32;
+    border: 2px solid #774b32;
+  }
+  
   .beast-race {
     background-color: #55431e;
     border: 2px solid #55431e;
@@ -272,30 +308,15 @@
     background-color: #424242;
     border: 2px solid #424242;
   }
-  
-  .dwarf-race {
-    background-color: #774b32;
-    border: 2px solid #774b32;
-  }
-  
-  .elf-race {
-    background-color: #726b7a;
-    border: 2px solid #726b7a;
-  }
-  
-  .goblin-race {
-    background-color: #327738;
-    border: 2px solid #327738;
-  }
-  
-  .human-race {
-    background-color: #324277;
-    border: 2px solid #324277;
-  }
-  
+
   .xeno-race {
     background-color: #8e7419;
     border: 2px solid #8e7419;
+  }
+
+  .spirit-race {
+    background-color: #b63bac;
+    border: 2px solid #b63bac;
   }
 
   .boost-race {
