@@ -5,8 +5,6 @@ const beastDeck = writable([
   'dreamDestroyer',
   'rhino',
   'rhino',
-  'rhino',
-  'bear',
   'bear',
   'bear',
   'lion',
@@ -14,16 +12,15 @@ const beastDeck = writable([
   'lion',
   'panther',
   'panther',
-  'panther',
   'wolf',
   'wolf',
   'wolf',
-  'fox',
+  'wolf',
   'fox',
   'fox',
   'dog',
   'dog',
-  'dog'
+  'eggGiraffe'
 ]);
 
 export default beastDeck;

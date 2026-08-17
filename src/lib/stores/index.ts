@@ -11,6 +11,7 @@ import xenoDeck from "./xenoDeck";
 import boostDeck from "./boostDeck";
 import trapDeck from "./trapDeck";
 import neutralDeck from "./neutralDeck";
+import giraffeDeck from "./giraffeDeck";
 
 export {
   type Player,
@@ -28,5 +29,6 @@ export {
   xenoDeck,
   boostDeck,
   trapDeck,
-  neutralDeck
+  neutralDeck,
+  giraffeDeck
 }

@@ -4,7 +4,7 @@ import { writable } from 'svelte/store';
 // TODO: New race - Card that exposes both players hand while in player's hand.
 // TODO: New race - Card that has 10 in deck, 0 points. If player holds 5 they get + 100 points.
 // TODO: Boost - Removes a race from the game (draw pile) Eradicate, 1 in deck.
-// TODO: Boost - Lets you pick next race card, 1 in deck .
+// TODO: Boost - Lets you pick next race card, 1 in deck.
 // TODO: Boost - Gives +50 points to all races if card is in hand and no race cards in hand. Cookie jar? :)
 
 const cardDetails = writable({
@@ -35,26 +35,25 @@ const cardDetails = writable({
     otherRaces: [],
     image: '/humans/commander.png'
   },
-  // TODO:
-  // lupin: {
-  //   title: 'Lupin',
-  //   displayTitle: 'Lupin',
-  //   points: 6, // TODO: make assassin 5 after
-  //   amount: 2, // TODO: reduce assassin to 2 as well
-  //   rarity: 'amazing',
-  //   traitTitle: 'Full Moon',
-  //   trait: 'Lupin counts as both human and beast/wolf.',
-  //   description: 'A human who was bit by a strange wolf and now transforms on full moons.',
-  //   race: 'human',
-  //   otherRaces: ['beast'],
-  //   image: '/bots/werewolf.png' // TODO: get img
-  // },
+  lupin: {
+    title: 'Lupin',
+    displayTitle: 'Lupin',
+    points: 8,
+    amount: 2,
+    rarity: 'amazing',
+    traitTitle: 'Full Moon',
+    trait: 'Lupin counts as both human and beast/wolf.',
+    description: 'A human who was bit by a strange wolf and now transforms on full moons.',
+    race: 'human',
+    otherRaces: ['beast'],
+    image: '/humans/werewolf.png'
+  },
   assassin: {
     title: 'assassin',
     displayTitle: 'Assassin',
-    points: 6,
+    points: 5,
     amount: 3,
-    rarity: 'amazing',
+    rarity: 'uncommon',
     traitTitle: '',
     trait: '',
     description: 'A highly skilled professional killer.',
@@ -65,8 +64,8 @@ const cardDetails = writable({
   knight: {
     title: 'knight',
     displayTitle: 'Knight',
-    points: 5,
-    amount: 4,
+    points: 4,
+    amount: 3,
     rarity: 'uncommon',
     traitTitle: '',
     trait: '',
@@ -78,8 +77,8 @@ const cardDetails = writable({
   soldier: {
     title: 'soldier',
     displayTitle: 'Soldier',
-    points: 4,
-    amount: 4,
+    points: 3,
+    amount: 3,
     rarity: 'uncommon',
     traitTitle: '',
     trait: '',
@@ -91,8 +90,8 @@ const cardDetails = writable({
   scout: {
     title: 'scout',
     displayTitle: 'Scout',
-    points: 3,
-    amount: 4,
+    points: 2,
+    amount: 3,
     rarity: 'common',
     traitTitle: '',
     trait: '',
@@ -105,7 +104,7 @@ const cardDetails = writable({
     title: 'villager',
     displayTitle: 'Villager',
     points: 1,
-    amount: 2,
+    amount: 3,
     rarity: 'common',
     traitTitle: '',
     trait: '',
@@ -118,7 +117,7 @@ const cardDetails = writable({
     title: 'villager2',
     displayTitle: 'Villager',
     points: 1,
-    amount: 2,
+    amount: 3,
     rarity: 'common',
     traitTitle: '',
     trait: '',
@@ -513,24 +512,11 @@ const cardDetails = writable({
     otherRaces: [],
     image: '/bots/protectron.png'
   },
-  sawBot: {
-    title: 'sawBot',
-    displayTitle: 'Sawbot-3000',
-    points: 7,
-    amount: 4,
-    rarity: 'rare',
-    traitTitle: '',
-    trait: '',
-    description: 'A bot designed to kill humans and trees, but mostly humans, beware.',
-    race: 'bot',
-    otherRaces: [],
-    image: '/bots/saw-bot.png'
-  },
   faeBot: {
     title: 'faeBot',
     displayTitle: 'Fae Bot',
-    points: 6,
-    amount: 3,
+    points: 8,
+    amount: 2,
     rarity: 'amazing',
     traitTitle: 'Fae Loader',
     trait: 'Fae Bot counts as both bot and elf.',
@@ -539,25 +525,37 @@ const cardDetails = writable({
     otherRaces: ['elf'],
     image: '/bots/fae-bot.png'
   },
-  // TODO:
-  // cyborg: {
-  //   title: 'Cyborg',
-  //   displayTitle: 'Cyborg',
-  //   points: 5,
-  //   amount: 2, // TODO: reduce faebot to 2 as well
-  //   rarity: 'amazing',
-  //   traitTitle: 'Human Loader',
-  //   trait: 'Cyborg counts as both bot and human.',
-  //   description: 'A human who underwent experiments to become half machine.',
-  //   race: 'bot',
-  //   otherRaces: ['human'],
-  //   image: '/bots/cyborg.png' // TODO: get img
-  // },
+  cyborg: {
+    title: 'Cyborg',
+    displayTitle: 'Cyborg',
+    points: 7,
+    amount: 2,
+    rarity: 'amazing',
+    traitTitle: 'Human Loader',
+    trait: 'Cyborg counts as both bot and human.',
+    description: 'A human who underwent experiments to become mostly machine.',
+    race: 'bot',
+    otherRaces: ['human'],
+    image: '/bots/cyborg.png'
+  },
+    sawBot: {
+    title: 'sawBot',
+    displayTitle: 'Sawbot-3000',
+    points: 5,
+    amount: 3,
+    rarity: 'rare',
+    traitTitle: '',
+    trait: '',
+    description: 'A bot designed to kill humans and trees, but mostly humans, beware.',
+    race: 'bot',
+    otherRaces: [],
+    image: '/bots/saw-bot.png'
+  },
   killBot: {
     title: 'killBot',
     displayTitle: 'Kill Bot',
-    points: 5,
-    amount: 4,
+    points: 4,
+    amount: 3,
     rarity: 'rare',
     traitTitle: '',
     trait: '',
@@ -570,7 +568,7 @@ const cardDetails = writable({
     title: 'incuBot',
     displayTitle: 'Incu Bot',
     points: 2,
-    amount: 4,
+    amount: 3,
     rarity: 'uncommon',
     traitTitle: '',
     trait: '',
@@ -611,7 +609,7 @@ const cardDetails = writable({
     title: 'rhino',
     displayTitle: 'Rhinestone',
     points: 10,
-    amount: 3,
+    amount: 2,
     rarity: 'amazing',
     traitTitle: 'Thick skin',
     trait: 'If this card is in the player\'s hand at the end of the game, they will block all trap cards.',
@@ -624,7 +622,7 @@ const cardDetails = writable({
     title: 'bear',
     displayTitle: 'Theo Thunderpaw',
     points: 9,
-    amount: 3,
+    amount: 2,
     rarity: 'amazing',
     traitTitle: '',
     trait: '',
@@ -650,7 +648,7 @@ const cardDetails = writable({
     title: 'panther',
     displayTitle: 'Panth Nocturna',
     points: 7,
-    amount: 3,
+    amount: 2,
     rarity: 'rare',
     traitTitle: '',
     trait: '',
@@ -663,7 +661,7 @@ const cardDetails = writable({
     title: 'wolf',
     displayTitle: 'Alpha Wolfbane',
     points: 6,
-    amount: 3,
+    amount: 4,
     rarity: 'rare',
     traitTitle: 'Wolf pack',
     trait: 'Receive +2 points for every wolf in your hand, including this one and werewolves.',
@@ -676,7 +674,7 @@ const cardDetails = writable({
     title: 'fox',
     displayTitle: 'Finn Foxglove',
     points: 5,
-    amount: 3,
+    amount: 2,
     rarity: 'uncommon',
     traitTitle: '',
     trait: '',
@@ -689,7 +687,7 @@ const cardDetails = writable({
     title: 'dog',
     displayTitle: 'Pawl Barkington',
     points: 4,
-    amount: 3,
+    amount: 2,
     rarity: 'uncommon',
     traitTitle: "Man's best friend",
     trait: 'If ally hand contains humans (or hobbit), pawl receives + 10 points at the end of the game.',
@@ -697,6 +695,72 @@ const cardDetails = writable({
     race: 'beast',
     otherRaces: [],
     image: '/beasts/dog.png'
+  },
+  // Giraffes
+  nightTerror: {
+    title: 'nightTerror',
+    displayTitle: 'Night Terror',
+    points: 12,
+    amount: 1,
+    rarity: 'legendary',
+    traitTitle: 'Nightmare Pact💤',
+    trait: 'All of your beasts are worth 12 points.',
+    description: 'Dream Destroyer\'s mother.',
+    race: 'beast',
+    otherRaces: [],
+    image: '/beasts/night_terror.png'
+  },
+  eggGiraffe: {
+    title: 'eggGiraffe',
+    displayTitle: '🦒Egg🦒',
+    points: 0,
+    amount: 1,
+    rarity: 'amazing',
+    traitTitle: 'Hatch',
+    trait: "Grows into a more powerful card.",
+    description: 'This egg is destined for greatness.',
+    race: 'beast',
+    otherRaces: [],
+    image: '/beasts/egg_giraffe.png'
+  },
+    kidGiraffe: {
+    title: 'kidGiraffe',
+    displayTitle: 'Calfy',
+    points: 1,
+    amount: 1,
+    rarity: 'amazing',
+    traitTitle: 'Grow',
+    trait: "Grows into a more powerful card.",
+    description: 'This calf is destined for greatness.',
+    race: 'beast',
+    otherRaces: [],
+    image: '/beasts/kid_giraffe.png'
+  },
+    adultGiraffe: {
+    title: 'adultGiraffe',
+    displayTitle: 'Giraffey',
+    points: 2,
+    amount: 1,
+    rarity: 'amazing',
+    traitTitle: 'Age',
+    trait: "Grows into a more powerful card.",
+    description: '',
+    race: 'beast',
+    otherRaces: [],
+    image: '/beasts/adult_giraffe.png'
+  },
+    elderGiraffe: {
+    title: 'elderGiraffe',
+    displayTitle: 'Granffey',
+    points: 3,
+    amount: 1,
+    rarity: 'amazing',
+    traitTitle: 'Unicorn Pact🦄',
+    trait: "Summons a very powerful ally.",
+    description: '',
+    race: 'beast',
+    otherRaces: [],
+    image: '/beasts/elder_giraffe.png'
   },
 
   // Xenos (Alien hive colony)
@@ -1043,7 +1107,7 @@ const cardDetails = writable({
     race: 'neutral',
     otherRaces: [],
     image: '/neutrals/xeno_blossom.png'
-  },
+  }
 });
 
 export default cardDetails;

@@ -9,7 +9,7 @@
   import wait from '../helpers/wait';
 
   // Stores
-  import { type Player, player1, player1Reset, player2, player2Reset, cardDetails, beastDeck, botDeck, dwarfDeck, elfDeck, goblinDeck, humanDeck, xenoDeck, boostDeck,  trapDeck, neutralDeck } from '../stores';
+  import { type Player, player1, player1Reset, player2, player2Reset, cardDetails, beastDeck, botDeck, dwarfDeck, elfDeck, goblinDeck, humanDeck, xenoDeck, boostDeck,  trapDeck, neutralDeck, giraffeDeck } from '../stores';
 
   // Custom components
   import { Button, Discards, Library, Spinner, RacePoints } from './index';
@@ -17,6 +17,9 @@
 
   // Websocket
   import { io } from 'socket.io-client';
+
+  type DeckRace = 'humans' | 'goblins' | 'elves' | 'dwarves' | 'beasts' | 'bots' | 'xenos' | 'boosts' | 'traps' | 'neutrals' | 'giraffe' | '';
+  type Race = 'human' | 'goblin' | 'elf' | 'dwarf' | 'beast' | 'bot' | 'xeno' | 'boost' | 'trap' | 'neutral' | '';
 
   // Thanos: http://192.168.2.10:6912; 
   let socket = io('http://192.168.2.10:6912'); // Currently work
@@ -54,7 +57,7 @@
     neutrals: [...$neutralDeck]
   };
   // array for each deck, humans, goblins, elves and dwarves
-  let deckTypes = Object.keys(fullDeck);
+  let deckTypes: DeckRace[] | string[] = Object.keys(fullDeck);
   
   onMount(() => {
     // Handles connects
@@ -260,7 +263,7 @@
       // goblins: [...$goblinDeck],
       humans: [...$humanDeck],
       // xenos: [...$xenoDeck],
-      boosts: [...$boostDeck],
+      // boosts: [...$boostDeck],
       // traps: [...$trapDeck],
       // neutrals: [...$neutralDeck]
     };
@@ -313,7 +316,13 @@
 
       // Grab random card from that deck
       randomNum = Math.floor(Math.random() * fullDeck[currentDeck].length);
-      const cardDrawn = fullDeck[currentDeck][randomNum];
+      let cardDrawn = fullDeck[currentDeck][randomNum];
+
+      // Make sure player never starts with the egg
+      while (cardDrawn === 'eggGiraffe') {
+        randomNum = Math.floor(Math.random() * fullDeck[currentDeck].length);
+        cardDrawn = fullDeck[currentDeck][randomNum];
+      }
 
       const removedCardIndex = fullDeck[currentDeck].indexOf(cardDrawn);
       fullDeck[currentDeck].splice(removedCardIndex, 1);
@@ -351,7 +360,7 @@
   async function drawCard(player: Player, newTurn = true) {
     if (gameState.gameOver) return;
     if (newTurn) calculateNewTurn(player);
-    let currentDeck = '';
+    let currentDeck: DeckRace = '';
     let cardDrawn = '';
     let randomNum = 0;
 
@@ -364,13 +373,19 @@
     // Player can't draw when he has more than 5 cards unless due to echo. Player can't draw more than 7 cards (echo + 1)
     if ((player.hand.length > 5 && !player.playingTwice) || player.hand.length >= 7) return;
     
+    // Checks if there's a giraffe counter, if so return the appropriate giraffe.
+    if ([1, 2, 3, 4].includes(player.giraffeCounter)) {
+      currentDeck = 'giraffe';
+
+    } else if (player.dwarfNextTurn) {
+
     // Determines if the next card will be a dwarf or just a random deck.
-    if (player.dwarfNextTurn) {
       currentDeck = isDwarfNext(player);
     } else {
+
       // If no remaining dwarves, random deck 
       randomNum = Math.floor(Math.random() * deckTypes.length);
-      currentDeck = deckTypes[randomNum];
+      currentDeck = deckTypes[randomNum] as DeckRace; // to appease ts gods
     }
 
     // When the last card is drawn, currentDeck becomes undefined. This will catch that
@@ -387,7 +402,7 @@
     // If player has goblin lord's mark, next card is the goblin lord
     if (player.goblinLordMarked) {
       player.goblinLordMarked = false;
-      fullDeck['goblins'].length === 0 ? currentDeck = deckTypes[randomNum] : currentDeck = 'goblins';
+      fullDeck['goblins'].length === 0 ? currentDeck = deckTypes[randomNum] as DeckRace : currentDeck = 'goblins'; // to appease ts gods
 
       if (fullDeck['goblins'].includes('goblinLord')) {
         cardDrawn = fullDeck['goblins'].find(card => card === 'goblinLord')
@@ -400,30 +415,31 @@
       // Grab random card from that deck, if elf deck, look for elf champion.
       if (currentDeck === 'elves' && fullDeck['elves'].includes('elfChampion')) {
         cardDrawn = fullDeck['elves'].find(card => card === 'elfChampion');
+      } else if (currentDeck === 'giraffe') {
+        cardDrawn = drawGiraffeCards(player);
+
       } else {
         // If the elf champion isn't in deck, grab a random elf
         randomNum = Math.floor(Math.random() * fullDeck[currentDeck].length);
         cardDrawn = fullDeck[currentDeck][randomNum];
       }
-
       // Change card drawn to goblin lord's mark if player last drew warchief and goblin lord's mark is in deck
       if (player.drewWarchief && canDrawGoblinLordMark(player)) {
         currentDeck = 'goblins';
         cardDrawn = 'goblinLordsMark';
       }
 
+      // If it's the giraffe egg, get the next giraffe.
+      if (cardDrawn === 'eggGiraffe') player.giraffeCounter = 1;
+
       // If player has chastity but draws the trap card "lost", draw again.
-      if (cardDrawn === 'lost' && player.hand.includes('chastity')) {
+      if (cardDrawn === 'lost' && areTrapsBlocked(player)) {
         // Remove card from deck
         const removedCardIndex = fullDeck[currentDeck].indexOf(cardDrawn);
         fullDeck[currentDeck].splice(removedCardIndex, 1);
 
         // Was it the last card in it's race deck? Remove deck.
-        if (fullDeck[currentDeck].length === 0) {
-          // Remove deck from main deck
-          const index = deckTypes.indexOf(currentDeck);
-          deckTypes.splice(index, 1);
-        }
+        if (fullDeck[currentDeck].length === 0) removeRaceDeck(currentDeck);
 
         // Draw new card but doesn't count as new turn
         await drawCard(player, false);
@@ -452,15 +468,13 @@
       if (getRaces(cardDrawn).includes('neutral')) await addneutralCard(player, cardDrawn);
     }
 
-    // Remove card from deck
-    const removedCardIndex = fullDeck[currentDeck].indexOf(cardDrawn);
-    fullDeck[currentDeck].splice(removedCardIndex, 1);
+    // Remove card from deck unless special giraffe deck
+    if (currentDeck !== 'giraffe') {
+      const removedCardIndex = fullDeck[currentDeck].indexOf(cardDrawn);
+      fullDeck[currentDeck].splice(removedCardIndex, 1);
 
-    // When a smaller race deck runs out, it will be removed here. Placed below the cardDrawn logic to ensure the card is actually drawn (think goblin lord's mark)
-    if (fullDeck[currentDeck].length === 0) {
-      // Remove deck from main deck
-      const index = deckTypes.indexOf(currentDeck);
-      deckTypes.splice(index, 1);
+      // When a smaller race deck runs out, it will be removed here. Placed below the cardDrawn logic to ensure the card is actually drawn (think goblin lord's mark)
+      if (fullDeck[currentDeck].length === 0) removeRaceDeck(currentDeck);
     }
 
     // Checks if player is player 1 or 2, then adds card to hand
@@ -660,6 +674,12 @@
     if ($player2.id === socket.id && $player2.turn) return true;
     return false;
   }
+
+  // Remove deck from main deck
+  function removeRaceDeck(race: DeckRace): void {
+    const index = deckTypes.indexOf(race);
+    deckTypes.splice(index, 1);
+  }
   
   // ---------------------------------------------------------------- \\
   // ------------------------- CALCULATIONS ------------------------- \\
@@ -682,8 +702,8 @@
     calculateGoblinPoints(player, otherPlayer);
     calculateElfPoints(player, otherPlayer);
     calculateDwarfPoints(player);
-    calculateBeastPoints(player);
-    calculateBotPoints(player, otherPlayer);
+    calculateBeastPoints(player); // TODO: either leave as is or show highest? Since this is after human calc, lupin will get +12 if dreamdestroyer & human elite/leader in hand.
+    calculateBotPoints(player, otherPlayer); // TODO: either leave as is or show highest? Since this is after human calc, cyborg will get +2 if ai & human elite/leader in hand.
     calculateXenoPoints(player, otherPlayer);
     calculatePlayerHighestPoints(player);
     
@@ -729,7 +749,7 @@
   // Modifies card points depending on cards in player hand
   function displayCardPoints(player: Player, cardTitle: string): number {
     const triggerTwinEffect = player.hand.includes('nelladan') && player.hand.includes('nadallen');
-    if ((player.hand.includes('dreamDestroyer') || cardTitle === 'dog' || cardTitle === 'wolf') && getRaces(cardTitle).includes('beast')) return displayBeastPoints(player, cardTitle);
+    if ((player.hand.some(card => ['dreamDestroyer', 'nightTerror'].includes(card)) || cardTitle === 'dog' || cardTitle === 'wolf') && getRaces(cardTitle).includes('beast')) return displayBeastPoints(player, cardTitle);
     if ((player.hand.includes('ai') || player.hand.includes('protectron')) && getRaces(cardTitle).includes('bot')) return displayBotPoints(player, cardTitle);
     if (triggerTwinEffect || (player.hand.includes('elfKing') && getRaces(cardTitle).includes('elf'))) return displayElfPoints(player, cardTitle);
     if ((player.hand.includes('emperor') || player.hand.includes('commander')) && getRaces(cardTitle).includes('human')) return displayHumanPoints(player, cardTitle);
@@ -1020,9 +1040,9 @@
   }
   
   // Attempts to draw a dwarf next if there are dwarves remaining.
-  function isDwarfNext(player: Player) {
+  function isDwarfNext(player: Player): DeckRace {
     player.dwarfNextTurn = false;
-    let currentDeck = '';
+    let currentDeck: DeckRace = '';
     let randomNum = 0;
 
     if (fullDeck['dwarves'] && fullDeck['dwarves'].length !== 0) {
@@ -1030,9 +1050,29 @@
     } else {
       // If no remaining dwarves, random deck 
       randomNum = Math.floor(Math.random() * deckTypes.length);
-      currentDeck = deckTypes[randomNum];
+      currentDeck = deckTypes[randomNum] as DeckRace; // to appease ts gods
     }
     return currentDeck;
+  }
+
+  // Draws the giraffe deck cards.
+  function drawGiraffeCards(player: Player): string {
+    if (player.giraffeCounter === 1) {
+      player.giraffeCounter ++; 
+      return 'kidGiraffe';
+      
+    } else if (player.giraffeCounter === 2) {
+      player.giraffeCounter ++; 
+      return 'adultGiraffe';
+      
+    } if (player.giraffeCounter === 3) {
+      player.giraffeCounter ++; 
+      return 'elderGiraffe';
+
+    } if (player.giraffeCounter === 4) {
+      player.giraffeCounter ++; 
+      return 'nightTerror';
+    }
   }
 
   // Player gains +5 points per discarded dwarf.
@@ -1061,7 +1101,7 @@
     const beastCards = player.hand.filter(card => getRaces(card).includes('beast'));
     beastCards.forEach(card => player.points.beasts += $cardDetails[card].points);
 
-    if (player.hand.includes('dreamDestroyer')) calculateDreamDestroyer(player);
+    if (player.hand.some(card => ['dreamDestroyer', 'nightTerror'].includes(card))) calculateDreamDestroyer(player);
 
     // If player has humans/hobbits, pawl barkington gains +10 points.
     if (player.hand.includes('dog') && player.hand.some(card => getRaces(card).includes('human'))) {
@@ -1120,12 +1160,12 @@
 
   function displayBeastPoints(player: Player, cardTitle: string): number {
     const hasHumans = player.hand.some(c => getRaces(c).includes('human'));
-    const hasDreamDestroyer = player.hand.includes('dreamDestroyer');
+    const hasDreamDestroyer = player.hand.some(card => ['dreamDestroyer', 'nightTerror'].includes(card));
 
     if (cardTitle === 'wolf') {
       const numOfWolves = player.hand.filter(card => card === 'wolf').length;
       const numOfWerewolves = player.hand.filter(card => card === 'lupin').length;
-      return $cardDetails[cardTitle].points + (numOfWolves * 2) + (numOfWerewolves * 2) + (hasDreamDestroyer ? 12 : 0);
+      return $cardDetails[cardTitle].points + (numOfWolves * 2) + (numOfWerewolves * 2) + (hasDreamDestroyer ? (12 - $cardDetails[cardTitle].points) : 0);
     }
     if (cardTitle === 'dog' && hasHumans && hasDreamDestroyer) return 22;
     if (cardTitle === 'dog' && hasHumans) return 14;
@@ -1476,7 +1516,7 @@
     if (player.hand.includes('elfKing') && getRaces(cardTitle).includes('elf')) return 'legendary';
     if (player.hand.includes('longbeardLeader') && getRaces(cardTitle).includes('dwarf')) return 'legendary';
     if (player.hand.includes('ai') && getRaces(cardTitle).includes('bot')) return 'legendary';
-    if (player.hand.includes('dreamDestroyer') && getRaces(cardTitle).includes('beast')) return 'legendary';
+    if (player.hand.some(card => ['dreamDestroyer', 'nightTerror'].includes(card)) && getRaces(cardTitle).includes('beast')) return 'legendary';
     return $cardDetails[cardTitle].rarity;
   }
 
@@ -1564,7 +1604,7 @@
   }
 
   // Opens library to card clicked
-  function openLibraryToCard(race: 'human' | 'goblin' | 'elf' | 'dwarf' | 'beast' | 'bot' | 'xeno' | 'boost' | 'trap' | 'neutral'): void {
+  function openLibraryToCard(race: Race): void {
     gameState.discardsVisible = false;
     gameState.libraryVisible = true;
     // So library has time to open and DOM can create elements

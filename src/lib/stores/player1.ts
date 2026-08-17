@@ -19,6 +19,7 @@ export const player1 = writable<Player>({
   playedFirst: false,
   playingTwice: false,
   turn: false,
+  giraffeCounter: 0,
   dwarfNextTurn: false,
   drewWarchief: false,
   goblinLordMarked: false,
@@ -61,6 +62,7 @@ export const player1Reset = writable<Player>({
   playedFirst: false,
   playingTwice: false,
   turn: false,
+  giraffeCounter: 0,
   dwarfNextTurn: false,
   drewWarchief: false,
   goblinLordMarked: false,
@@ -103,6 +105,7 @@ export type Player = {
   playedFirst: boolean; // Relevant for keeping track of turn count.
   playingTwice: boolean; // Echo card which allows player to draw multiple.
   turn: boolean; // Is it the player's turn.
+  giraffeCounter: number; // Counts how many giraffes player has picked up.
   dwarfNextTurn: boolean; // Determines if player's next card will be a dwarf.
   drewWarchief: boolean; // Player next card will be goblin mark if available.
   goblinLordMarked: boolean; // Player next card will be goblin lord if available.
