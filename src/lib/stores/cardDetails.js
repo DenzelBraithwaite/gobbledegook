@@ -2,10 +2,9 @@ import { writable } from 'svelte/store';
 
 // TODO: Boost Eradicate - Removes a race from the game (draw pile) Eradicate, 1 in deck.
 // TODO: Boost Gaze - Lets you pick next race card, 1 in deck.
-// TODO: Boost - Gives +50 points to all races if card is in hand and no race cards in hand. Cookie jar? :)
-// TODO: Boost Chest - 
-// TODO: Trap Mimic - 
-// TODO: Neutral Magni - Card that exposes both players hand while in player's hand.
+// TODO: Boost/CookieJar: Gives +50 points to all races if card is in hand and no race cards in hand. Cookie jar? :)
+// TODO: Boost/Chester: - +20 points to the race you choose
+// TODO: Trap/Chjester: -20 points to the race you choose
 
 const cardDetails = writable({
   // Humans
@@ -851,7 +850,7 @@ const cardDetails = writable({
     amount: 1,
     rarity: 'legendary',
     traitTitle: 'Seance',
-    trait: 'Reveals both player\'s hands while this is in your hand.', // TODO: Both hands exposed
+    trait: 'Reveals both player\'s hands while this is in your hand.',
     description: 'A powerful ancient spirit who represents life and death.',
     race: 'spirit',
     otherRaces: [],
@@ -864,7 +863,7 @@ const cardDetails = writable({
     amount: 1,
     rarity: 'epic',
     traitTitle: 'Reveal',
-    trait: 'This card is always exposd to the other player.',  // TODO: Always exposed.
+    trait: 'This card is always exposd to the other player.',
     description: 'A spirit born from all things pure.',
     race: 'spirit',
     otherRaces: [],
@@ -878,7 +877,7 @@ const cardDetails = writable({
     rarity: 'epic',
     traitTitle: 'Enshrouded',
     trait: 'Prevents any of your cards from being exposed in any way (protects Brite and Spirit king).',
-    description: 'A spirit born from all things impure.', // TODO: prevents exposed/vision/light_spirit/spirit king
+    description: 'A spirit born from all things impure.',
     race: 'spirit',
     otherRaces: [],
     image: '/spirits/dark_spirit.png'

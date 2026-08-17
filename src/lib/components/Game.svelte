@@ -278,13 +278,13 @@
     player2.set({...$player2Reset, title: $player2.title});
 
     fullDeck = {
-      // beasts: [...$beastDeck],
-      // bots: [...$botDeck],
-      // dwarves: [...$dwarfDeck],
-      // elves: [...$elfDeck],
-      // goblins: [...$goblinDeck],
-      // humans: [...$humanDeck],
-      // xenos: [...$xenoDeck],
+      beasts: [...$beastDeck],
+      bots: [...$botDeck],
+      dwarves: [...$dwarfDeck],
+      elves: [...$elfDeck],
+      goblins: [...$goblinDeck],
+      humans: [...$humanDeck],
+      xenos: [...$xenoDeck],
       spirits: [...$spiritDeck],
       boosts: [...$boostDeck],
       traps: [...$trapDeck],
@@ -555,7 +555,7 @@
     // Emits to server that a card was discarded
     socket.emit('discard-card', {player1: $player1, player2: $player2});
 
-    // Check if card discarded is spirit king, if so, hide hands. // TODO: //FIXME:
+    // Check if card discarded is spirit king, if so, hide hands.
     if (card === 'spiritKing') concealPlayers();
 
     // Check if card discarded is switcharoo, if so, swap hands, but don't swap if they have echo in effect (too many cards)
@@ -1652,7 +1652,6 @@
         timer = 750;
         gameState.eventMessage = "It's Your Turn!";
         break;
-        
       case 'exposed':
         gameState.eventMessage = "Exposed 🔍!";
         break;
