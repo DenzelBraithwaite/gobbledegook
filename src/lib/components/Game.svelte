@@ -257,15 +257,15 @@
 
     fullDeck = {
       beasts: [...$beastDeck],
-      // bots: [...$botDeck],
-      // dwarves: [...$dwarfDeck],
-      // elves: [...$elfDeck],
-      // goblins: [...$goblinDeck],
+      bots: [...$botDeck],
+      dwarves: [...$dwarfDeck],
+      elves: [...$elfDeck],
+      goblins: [...$goblinDeck],
       humans: [...$humanDeck],
-      // xenos: [...$xenoDeck],
-      // boosts: [...$boostDeck],
-      // traps: [...$trapDeck],
-      // neutrals: [...$neutralDeck]
+      xenos: [...$xenoDeck],
+      boosts: [...$boostDeck],
+      traps: [...$trapDeck],
+      neutrals: [...$neutralDeck]
     };
 
     cardDetails.set({...controlCopyOfCardDetails});
