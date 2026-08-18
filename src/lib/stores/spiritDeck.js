@@ -1,9 +1,10 @@
 import { writable } from 'svelte/store';
 
+// 33 total (8 + 15red + 10blue)
 const spiritDeck = writable([
   'spiritKing',
-  'lightSpirit',
   'darkSpirit',
+  'lightSpirit',
   'earthSpirit',
   'waterSpirit',
   'lightningSpirit',

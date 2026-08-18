@@ -320,16 +320,31 @@
     background: linear-gradient(353deg, #90beff, #8bc8d13d 50%);
     outline: 4px solid #eeeeeed4;
   }
+  
+  .bg-boost-rare {
+    background: linear-gradient(to top left, #90beff47 5%, #fffecdbf, #90beff47 90%);
+    outline: 4px solid #eeeeeed4;
+  }
 
   .bg-trap {
     background: linear-gradient(353deg, #000000, #ffffff4a 50%);
     outline: 4px solid #111111;
   }
+  
+  .bg-trap-rare {
+    background: linear-gradient(to top left, #000000 5%, #fffecdbf, #000000 90%);
+    outline: 4px solid #111111;
+  }
 
   .bg-neutral {
-    background: linear-gradient(353deg,#31273e,rgb(147 60 233 / 16%) 50%);
+    background: linear-gradient(353deg,#31273e,#933ce929 50%);
     outline: 4px solid #3d1f5a;
-}
+  }
+  
+  .bg-neutral-rare {
+    background: linear-gradient(to top left, #31273e 5%, #fffecd69, #933ce929 90%);
+    outline: 4px solid #3d1f5a;
+  }
 
   /* Race text color */  
   .human-race {

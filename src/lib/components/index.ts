@@ -1,6 +1,7 @@
 import Button from './Button.svelte';
 import Card from './Card.svelte';
 import Discards from './Discards.svelte';
+import RemainingCardsModal from './RemainingCardsModal.svelte';
 import Library from './Library.svelte';
 import LibraryCard from './LibraryCard.svelte';
 import Game from './Game.svelte';
@@ -11,6 +12,7 @@ export {
   Button,
   Card,
   Discards,
+  RemainingCardsModal,
   Library,
   LibraryCard,
   Game,

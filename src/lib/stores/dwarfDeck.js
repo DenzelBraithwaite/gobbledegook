@@ -1,5 +1,6 @@
 import { writable } from 'svelte/store';
 
+// 25 total
 const dwarfDeck = writable([
   'longbeardLeader',
   'dwarfCommander',
@@ -8,19 +9,22 @@ const dwarfDeck = writable([
   'alchemist',
   'dwarfWarrior',
   'dwarfWarrior',
+  'dwarfWarrior',
   'hunter',
   'hunter',
   'hunter',
+  'traveller',
+  'traveller',
+  'traveller',
   'miner',
   'miner',
   'miner',
   'blacksmith',
   'blacksmith',
-  'traveller',
-  'traveller',
+  'blacksmith',
   'bartender',
   'bartender',
-  'hobbit',
+  'bartender',
   'hobbit',
   'hobbit'
 ]);

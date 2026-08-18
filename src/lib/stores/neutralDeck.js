@@ -2,16 +2,19 @@ import { writable } from 'svelte/store';
 
 const neutralDeck = writable([
   'neutralize',
-  'echo',
-  'echo',
-  'echo',
   'switcharoo',
+  'vision',
+  'vision',
+  'echo',
+  'echo',
+  'echo',
+  'xenoBloom',
   'ticktock',
   'ticktock',
   'tocktick',
-  'vision',
-  'vision',
-  'xenoBloom',
+  'dwarvenCall',
+  'dwarvenCall',
+  'dwarvenCall',
   'xenoBlossom'
 ]);
 

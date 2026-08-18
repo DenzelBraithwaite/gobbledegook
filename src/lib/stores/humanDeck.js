@@ -1,5 +1,6 @@
 import { writable } from 'svelte/store';
 
+// 21 total
 const humanDeck = writable([
   'emperor',
   'commander',
@@ -20,8 +21,6 @@ const humanDeck = writable([
   'scout',
   'villager',
   'villager',
-  'villager',
-  'villager2',
   'villager2',
   'villager2'
 ]);

@@ -39,6 +39,7 @@
           race={keyValuePair[1].race}
           rarity={keyValuePair[1].rarity}
           points={keyValuePair[1].points}
+          amount={keyValuePair[1].amount}
         />
       </div>
     {/each}
@@ -60,6 +61,7 @@
           race={keyValuePair[1].race}
           rarity={keyValuePair[1].rarity}
           points={keyValuePair[1].points}
+          amount={keyValuePair[1].amount}
         />
       </div>
     {/each}
@@ -81,6 +83,7 @@
           race={keyValuePair[1].race}
           rarity={keyValuePair[1].rarity}
           points={keyValuePair[1].points}
+          amount={keyValuePair[1].amount}
         />
       </div>
     {/each}
@@ -102,6 +105,7 @@
           race={keyValuePair[1].race}
           rarity={keyValuePair[1].rarity}
           points={keyValuePair[1].points}
+          amount={keyValuePair[1].amount}
         />
       </div>
     {/each}
@@ -123,6 +127,7 @@
           race={keyValuePair[1].race}
           rarity={keyValuePair[1].rarity}
           points={keyValuePair[1].points}
+          amount={keyValuePair[1].amount}
         />
       </div>
     {/each}
@@ -144,6 +149,7 @@
           race={keyValuePair[1].race}
           rarity={keyValuePair[1].rarity}
           points={keyValuePair[1].points}
+          amount={keyValuePair[1].amount}
         />
       </div>
     {/each}
@@ -165,6 +171,7 @@
           race={keyValuePair[1].race}
           rarity={keyValuePair[1].rarity}
           points={keyValuePair[1].points}
+          amount={keyValuePair[1].amount}
         />
       </div>
     {/each}
@@ -186,6 +193,7 @@
           race={keyValuePair[1].race}
           rarity={keyValuePair[1].rarity}
           points={keyValuePair[1].points}
+          amount={keyValuePair[1].amount}
         />
       </div>
     {/each}
@@ -207,6 +215,7 @@
           race={keyValuePair[1].race}
           rarity={keyValuePair[1].rarity}
           points={keyValuePair[1].points}
+          amount={keyValuePair[1].amount}
         />
       </div>
     {/each}
@@ -228,6 +237,7 @@
           race={keyValuePair[1].race}
           rarity={keyValuePair[1].rarity}
           points={keyValuePair[1].points}
+          amount={keyValuePair[1].amount}
         />
       </div>
     {/each}
@@ -249,6 +259,7 @@
           race={keyValuePair[1].race}
           rarity={keyValuePair[1].rarity}
           points={keyValuePair[1].points}
+          amount={keyValuePair[1].amount}
         />
       </div>
     {/each}
@@ -258,6 +269,7 @@
   <h2 class="section-title">Full Deck</h2>
   <div class="grid deck-section bg-rainbow">
     {#each Object.entries($cardDetails) as [card, details]}
+      {#each Array($cardDetails[card].amount) as _}
         <Card
         displayTitle={$cardDetails[card].displayTitle}
         title={$cardDetails[card].title}
@@ -269,6 +281,7 @@
         rarity={$cardDetails[card].rarity}
         points={$cardDetails[card].points}
         />
+      {/each}
     {/each}
   </div>
 </main>
@@ -303,8 +316,8 @@
 
   .card-wrapper {
     margin: 1.5rem auto 0;
-    width: 60%;
-    max-width: 1000px;
+    width: 75%;
+    max-width: 750px;
   }
 
   .grid {  

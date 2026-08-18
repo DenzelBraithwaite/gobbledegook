@@ -1,5 +1,6 @@
 import { writable } from 'svelte/store';
 
+// 22 total
 const botDeck = writable([
   'ai',
   'protectron',

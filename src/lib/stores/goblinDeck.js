@@ -1,8 +1,10 @@
 import { writable } from 'svelte/store';
 
+// 19 total
 const goblinDeck = writable([
   'goblinLord',
   'warchief',
+  'goblinLordsMark',
   'troll',
   'troll',
   'troll',
@@ -18,7 +20,7 @@ const goblinDeck = writable([
   'bokoblin',
   'bokoblin',
   'bokoblin',
-  'goblinLordsMark'
+  'bokoblin'
 ]);
 
 export default goblinDeck;

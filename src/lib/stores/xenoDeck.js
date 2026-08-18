@@ -1,24 +1,27 @@
 import { writable } from 'svelte/store';
 
+// 18 total
 const xenoDeck = writable([
   'xenoGuard',
   'xenoGuard',
   'xenoGuard',
-  'abyssolarian',
-  'abyssolarian',
-  'abyssolarian',
   'warpstalker',
   'warpstalker',
   'warpstalker',
   'voidRunner',
   'voidRunner',
   'voidRunner',
-  'celenial',
-  'celenial',
-  'celenial',
   'nebulite',
   'nebulite',
   'nebulite',
+  'abyssolarian',
+  'abyssolarian',
+  'abyssolarian',
+  'abyssolarian',
+  'celenial',
+  'celenial',
+  'celenial',
+  'celenial'
 ]);
 
 export default xenoDeck;

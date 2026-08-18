@@ -95,6 +95,9 @@ io.on('connection', socket => {
   // Reveal both player hands
   socket.on('reveal-players', () => io.emit('players-revealed'));
 
+  // Remove traps from both clients
+  socket.on('eradicate-traps', () => io.emit('traps-eradicated'));
+
   // Conceal both player hands
   socket.on('conceal-players', () => io.emit('players-concealed'));
 

@@ -1,34 +1,54 @@
-<script>
+<script lang="ts">
   export let displayTitle = 'Title here...';
   export let title = '';
   export let img = '/card-bg.png';
+  export let amount = 0;
   export let points = 0;
   export let race = 'none';
-  export let rarity = 'common';
+  export let rarity = 'poor';
   export let description = '';
   export let trait = '';
   export let traitTitle = '';
 
   $: if (race === 'goblin-ish') race = 'goblin';
+  
+  function capitalize(word): string {
+    return word.charAt(0).toUpperCase() + word.slice(1);
+  } 
 </script>
 
 <!-- If card is legendary, shows special race colors, otherwise matches race color -->
-<article class="card bg-{race} border-{race} {rarity === 'legendary' ? '-rare' : ''}">
+<article class="card bg-{race}{rarity === 'legendary' ? '-rare' : ''} border-{race}">
   <p class="points {race}-race">{points}</p>
   <div class="img-section">
     <img class="card-img" src={img} alt="img of card">
     <p class="card-title {race}-title position-bottom-left">{displayTitle}</p>
   </div>
 
-  <div class="description-section">
-    <h2 class="card-title {race}-title position-bottom-center">Description</h2>
-    <p class="description">{description}</p>
+  <div class="trait-section">
+    <h2 class="card-title {race}-title position-bottom-center">Trait</h2>
+    <h2 class:info-title={traitTitle}>{traitTitle}</h2>
+    <p class="trait">{trait ? trait : 'None'}</p>
   </div>
 
-  <div class="trait-section">
-    <h2 class="card-title {race}-title position-bottom-right">Trait</h2>
-    <h2 class="trait-title">{traitTitle}</h2>
-    <p class="trait">{trait}</p>
+  <div class="description-section">
+    <h2 class="card-title {race}-title position-bottom-right">Description</h2>
+
+    <hr>
+    <p class="info-title">Rarity</p>
+    <p>{capitalize(rarity)}</p>
+
+    <hr>
+    <p class="info-title">Amount</p>
+    <p>{amount}</p>
+
+    <hr>
+    <p class="info-title">Description</p>
+    <p>{description}</p>
+
+    <hr>
+    <p class="info-title">Real Title</p>
+    <p>{title}</p>
   </div>
 </article>
 
@@ -64,11 +84,10 @@
     background-color: transparent;
     padding: 1rem;
     height: 75%;
-    border-radius: 0.5rem;
-    border-radius: 1rem;
     background-color: #f1f1f194;
     max-width: 30%;
     margin: 0.5rem auto 0;
+    border: 1px solid #00000033;
 
     overflow-y: scroll;
 
@@ -78,10 +97,19 @@
     }
   }
 
+  .description-section {
+    border-radius: 0 16px 16px 0;
+  }
+  
+  .trait-section {
+    border-radius: 16px 0 0 16px;
+  }
+
   .img-section {
     margin-right: auto;
     max-width: 33%;
-    background: linear-gradient(214deg, #ddceee99, #855a2a99, #69c0ad99, #78c06999, #c0736999, #c2a84c99);
+    background-color: #00000028;
+    border-radius: 0 75px 75px 0;
   }
 
   .card-img {
@@ -196,13 +224,25 @@
   .bg-boost {
     background: linear-gradient(353deg, #90beff, #8bc8d13d 50%);
   }
+  
+  .bg-boost-rare {
+    background: linear-gradient(to top left, #90beff47 5%, #fffecdbf, #90beff47 90%);
+  }
 
   .bg-trap {
     background: linear-gradient(353deg, #000000, #ffffff4a 50%);
   }
+  
+  .bg-trap-rare {
+    background: linear-gradient(to top left, #000000 5%, #fffecdbf, #000000 90%);
+  }
 
   .bg-neutral {
-    background: linear-gradient(353deg,#31273e,rgb(147 60 233 / 16%) 50%);
+    background: linear-gradient(353deg,#31273e,#933ce929 50%);
+  }
+  
+  .bg-neutral-rare {
+    background: linear-gradient(to top left, #31273e 5%, #fffecd69, #933ce929 90%);
   }
 
   /* border color based on race */
@@ -375,8 +415,18 @@
     background-color: #3b1d4e96;
   }
 
-  /* Utility */@at-root
+  .info-title {
+    text-align: center;
+    font-size: .9rem;
+    font-weight: 700;
+    margin-bottom: 2px;
+    background-color: #000000a3;
+    border-radius: 0.125rem;
+    padding: 2px;
+    color: #e0e0e0;
+  }
 
+  /* Utility */@at-root
   .position-bottom-left {
     position: absolute;
     bottom: 0;
