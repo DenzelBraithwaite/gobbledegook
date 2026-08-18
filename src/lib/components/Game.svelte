@@ -21,9 +21,13 @@
   type DeckRace = 'humans' | 'goblins' | 'elves' | 'dwarves' | 'beasts' | 'bots' | 'xenos' | 'spirits' | 'boosts' | 'traps' | 'neutrals' | 'giraffe' | '';
   type Race = 'human' | 'goblin' | 'elf' | 'dwarf' | 'beast' | 'bot' | 'xeno' | 'spirit' | 'boost' | 'trap' | 'neutral' | '';
 
+  // FIXME: other client warpstalker was 0 while spirit king in hand.
+  // TODO: show buffed version at player end screen results? dunno.
+  // TODO: make beer mug dwarven call thing a neutral?
+  // TODO: there's a crash when I made small decks and it ran out when drawing? with spirits maybe? or bonus races
   // Thanos: http://192.168.2.10:6912; 
   // Work Mac at home: http://192.168.2.19:6912;
-  let socket = io('http://192.168.2.19:6912'); // Currently work
+  let socket = io('http://192.168.2.10:6912');
   $: gameState = {
     gobbledegookDeclared: false,
     gobbledegookDisabled: false,
@@ -278,12 +282,12 @@
     player2.set({...$player2Reset, title: $player2.title});
 
     fullDeck = {
+      humans: [...$humanDeck],
+      goblins: [...$goblinDeck],
+      elves: [...$elfDeck],
+      dwarves: [...$dwarfDeck],
       beasts: [...$beastDeck],
       bots: [...$botDeck],
-      dwarves: [...$dwarfDeck],
-      elves: [...$elfDeck],
-      goblins: [...$goblinDeck],
-      humans: [...$humanDeck],
       xenos: [...$xenoDeck],
       spirits: [...$spiritDeck],
       boosts: [...$boostDeck],
@@ -302,6 +306,7 @@
       startBtnDisabled: true,
       gobbledegookDeclared: false,
       gobbledegookDisabled: false,
+      playersRevealed: false,
       winMessage: '',
       loseMessage: '',
       eventMessage: ''

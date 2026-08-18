@@ -35,7 +35,7 @@ const cardDetails = writable({
     image: '/humans/commander.png'
   },
   lupin: {
-    title: 'Lupin',
+    title: 'lupin',
     displayTitle: 'Lupin',
     points: 8,
     amount: 2,
@@ -525,7 +525,7 @@ const cardDetails = writable({
     image: '/bots/fae-bot.png'
   },
   cyborg: {
-    title: 'Cyborg',
+    title: 'cyborg',
     displayTitle: 'Cyborg',
     points: 7,
     amount: 2,
@@ -796,7 +796,7 @@ const cardDetails = writable({
     amount: 3,
     rarity: 'amazing',
     traitTitle: 'Hive Resonance',
-    trait: 'When drawn, a random point value (7-13 inclusive) will be chosen, then applied to ALL ally warpstalkers.',
+    trait: 'When drawn, a random point value (10-20 inclusive) will be chosen, then applied to ALL ally warpstalkers.',
     description: 'A xeno capable of riftwalking, similar to teleporting over short distances. Sometimes riftwalks to the wrong place.',
     race: 'xeno',
     otherRaces: [],
@@ -863,7 +863,7 @@ const cardDetails = writable({
     amount: 1,
     rarity: 'epic',
     traitTitle: 'Reveal',
-    trait: 'This card is always exposd to the other player.',
+    trait: 'This card is always exposed to the other player.',
     description: 'A spirit born from all things pure.',
     race: 'spirit',
     otherRaces: [],
