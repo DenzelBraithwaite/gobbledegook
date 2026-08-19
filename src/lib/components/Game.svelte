@@ -294,7 +294,7 @@
       // xenos: [...$xenoDeck],
       // spirits: [...$spiritDeck],
       boosts: [...$boostDeck],
-      // traps: [...$trapDeck],
+      traps: [...$trapDeck],
       // neutrals: [...$neutralDeck]
     };
 
@@ -351,7 +351,7 @@
       let cardDrawn = fullDeck[currentDeck][randomNum];
 
       // Make sure player never starts with bonus cards or specific cards.
-      const cardsThatMustBeDrawn = ['goblinLordsMark', 'eggGiraffe', 'spiritKing', 'chastity', 'corruption'];
+      const cardsThatMustBeDrawn = ['goblinLordsMark', 'eggGiraffe', 'spiritKing'];
       while ((cardsThatMustBeDrawn.includes(cardDrawn) || ['boost', 'trap', 'neutral'].some(race => getRaces(cardDrawn).includes(race)))) {
         // Grab new card
         randomNum = Math.floor(Math.random() * deckTypes.length);
@@ -757,6 +757,8 @@
   function calculateCurrentPlayerPoints(player: Player, isNewTurn = false) {
     const otherPlayer = player.id === $player1.id ? $player2 : $player1;
 
+    // TODO: should not increase while blocked
+    // TODO: I drew corruption and it wipe my accumulated growth and charge points but how?
     if (isNewTurn) {
       $player1.chargePoints += $player1.numOfCharges;
       $player1.growthPoints += $player1.numOfGrowths;
@@ -1787,12 +1789,13 @@
   function isCardVisible(playerSide: 'p1' | 'p2', card: string) {
     const isLookingAtOwnSide = (gameState.playingAs === 'p1' && playerSide === 'p1') || (gameState.playingAs === 'p2' && playerSide === 'p2');
     const hasVision = (playerSide === 'p1' && $player2.hasVision) || (playerSide === 'p2' && $player1.hasVision);
-    // FIXME: should've been exposed with xeno guard in hand, did it block by accident? check whos hand. elisa hand had rhino
     const isExposed = (gameState.playingAs === 'p1' && $player2.isExposed && playerSide === 'p2') || (gameState.playingAs === 'p2' && $player1.isExposed && playerSide === 'p1');
     const visionBlockedByDarkSpirit = (gameState.playingAs === 'p1' && $player2.hand.includes('darkSpirit') && playerSide === 'p2') || (gameState.playingAs === 'p2' && $player1.hand.includes('darkSpirit') && playerSide === 'p1');
     const visionBlockedByChastityOrRhino = (gameState.playingAs === 'p1' && ($player2.hasChastity || $player2.hand.some(card => ['chastity', 'rhino'].includes(card))) || (gameState.playingAs === 'p2' && ($player1.hasChastity || $player2.hand.some(card => ['chastity', 'rhino'].includes(card)))));
     const cardIsLightSpirit = card === 'lightSpirit';
-
+    
+    // FIXME: should've been exposed with xeno guard in hand, did it block by accident? check whos hand. elisa hand had rhino
+    // FIXME: looks fine... is it maybe a mistake on on adding chastity or something....
     if (isLookingAtOwnSide) return true;
     if (isExposed && !visionBlockedByDarkSpirit && !visionBlockedByChastityOrRhino) return true;
     if (hasVision && !visionBlockedByDarkSpirit) return true;
