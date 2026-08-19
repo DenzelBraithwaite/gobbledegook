@@ -352,7 +352,8 @@
 
       // Make sure player never starts with bonus cards or specific cards.
       const cardsThatMustBeDrawn = ['goblinLordsMark', 'eggGiraffe', 'spiritKing'];
-      while ((cardsThatMustBeDrawn.includes(cardDrawn) || ['boost', 'trap', 'neutral'].some(race => getRaces(cardDrawn).includes(race)))) {
+      const safeBonusCards = ['chastity', 'corruption'];
+      while (!safeBonusCards.includes(cardDrawn) && (cardsThatMustBeDrawn.includes(cardDrawn) || ['boost', 'trap', 'neutral'].some(race => getRaces(cardDrawn).includes(race)))) {
         // Grab new card
         randomNum = Math.floor(Math.random() * deckTypes.length);
         currentDeck = deckTypes[randomNum];
