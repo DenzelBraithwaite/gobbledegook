@@ -998,7 +998,7 @@ const cardDetails = writable({
     amount: 1,
     rarity: 'legendary',
     traitTitle: 'Purity',
-    trait: 'Gain chastity immediately, remains even if discarded. Blocks all trap cards except Corruption. If acquired by switcharoo, only active while in hand. Can be neutralized.',
+    trait: 'Gain chastity immediately, remains even if discarded. Blocks all trap cards except Corruption. If acquired by switcharoo, only active while in hand. Wipes infect, can be neutralized.',
     description: 'An intriguing artifact said to repel all evil.',
     race: 'boost',
     otherRaces: [],
@@ -1228,6 +1228,19 @@ const cardDetails = writable({
     race: 'neutral',
     otherRaces: [],
     image: '/neutrals/echo.png'
+  },
+  leon: {
+    title: 'leon',
+    displayTitle: 'Leon',
+    points: 0,
+    amount: 2,
+    rarity: 'amazing',
+    traitTitle: 'Camouflage',
+    trait: "Leon can blend into any race.",
+    description: 'A docile chameleon who hates being mistaken for a gecko.',
+    race: 'neutral',
+    otherRaces: ['human', 'goblin', 'elf', 'dwarf', 'beast', 'bot', 'xeno', 'spirit'],
+    image: '/neutrals/leon.png'
   },
   xenoBloom: {
     title: 'xenoBloom',

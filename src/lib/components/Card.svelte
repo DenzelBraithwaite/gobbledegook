@@ -56,9 +56,13 @@
     <p class="card-title {race}-title">{displayTitle}</p>
     <div class="card-bottom-section">
       <div class="bottom-section-wrapper">
-        <p class="description">{description}</p>
-        {#if trait}<p class="special-trait">{traitTitle}</p>{/if}
-        <p>{trait}</p>
+        {#if trait}
+          <p class="trait-title">{traitTitle}</p>
+          <p>{trait}</p>
+          <hr>
+          <p class="description-title">Description</p>
+        {/if}
+        <p>{description}</p>
       </div>
     </div>
   </div>
@@ -205,12 +209,14 @@
     justify-content: center;
   }
 
-  .special-trait {
+  .trait-title {
     font-weight: bold;
     color: #fdf3c8;
+    margin-bottom: 0.25rem;
   }
 
-  .description {
+  .description-title {
+    font-weight: bold;
     margin-bottom: 0.25rem;
   }
 
@@ -307,13 +313,13 @@
   }
 
   .bg-spirit {
-    background: linear-gradient(to top left, #b63bac, #b390b7 50%);
-    outline: 4px solid #b63baca8;
+    background: linear-gradient(to top left, #b63bac00, #b390b7 50%);
+    outline: 4px solid #c173baa8;
   }
   
   .bg-spirit-rare {
-    background: linear-gradient(to top left, #b63bac 5%, #e0de69, #b390b7 90%);
-    outline: 4px solid #b63baca8;
+    background: linear-gradient(to top left, #b63bac00 5%, #e0de69, #b390b7 90%);
+    outline: 4px solid #c173baa8;
   }
 
   .bg-boost {

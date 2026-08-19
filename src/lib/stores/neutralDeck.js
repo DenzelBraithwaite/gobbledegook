@@ -8,6 +8,8 @@ const neutralDeck = writable([
   'echo',
   'echo',
   'echo',
+  'leon',
+  'leon',
   'xenoBloom',
   'ticktock',
   'ticktock',

@@ -23,7 +23,7 @@
 
   // Thanos: http://192.168.2.10:6912; 
   // Work Mac at home: http://192.168.2.19:6912;
-  let socket = io('http://192.168.2.10:6912');
+  let socket = io('http://10.3.144.168:6912');
   $: gameState = {
     gobbledegookDeclared: false,
     gobbledegookDisabled: false,
@@ -285,17 +285,17 @@
     player2.set({...$player2Reset, title: $player2.title});
 
     fullDeck = {
-      humans: [...$humanDeck],
+      // humans: [...$humanDeck],
       // goblins: [...$goblinDeck],
       // elves: [...$elfDeck],
       // dwarves: [...$dwarfDeck],
-      // beasts: [...$beastDeck],
+      beasts: [...$beastDeck],
       // bots: [...$botDeck],
-      // xenos: [...$xenoDeck],
+      xenos: [...$xenoDeck],
       // spirits: [...$spiritDeck],
       boosts: [...$boostDeck],
       traps: [...$trapDeck],
-      // neutrals: [...$neutralDeck]
+      neutrals: [...$neutralDeck]
     };
 
     cardDetails.set({...controlCopyOfCardDetails});
@@ -351,7 +351,7 @@
       let cardDrawn = fullDeck[currentDeck][randomNum];
 
       // Make sure player never starts with bonus cards or specific cards.
-      const cardsThatMustBeDrawn = ['goblinLordsMark', 'eggGiraffe', 'spiritKing'];
+      const cardsThatMustBeDrawn = ['goblinLordsMark', 'eggGiraffe', 'spiritKing', 'warpStalker'];
       const safeBonusCards = ['chastity', 'corruption'];
       while (!safeBonusCards.includes(cardDrawn) && (cardsThatMustBeDrawn.includes(cardDrawn) || ['boost', 'trap', 'neutral'].some(race => getRaces(cardDrawn).includes(race)))) {
         // Grab new card
@@ -758,18 +758,13 @@
   function calculateCurrentPlayerPoints(player: Player, isNewTurn = false) {
     const otherPlayer = player.id === $player1.id ? $player2 : $player1;
 
-    // TODO: should not increase while blocked
-    // TODO: I drew corruption and it wipe my accumulated growth and charge points but how?
+    // If chastity/corruption, wipe the bonus points, otherwise temporarily stop accumulating.
     if (isNewTurn) {
-      $player1.chargePoints += $player1.numOfCharges;
-      $player1.growthPoints += $player1.numOfGrowths;
-      $player1.infectPoints += $player1.numOfInfects;
+      calculateAccumulatingBonusCards($player1);
+      calculateAccumulatingBonusCards($player2);
+    };
 
-      $player2.chargePoints += $player2.numOfCharges;
-      $player2.growthPoints += $player2.numOfGrowths;
-      $player2.infectPoints += $player2.numOfInfects;
-    }
-    
+
     setPlayerPointsToZero(player);
     calculateHumanPoints(player);
     calculateGoblinPoints(player, otherPlayer);
@@ -780,6 +775,23 @@
     calculateXenoPoints(player, otherPlayer);
     calculateSpiritPoints(player, otherPlayer);
     calculatePlayerHighestPoints(player);
+  }
+
+  // If chastity/corruption, wipe the bonus points, otherwise temporarily stop accumulating.
+  function calculateAccumulatingBonusCards(player: Player) : void {
+    if (player.hasCorruption) {
+      player.chargePoints = 0;
+      player.growthPoints = 0;
+    } else if (!player.hand.includes('xenoGuard')) {
+      player.chargePoints += player.numOfCharges;
+      player.growthPoints += player.numOfGrowths;
+    }
+
+    if (player.hasChastity) {
+      player.infectPoints = 0;
+    } else if (!player.hand.includes('rhino')) {
+      player.infectPoints += player.numOfInfects;
+    }
   }
 
   // Calculates all player race points, used to determine the winner.
@@ -1792,11 +1804,9 @@
     const hasVision = (playerSide === 'p1' && $player2.hasVision) || (playerSide === 'p2' && $player1.hasVision);
     const isExposed = (gameState.playingAs === 'p1' && $player2.isExposed && playerSide === 'p2') || (gameState.playingAs === 'p2' && $player1.isExposed && playerSide === 'p1');
     const visionBlockedByDarkSpirit = (gameState.playingAs === 'p1' && $player2.hand.includes('darkSpirit') && playerSide === 'p2') || (gameState.playingAs === 'p2' && $player1.hand.includes('darkSpirit') && playerSide === 'p1');
-    const visionBlockedByChastityOrRhino = (gameState.playingAs === 'p1' && ($player2.hasChastity || $player2.hand.some(card => ['chastity', 'rhino'].includes(card))) || (gameState.playingAs === 'p2' && ($player1.hasChastity || $player2.hand.some(card => ['chastity', 'rhino'].includes(card)))));
+    const visionBlockedByChastityOrRhino = (gameState.playingAs === 'p1' && ($player2.hasChastity || $player2.hand.some(card => ['chastity', 'rhino'].includes(card))) || (gameState.playingAs === 'p2' && ($player1.hasChastity || $player1.hand.some(card => ['chastity', 'rhino'].includes(card)))));
     const cardIsLightSpirit = card === 'lightSpirit';
     
-    // FIXME: should've been exposed with xeno guard in hand, did it block by accident? check whos hand. elisa hand had rhino
-    // FIXME: looks fine... is it maybe a mistake on on adding chastity or something....
     if (isLookingAtOwnSide) return true;
     if (isExposed && !visionBlockedByDarkSpirit && !visionBlockedByChastityOrRhino) return true;
     if (hasVision && !visionBlockedByDarkSpirit) return true;
@@ -1902,12 +1912,32 @@
 
   // Check if boosts should be calculated or skipped
   function areBoostsBlocked(player: Player): boolean {
-    return player.hand.includes('xenoGuard') || (player.hand.includes('corruption') || player.hasCorruption);
+    return areBoostsBlockedByXeno(player) || areBoostsBlockedByCorruption(player);
+  }
+
+  // Check if boosts are blocked specifically by corruption
+  function areBoostsBlockedByCorruption(player: Player): boolean {
+    return player.hand.includes('corruption') || player.hasCorruption;
+  }
+
+  // Check if boosts are blocked specifically by xeno
+  function areBoostsBlockedByXeno(player: Player): boolean {
+    return player.hand.includes('xenoGuard');
   }
 
   // Check if traps should be calculated or skipped
   function areTrapsBlocked(player: Player): boolean {
-    return player.hand.includes('rhino') || (player.hand.includes('chastity') || player.hasChastity);
+    return areTrapsBlockedByRhino(player) || areTrapsBlockedByChastity(player);
+  }
+
+  // Check if traps are blocked specifically by chastity
+  function areTrapsBlockedByChastity(player: Player): boolean {
+    return (player.hand.includes('chastity') || player.hasChastity)
+  }
+
+  // Check if traps are blocked specifically by rhino
+  function areTrapsBlockedByRhino(player: Player): boolean {
+    return player.hand.includes('rhino');
   }
 
   // Returns all races associated with a card
@@ -2280,7 +2310,9 @@
                     
                   <div on:contextmenu|preventDefault={() => openLibraryToCard('neutral')} class="bonus-card-icons-section bonus-card-icons-section__neutrals">
                     {#each $player1.neutrals as neutral}
-                      <img src={displayBonusCardIcons(neutral)} alt={displayBonusCardIcons(neutral)} class="bonus-card-icon">
+                      {#if neutral !== 'leon'} <!-- Leon is weird here, it's more liek a raceless card than a neutral-->
+                        <img src={displayBonusCardIcons(neutral)} alt={displayBonusCardIcons(neutral)} class="bonus-card-icon">
+                      {/if}
                     {/each}
                   </div>
                 </div>

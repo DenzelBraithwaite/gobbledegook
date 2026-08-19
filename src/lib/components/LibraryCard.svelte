@@ -214,11 +214,11 @@
   }
 
   .bg-spirit {
-    background: linear-gradient(to top left, #b63bac, #b390b7 50%);
+    background: linear-gradient(to top left, #b63bac00, #b390b7 50%);
   }
   
   .bg-spirit-rare {
-    background: linear-gradient(to top left, #b63bac 5%, #e0de69, #b390b7 90%);
+    background: linear-gradient(to top left, #b63bac00 5%, #e0de69, #b390b7 90%);
   }
 
   .bg-boost {
@@ -299,11 +299,11 @@
   }
 
   .border-spirit {
-    outline: 4px solid #b63bac;
+    outline: 4px solid #c173baa8;
   }
 
   .border-spirit-rare {
-    outline: 4px solid #b63bac;
+    outline: 4px solid #c173baa8;
   }
 
   .border-boost {
