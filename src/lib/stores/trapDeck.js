@@ -2,6 +2,7 @@ import { writable } from 'svelte/store';
 
 const trapDeck = writable([
   'corruption',
+  'chjester',
   'exposed',
   'exposed',
   'sap',
@@ -14,7 +15,6 @@ const trapDeck = writable([
   'lost',
   'lost',
   'lost'
-  // Chjester TODO:
 ]);
 
 export default trapDeck;

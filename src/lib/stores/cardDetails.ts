@@ -1017,12 +1017,25 @@ const cardDetails = writable({
     otherRaces: [],
     image: '/boosts/eradicate.png'
   },
+  chester: {
+    title: 'chester',
+    displayTitle: 'Chester',
+    points: 0,
+    amount: 1,
+    rarity: 'epic',
+    traitTitle: 'Bountiful Booty',
+    trait: 'Discarding this card will instead transform it into a random legendary if any are available. Cannot be found if player boosts are blocked.',
+    description: 'A benevolent chest spirit that was born from the manifestation of peoples\' desires for riches.',
+    race: 'boost',
+    otherRaces: [],
+    image: '/boosts/chester.png'
+  },
   gaze: {
     title: 'Gaze',
     displayTitle: 'Gaze',
     points: 0,
     amount: 1,
-    rarity: 'epic',
+    rarity: 'amazing',
     traitTitle: 'Prediction',
     trait: 'While in hand, grants player the ability to click on it to reveal remaining cards in deck. This can be blocked.',
     description: 'This being exists outside of time and reality, always watching but never interfering.',
@@ -1110,12 +1123,25 @@ const cardDetails = writable({
     otherRaces: [],
     image: '/boosts/rainbow_boost.png'
   },
+  chjester: {
+    title: 'chjester',
+    displayTitle: 'Chjester',
+    points: 0,
+    amount: 1,
+    rarity: 'epic',
+    traitTitle: 'Surprise',
+    trait: 'If your hand contains a legendary, discarding this card will instead discard the legendary (chosen at random if multiple). Cannot be found if player is protected from traps.',
+    description: 'A mischievous mimic spirit that was born from the greed of humanity.',
+    race: 'boost',
+    otherRaces: [],
+    image: '/traps/chjester.png'
+  },
   exposed: {
     title: 'exposed',
     displayTitle: 'Exposed',
     points: 0,
     amount: 2,
-    rarity: 'epic',
+    rarity: 'amazing',
     traitTitle: 'Expose',
     trait: 'If drawn, your hand is exposed until your next turn, unless you have a card that blocks this in some way (e.g. chastity).',
     description: 'A spirit that briefly feeds on thoughts, making them temporarily tangible and visible to the naked eye.',

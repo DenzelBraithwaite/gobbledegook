@@ -21,6 +21,7 @@
   type DeckRace = 'humans' | 'goblins' | 'elves' | 'dwarves' | 'beasts' | 'bots' | 'xenos' | 'spirits' | 'boosts' | 'traps' | 'neutrals' | 'giraffe' | '';
   type Race = 'human' | 'goblin' | 'elf' | 'dwarf' | 'beast' | 'bot' | 'xeno' | 'spirit' | 'boost' | 'trap' | 'neutral' | '';
 
+  // TODO: I realize... for cards like lost and chester, they redraw which 99% of time is ok, but if no other cards remain, will be infinite loop...
   // Thanos: http://192.168.2.10:6912; 
   // Work Mac at home: http://192.168.2.19:6912;
   let socket = io('http://10.3.144.168:6912');
@@ -42,8 +43,9 @@
     p1NameChangeVisible: false,
     p2NameChangeVisible: false,
     playingAs: '' as 'p1' | 'p2',
-    playersRevealed: false
+    playersRevealed: false,
   };
+  let remainingLegendaries = []; // TODO: should i move this back under gameState? It works here but random
   let controlCopyOfCardDetails = {...$cardDetails};
   let remoteCardDetails = {...$cardDetails};
   // Deck players draw from, includes all race decks
@@ -195,6 +197,18 @@
       removeRaceDeck('traps');
       gameState.showSpinner = false;
     });
+
+    // Remove legendary from remainingLegendaries for both players.
+    socket.on('remaining-legendary-removed', card => {
+      remainingLegendaries.forEach(l => console.log(card + ' === ' + l[0] + '? | ' + Boolean(card === l[0])));
+      remainingLegendaries = remainingLegendaries.filter(l => l[0] !== card);
+
+      // Then remove from deck both are using
+      const race = $cardDetails[card].race;
+      const deck = getDeckTypeFromRace(race);
+      const removedCardIndex = fullDeck[deck].indexOf(card);
+      if (removedCardIndex !== -1) fullDeck[deck].splice(removedCardIndex, 1);
+    });
   });
 
   // sets users based on [username, id] from server.js
@@ -285,17 +299,17 @@
     player2.set({...$player2Reset, title: $player2.title});
 
     fullDeck = {
-      // humans: [...$humanDeck],
-      // goblins: [...$goblinDeck],
-      // elves: [...$elfDeck],
-      // dwarves: [...$dwarfDeck],
+      humans: [...$humanDeck],
+      goblins: [...$goblinDeck],
+      elves: [...$elfDeck],
+      dwarves: [...$dwarfDeck],
       beasts: [...$beastDeck],
-      // bots: [...$botDeck],
+      bots: [...$botDeck],
       xenos: [...$xenoDeck],
-      // spirits: [...$spiritDeck],
+      spirits: [...$spiritDeck],
       boosts: [...$boostDeck],
       traps: [...$trapDeck],
-      neutrals: [...$neutralDeck]
+      // neutrals: [...$neutralDeck]
     };
 
     cardDetails.set({...controlCopyOfCardDetails});
@@ -315,6 +329,8 @@
       loseMessage: '',
       eventMessage: ''
     }
+
+    remainingLegendaries = getAllLegendaries();
   }
 
   // Ensures player 1 isn't always first to start
@@ -334,6 +350,20 @@
   // Changes active player turn
   function changeTurns() {
     socket.emit('change-turns', {player1: $player1, player2: $player2});
+  }
+
+  function getDeckTypeFromRace(race: Race): DeckRace {
+    if (race === 'human') return 'humans';
+    if (race === 'goblin') return 'goblins';
+    if (race === 'elf') return 'elves';
+    if (race === 'dwarf') return 'dwarves';
+    if (race === 'beast') return 'beasts';
+    if (race === 'bot') return 'bots';
+    if (race === 'xeno') return 'xenos';
+    if (race === 'spirit') return 'spirits';
+    if (race === 'boost') return 'boosts';
+    if (race === 'trap') return 'traps';
+    if (race === 'neutral') return 'neutrals';
   }
 
   // Deals 5 cards to each player at the start of the round
@@ -361,8 +391,13 @@
         cardDrawn = fullDeck[currentDeck][randomNum];
       }
 
+      // Remove from deck
       const removedCardIndex = fullDeck[currentDeck].indexOf(cardDrawn);
       fullDeck[currentDeck].splice(removedCardIndex, 1);
+
+      // Other client getting update? if a legendary is drawn must also remove it from gamestate so no duplicates
+      const exemptLegendaries = ['nightTerror', 'chastity', 'corruption', 'neutralize'];
+      if ($cardDetails[cardDrawn].rarity === 'legendary' && !exemptLegendaries.includes(cardDrawn)) socket.emit('remove-remaining-legendary', cardDrawn);
 
       // Add to player's hand
       player.hand.push(cardDrawn);
@@ -466,13 +501,17 @@
         cardDrawn = 'goblinLordsMark';
       }
 
+      // other client getting update? if a legendary is drawn must also remove it from gamestate so no duplicates
+      const exemptLegendaries = ['nightTerror', 'chastity', 'corruption', 'neutralize'];
+      if ($cardDetails[cardDrawn].rarity === 'legendary' && !exemptLegendaries.includes(cardDrawn)) socket.emit('remove-remaining-legendary', cardDrawn);
+
       // If it's the spirit king, expose both hands.
       if (cardDrawn === 'spiritKing') await revealPlayers();
 
       // If it's the giraffe egg, get the next giraffe.
       if (cardDrawn === 'eggGiraffe') player.id === $player1.id ? player1.set({...$player1, giraffeCounter: 1}) : player2.set({...$player2, giraffeCounter: 1});
 
-      // If player has chastity but draws the trap card "lost", draw again.
+      // If player traps are blocked but draws the trap card "lost", draw again.
       if (cardDrawn === 'lost' && areTrapsBlocked(player)) {
         // Remove card from deck
         const removedCardIndex = fullDeck[currentDeck].indexOf(cardDrawn);
@@ -482,6 +521,12 @@
         if (fullDeck[currentDeck].length === 0) removeRaceDeck(currentDeck);
 
         // Draw new card but doesn't count as new turn
+        await drawCard(player, false);
+        return;
+      };
+
+      // If player boosts blocked but draws chester, draw again.
+      if (cardDrawn === 'chester' && areBoostsBlocked(player)) {
         await drawCard(player, false);
         return;
       };
@@ -583,6 +628,21 @@
 
     // Check if card discarded is dwarf alchemist, if so, calculate 50% chance to draw dwarf next turn.
     if (cardTitle === 'alchemist') player.dwarfNextTurn = Math.random() < 0.5 ? true : false;
+
+    // If chester, swap for a legendary and don't end turn.
+    if (cardTitle === 'chester' && remainingLegendaries.length > 0) {
+      const randomIndex = Math.floor(Math.random() * remainingLegendaries.length);
+      const legendaryObj = remainingLegendaries[randomIndex];
+      player.hand = [...player.hand, legendaryObj[0]];
+      
+      // If it's the spirit king, expose both hands.
+      if (legendaryObj[0] === 'spiritKing') await revealPlayers();
+      
+      // Then remove from gamestate remaining legendaries
+      socket.emit('remove-remaining-legendary', legendaryObj[0]);
+
+      return;
+    }
 
     // Don't change turns until player only has 5 cards
     if (player.hand.length > 5) return;
@@ -735,6 +795,19 @@
   function removeRaceDeck(race: DeckRace): void {
     const index = deckTypes.indexOf(race);
     if (index !== -1) deckTypes.splice(index, 1); // make sure it was found
+  }
+
+  function getAllLegendaries(): string[][] {
+    const legendaries = [];
+    if (fullDeck['humans'].includes('emperor')) legendaries.push(['emperor', 'humans']);
+    if (fullDeck['goblins'].includes('goblinLord')) legendaries.push(['goblinLord', 'goblins']);
+    if (fullDeck['elves'].includes('elfKing')) legendaries.push(['elfKing', 'elves']);
+    if (fullDeck['dwarves'].includes('longbeardLeader')) legendaries.push(['longbeardLeader', 'dwarves']);
+    if (fullDeck['beasts'].includes('dreamDestroyer')) legendaries.push(['dreamDestroyer', 'beasts']);
+    if (fullDeck['bots'].includes('ai')) legendaries.push(['ai', 'bots']);
+    if (fullDeck['spirits'].includes('spiritKing')) legendaries.push(['spiritKing', 'spirits']);
+
+    return legendaries;
   }
   
   // ---------------------------------------------------------------- \\
@@ -1879,7 +1952,7 @@
     if (isPlayerTurn() && $player2.turn) await drawCard($player2);
   }
   
-  // Handles player click on card
+  // Handles player click on card (player is the player whos side ur clicking not playingAs)
   async function clickOnCard(player: Player, cardTitle: string) {
     const currentPlayer = gameState.playingAs === 'p1' ? $player1 : $player2;
     if (player.hand.length > 5) await discard(cardTitle);
