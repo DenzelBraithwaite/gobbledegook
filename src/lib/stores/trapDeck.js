@@ -1,5 +1,6 @@
 import { writable } from 'svelte/store';
 
+// 14 total
 const trapDeck = writable([
   'corruption',
   'chjester',

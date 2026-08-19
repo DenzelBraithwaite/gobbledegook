@@ -1,5 +1,6 @@
 import { writable } from 'svelte/store';
 
+// 17 total
 const neutralDeck = writable([
   'neutralize',
   'switcharoo',

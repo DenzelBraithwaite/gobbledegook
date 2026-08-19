@@ -21,10 +21,9 @@
   type DeckRace = 'humans' | 'goblins' | 'elves' | 'dwarves' | 'beasts' | 'bots' | 'xenos' | 'spirits' | 'boosts' | 'traps' | 'neutrals' | 'giraffe' | '';
   type Race = 'human' | 'goblin' | 'elf' | 'dwarf' | 'beast' | 'bot' | 'xeno' | 'spirit' | 'boost' | 'trap' | 'neutral' | '';
 
-  // TODO: I realize... for cards like lost and chester, they redraw which 99% of time is ok, but if no other cards remain, will be infinite loop...
   // Thanos: http://192.168.2.10:6912; 
   // Work Mac at home: http://192.168.2.19:6912;
-  let socket = io('http://10.3.144.168:6912');
+  let socket = io('http://192.168.2.10:6912');
   $: gameState = {
     gobbledegookDeclared: false,
     gobbledegookDisabled: false,
@@ -236,8 +235,10 @@
   }
 
   async function revealPlayers(): Promise<void> {
+    // FIXME: issue when revealing xenos, voidrunner/warpstalker may appear as 0? Need to confirm, might be fixed i wasn't awaiting
+    // Must be before updateClientsForSpecialXenoCards()
+    socket.emit('reveal-players');
     updateClientsForSpecialXenoCards();
-    socket.emit('reveal-players'); // TODO: does this prevent other client warpstalker/voidrunner from being 0? Move it after updateClientsForXenoCards()
     while (gameState.showSpinner) await wait(500);
     socket.emit('display-event', 'revealed');
   }
@@ -309,7 +310,7 @@
       spirits: [...$spiritDeck],
       boosts: [...$boostDeck],
       traps: [...$trapDeck],
-      // neutrals: [...$neutralDeck]
+      neutrals: [...$neutralDeck]
     };
 
     cardDetails.set({...controlCopyOfCardDetails});
@@ -393,7 +394,7 @@
 
       // Remove from deck
       const removedCardIndex = fullDeck[currentDeck].indexOf(cardDrawn);
-      fullDeck[currentDeck].splice(removedCardIndex, 1);
+      if (removedCardIndex !== -1) fullDeck[currentDeck].splice(removedCardIndex, 1);
 
       // Other client getting update? if a legendary is drawn must also remove it from gamestate so no duplicates
       const exemptLegendaries = ['nightTerror', 'chastity', 'corruption', 'neutralize'];
@@ -515,7 +516,7 @@
       if (cardDrawn === 'lost' && areTrapsBlocked(player)) {
         // Remove card from deck
         const removedCardIndex = fullDeck[currentDeck].indexOf(cardDrawn);
-        fullDeck[currentDeck].splice(removedCardIndex, 1);
+        if (removedCardIndex !== -1) fullDeck[currentDeck].splice(removedCardIndex, 1);
 
         // Was it the last card in it's race deck? Remove deck.
         if (fullDeck[currentDeck].length === 0) removeRaceDeck(currentDeck);
@@ -525,8 +526,15 @@
         return;
       };
 
+      // TODO: technically causes a bug if no other cards remain but should almost never happen.
       // If player boosts blocked but draws chester, draw again.
       if (cardDrawn === 'chester' && areBoostsBlocked(player)) {
+        await drawCard(player, false);
+        return;
+      };
+
+      // If player boosts blocked but draws chester, draw again.
+      if (cardDrawn === 'chjester' && areTrapsBlocked(player)) {
         await drawCard(player, false);
         return;
       };
@@ -556,7 +564,7 @@
     // Remove card from deck unless special giraffe deck
     if (currentDeck !== 'giraffe') {
       const removedCardIndex = fullDeck[currentDeck].indexOf(cardDrawn);
-      fullDeck[currentDeck].splice(removedCardIndex, 1);
+      if (removedCardIndex !== -1) fullDeck[currentDeck].splice(removedCardIndex, 1);
 
       // When a smaller race deck runs out, it will be removed here. Placed below the cardDrawn logic to ensure the card is actually drawn (think goblin lord's mark)
       if (fullDeck[currentDeck].length === 0) removeRaceDeck(currentDeck);
@@ -594,6 +602,14 @@
     if (player.hand.includes('kidGiraffe')) cardTitle = 'kidGiraffe';
     if (player.hand.includes('adultGiraffe')) cardTitle = 'adultGiraffe';
 
+    if (player.hand.includes('chjester')) {
+      const exemptLegendaries = ['chastity', 'corruption', 'neuralize'];
+      const legendariesInHand = player.hand.filter(l => !exemptLegendaries.includes(l) && $cardDetails[l].rarity === 'legendary');
+
+      // Remove legendaries if they are found
+      if (legendariesInHand.length > 0) cardTitle = legendariesInHand[0]; // grab first one doesnt matter which
+    }
+
     // Using store update methods instead of player var ^
     if ($player1.turn) {
       const index = $player1.hand.indexOf(cardTitle);
@@ -618,7 +634,7 @@
     if (cardTitle === 'eradicate') await eradicateTraps();
 
     // Check if card discarded is spirit king, if so, hide hands.
-    if (cardTitle === 'spiritKing') concealPlayers();
+    if (cardTitle === 'spiritKing') await concealPlayers();
 
     // Check if card discarded is switcharoo, if so, swap hands, but don't swap if they have echo in effect (too many cards)
     if (cardTitle === 'switcharoo' && player.hand.length === 5 && !gameState.gobbledegookDeclared) await swapHands();

@@ -1,7 +1,5 @@
 import { writable } from 'svelte/store';
 
-// TODO: Boost/Chester: - Discard turns it into legendary
-// TODO: Trap/Chjester: - Discard discards a legendary from hand
 /*
  * Legendary = leader
  * Epic = Great ability, usually 2nd in command
@@ -1024,7 +1022,7 @@ const cardDetails = writable({
     amount: 1,
     rarity: 'epic',
     traitTitle: 'Bountiful Booty',
-    trait: 'Discarding this card will instead transform it into a random legendary if any are available. Cannot be found if player boosts are blocked.',
+    trait: 'Discarding this card will instead transform it into a random legendary (race not boost/trap/neutral) if any are available. Cannot be found if player boosts are blocked.',
     description: 'A benevolent chest spirit that was born from the manifestation of peoples\' desires for riches.',
     race: 'boost',
     otherRaces: [],
@@ -1130,9 +1128,9 @@ const cardDetails = writable({
     amount: 1,
     rarity: 'epic',
     traitTitle: 'Surprise',
-    trait: 'If your hand contains a legendary, discarding this card will instead discard the legendary (chosen at random if multiple). Cannot be found if player is protected from traps.',
+    trait: 'If your hand contains a legendary (race not boost/trap/neutral), discarding this card will instead discard the legendary (chosen at random if multiple). Cannot be found if player is protected from traps.',
     description: 'A mischievous mimic spirit that was born from the greed of humanity.',
-    race: 'boost',
+    race: 'trap',
     otherRaces: [],
     image: '/traps/chjester.png'
   },
