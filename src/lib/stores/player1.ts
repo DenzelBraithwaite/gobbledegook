@@ -32,9 +32,9 @@ export const player1 = writable<Player>({
   traps: [],
   neutrals: [],
   neutralizedCards: [],
-  chargeDrawnTurns: [],
-  growthDrawnTurns: [],
-  infectDrawnTurns: [],
+  numOfCharges: 0,
+  numOfGrowths: 0,
+  numOfInfects: 0,
   hasChastity: false,
   hasCorruption: false,
   hasVision: false,
@@ -76,9 +76,9 @@ export const player1Reset = writable<Player>({
   traps: [],
   neutrals: [],
   neutralizedCards: [],
-  chargeDrawnTurns: [],
-  growthDrawnTurns: [],
-  infectDrawnTurns: [],
+  numOfCharges: 0,
+  numOfGrowths: 0,
+  numOfInfects: 0,
   hasChastity: false,
   hasCorruption: false,
   hasVision: false,
@@ -120,9 +120,9 @@ export type Player = {
   traps: string[]; // Log of all traps in effect (other cards may clear this e.g. chastity).
   neutrals: string[]; // Log of all neutrals in effect (other cards may clear this e.g. neutralize).
   neutralizedCards: string[]; // Logs all neutralized cards since they disappear from other logs.
-  chargeDrawnTurns: number[]; // Logs the exact turn each charge card was drawn.
-  growthDrawnTurns: number[]; // Logs the exact turn each growth card was drawn.
-  infectDrawnTurns: number[]; // Logs the exact turn each infect card was drawn.
+  numOfCharges: number; // Keeps track of how many charges are in effect, this num used each turn.
+  numOfGrowths: number; // Keeps track of how many growths are in effect, this num used each turn.
+  numOfInfects: number; // Keeps track of how many infects are in effect, this num used each turn.
   hasChastity: boolean; // If dealt turn 1 or drawn, marks player. Blocks all traps unless neutralized.
   hasCorruption: boolean; // If dealt turn 1 or drawn, marks player. Blocks all boosts unless neutralized.
   hasVision: boolean; // When player draws vision, they briefly can see enemy cards.

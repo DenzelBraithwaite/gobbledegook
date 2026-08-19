@@ -23,7 +23,7 @@
 
   // Thanos: http://192.168.2.10:6912; 
   // Work Mac at home: http://192.168.2.19:6912;
-  let socket = io('http://192.168.2.19:6912');
+  let socket = io('http://192.168.2.10:6912');
   $: gameState = {
     gobbledegookDeclared: false,
     gobbledegookDisabled: false,
@@ -286,16 +286,16 @@
 
     fullDeck = {
       humans: [...$humanDeck],
-      goblins: [...$goblinDeck],
-      elves: [...$elfDeck],
-      dwarves: [...$dwarfDeck],
-      beasts: [...$beastDeck],
-      bots: [...$botDeck],
-      xenos: [...$xenoDeck],
-      spirits: [...$spiritDeck],
+      // goblins: [...$goblinDeck],
+      // elves: [...$elfDeck],
+      // dwarves: [...$dwarfDeck],
+      // beasts: [...$beastDeck],
+      // bots: [...$botDeck],
+      // xenos: [...$xenoDeck],
+      // spirits: [...$spiritDeck],
       boosts: [...$boostDeck],
-      traps: [...$trapDeck],
-      neutrals: [...$neutralDeck]
+      // traps: [...$trapDeck],
+      // neutrals: [...$neutralDeck]
     };
 
     cardDetails.set({...controlCopyOfCardDetails});
@@ -353,7 +353,6 @@
       // Make sure player never starts with bonus cards or specific cards.
       const cardsThatMustBeDrawn = ['goblinLordsMark', 'eggGiraffe', 'spiritKing', 'chastity', 'corruption'];
       while ((cardsThatMustBeDrawn.includes(cardDrawn) || ['boost', 'trap', 'neutral'].some(race => getRaces(cardDrawn).includes(race)))) {
-        console.log(cardDrawn);
         // Grab new card
         randomNum = Math.floor(Math.random() * deckTypes.length);
         currentDeck = deckTypes[randomNum];
@@ -531,7 +530,7 @@
         return $player2;
       });
     }
-    calculateCurrentPlayerPoints(player);
+    calculateCurrentPlayerPoints(player, isNewTurn(player));
     
     // Emits to server that a card was drawn
     socket.emit('draw-card', {player1: $player1, player2: $player2, deckTypes: deckTypes, fullDeck: fullDeck});
@@ -709,7 +708,7 @@
     }
   }
 
-  // Sets all of players point values (including charge/infect) to 0
+  // Sets all of players point values (not charge/growth/infect) to 0
   function setPlayerPointsToZero(player: Player): void {
     player.points = {
       humans: 0,
@@ -722,9 +721,6 @@
       spirits: 0
     };
     player.highestPoints = 0;
-    player.chargePoints = 0;
-    player.growthPoints = 0;
-    player.infectPoints = 0;
   }
 
   // Determine if it is the player's turn or not
@@ -744,18 +740,33 @@
   // ------------------------- CALCULATIONS ------------------------- \\
   // ---------------------------------------------------------------- \\
 
-  // Counts if 1 full turn has passed
+  // Adds to turn count if 1 full turn has passed
   function calculateNewTurn(player: Player) {
     // Not a new turn if player got echo and is drawing/discarding more cards. Must wait for actual turn change.
-    if (player.playingTwice) return;
-    if (player.hand.length >= 6) return;
+    if (player.playingTwice || player.hand.length >= 6) return;
     if (($player1.playedFirst && $player1.turn) || ($player2.playedFirst && $player2.turn)) socket.emit('new-turn');
   }
 
+  // Checks if it's a new turn (1 full rotation)
+  function isNewTurn(player: Player): boolean {
+    if (player.playingTwice) return false;
+    return ($player1.playedFirst && $player1.turn) || ($player2.playedFirst && $player2.turn);
+  }
+
   // Calculates all player race points, used to determine the winner.
-  function calculateCurrentPlayerPoints(player: Player) {
+  function calculateCurrentPlayerPoints(player: Player, isNewTurn = false) {
     const otherPlayer = player.id === $player1.id ? $player2 : $player1;
 
+    if (isNewTurn) {
+      $player1.chargePoints += $player1.numOfCharges;
+      $player1.growthPoints += $player1.numOfGrowths;
+      $player1.infectPoints += $player1.numOfInfects;
+
+      $player2.chargePoints += $player2.numOfCharges;
+      $player2.growthPoints += $player2.numOfGrowths;
+      $player2.infectPoints += $player2.numOfInfects;
+    }
+    
     setPlayerPointsToZero(player);
     calculateHumanPoints(player);
     calculateGoblinPoints(player, otherPlayer);
@@ -766,17 +777,12 @@
     calculateXenoPoints(player, otherPlayer);
     calculateSpiritPoints(player, otherPlayer);
     calculatePlayerHighestPoints(player);
-    
-    // Even though points are calculated, still need to set the infect/charge/growth points for end game results screen.
-    for (let i = 0; i < player.infectDrawnTurns.length; i++) player.infectPoints += (gameState.turnCount - player.infectDrawnTurns[i]);
-    for (let i = 0; i < player.chargeDrawnTurns.length; i++) player.chargePoints += (gameState.turnCount - player.chargeDrawnTurns[i]);
-    for (let i = 0; i < player.growthDrawnTurns.length; i++) player.growthPoints += (gameState.turnCount - player.growthDrawnTurns[i]);
   }
 
   // Calculates all player race points, used to determine the winner.
   function calculateEndGamePlayerPoints(player: Player) {
     const otherPlayer = player.id === $player1.id ? $player2 : $player1;
-
+    
     setPlayerPointsToZero(player);
     calculateHumanPoints(player);
     calculateGoblinPoints(player, otherPlayer, true);
@@ -787,11 +793,6 @@
     calculateXenoPoints(player, otherPlayer);
     calculateSpiritPoints(player, otherPlayer);
     calculatePlayerHighestPoints(player);
-    
-    // Even though points are calculated, still need to set the infect/charge/growth points for end game results screen.
-    for (let i = 0; i < player.infectDrawnTurns.length; i++) player.infectPoints += (gameState.turnCount - player.infectDrawnTurns[i]);
-    for (let i = 0; i < player.chargeDrawnTurns.length; i++) player.chargePoints += (gameState.turnCount - player.chargeDrawnTurns[i]);
-    for (let i = 0; i < player.growthDrawnTurns.length; i++) player.growthPoints += (gameState.turnCount - player.growthDrawnTurns[i]);
   }
 
   // Calculates and updates player's highest points among races.
@@ -847,9 +848,7 @@
     if (areBoostsBlocked(player)) return;
 
     // Add charge points
-    let chargePoints = 0;
-    for (let i = 0; i < player.chargeDrawnTurns.length; i++) chargePoints += (gameState.turnCount - player.chargeDrawnTurns[i]);
-    player.points.humans += chargePoints;
+    player.points.humans += player.chargePoints;
 
     // Add rejuvenate points
     const numOfRejuvenates = player.boosts.filter(boost => boost === 'rejuvenate').length;
@@ -867,9 +866,7 @@
     if (areTrapsBlocked(player)) return;
 
     // Infects
-    let infectPoints = 0;
-    for (let i = 0; i < player.infectDrawnTurns.length; i++) infectPoints += (gameState.turnCount - player.infectDrawnTurns[i]);
-    player.points.humans -= infectPoints;
+    player.points.humans -= player.infectPoints;
 
     // Saps
     const numOfSaps = player.traps.filter(trap => trap === 'sap').length;
@@ -916,9 +913,7 @@
     if (areBoostsBlocked(player)) return;
 
     // Add growth points
-    let growthPoints = 0;
-    for (let i = 0; i < player.growthDrawnTurns.length; i++) growthPoints += (gameState.turnCount - player.growthDrawnTurns[i]);
-    player.points.goblins += growthPoints;
+    player.points.goblins += player.growthPoints;
 
     // Add rejuvenate points
     const numOfRejuvenates = player.boosts.filter(boost => boost === 'rejuvenate').length;
@@ -936,9 +931,7 @@
     if (areTrapsBlocked(player)) return;
 
     // Infects
-    let infectPoints = 0;
-    for (let i = 0; i < player.infectDrawnTurns.length; i++) infectPoints += (gameState.turnCount - player.infectDrawnTurns[i]);
-    player.points.goblins -= infectPoints;
+    player.points.goblins -= player.infectPoints;
 
     // Saps
     const numOfSaps = player.traps.filter(trap => trap === 'sap').length;
@@ -994,9 +987,7 @@
     if (areBoostsBlocked(player)) return;
 
     // Add growth points
-    let growthPoints = 0;
-    for (let i = 0; i < player.growthDrawnTurns.length; i++) growthPoints += (gameState.turnCount - player.growthDrawnTurns[i]);
-    player.points.elves += growthPoints;
+    player.points.elves += player.growthPoints;
 
     // Add rejuvenate points
     const numOfRejuvenates = player.boosts.filter(boost => boost === 'rejuvenate').length;
@@ -1014,9 +1005,7 @@
     if (areTrapsBlocked(player)) return;
 
     // Infects
-    let infectPoints = 0;
-    for (let i = 0; i < player.infectDrawnTurns.length; i++) infectPoints += (gameState.turnCount - player.infectDrawnTurns[i]);
-    player.points.elves -= infectPoints;
+    player.points.elves -= player.infectPoints;
 
     // Saps
     const numOfSaps = player.traps.filter(trap => trap === 'sap').length;
@@ -1099,9 +1088,7 @@
     if (areBoostsBlocked(player)) return;
 
     // Add growth points
-    let growthPoints = 0;
-    for (let i = 0; i < player.growthDrawnTurns.length; i++) growthPoints += (gameState.turnCount - player.growthDrawnTurns[i]);
-    player.points.dwarves += growthPoints;
+    player.points.dwarves += player.growthPoints;
 
     // Add rejuvenate points
     const numOfRejuvenates = player.boosts.filter(boost => boost === 'rejuvenate').length;
@@ -1119,9 +1106,7 @@
     if (areTrapsBlocked(player)) return;
 
     // Infects
-    let infectPoints = 0;
-    for (let i = 0; i < player.infectDrawnTurns.length; i++) infectPoints += (gameState.turnCount - player.infectDrawnTurns[i]);
-    player.points.dwarves -= infectPoints;
+    player.points.dwarves -= player.infectPoints;
 
     // Saps
     const numOfSaps = player.traps.filter(trap => trap === 'sap').length;
@@ -1221,9 +1206,7 @@
     if (areTrapsBlocked(player)) return;
 
     // Infects
-    let infectPoints = 0;
-    for (let i = 0; i < player.infectDrawnTurns.length; i++) infectPoints += (gameState.turnCount - player.infectDrawnTurns[i]);
-    player.points.beasts -= infectPoints;
+    player.points.beasts -= player.infectPoints;
 
     // Saps
     const numOfSaps = player.traps.filter(trap => trap === 'sap').length;
@@ -1324,9 +1307,7 @@
 
     if (!otherPlayer.hand.includes('ai')) {
       // Add charge points
-      let chargePoints = 0;
-      for (let i = 0; i < player.chargeDrawnTurns.length; i++) chargePoints += (gameState.turnCount - player.chargeDrawnTurns[i]);
-      player.points.bots += chargePoints;
+      player.points.bots += player.chargePoints;
     }
 
     // Add rejuvenate points
@@ -1442,9 +1423,7 @@
     if (areTrapsBlocked(player)) return;
 
     // Infects
-    let infectPoints = 0;
-    for (let i = 0; i < player.infectDrawnTurns.length; i++) infectPoints += (gameState.turnCount - player.infectDrawnTurns[i]);
-    player.points.xenos -= infectPoints;
+    player.points.xenos -= player.infectPoints;
 
     // Saps
     const numOfSaps = player.traps.filter(trap => trap === 'sap').length;
@@ -1575,18 +1554,18 @@
     player.boosts = [...player.boosts, cardTitle];
     
     if (cardTitle === 'chastity') player.hasChastity = true;
-    if (cardTitle === 'charge') player.chargeDrawnTurns.push(gameState.turnCount);
-    if (cardTitle === 'growth') player.growthDrawnTurns.push(gameState.turnCount);
+    if (cardTitle === 'charge') player.numOfCharges += 1;
+    if (cardTitle === 'growth') player.numOfGrowths += 1;
     if (cardTitle === 'gaze') showEvent('gaze');
   }
 
   // Adds trap card to players traps array
-  async function addTrapCard(player: Player, card) {
-    player.traps = [...player.traps, card];
+  async function addTrapCard(player: Player, cardTitle: string) {
+    player.traps = [...player.traps, cardTitle];
 
-    if (card === 'corruption') player.hasCorruption = true;
-    if (card === 'infect') player.infectDrawnTurns.push(gameState.turnCount);
-    if (card === 'exposed' && !player.hasChastity && !player.hand.includes('chastity')) {
+    if (cardTitle === 'corruption') player.hasCorruption = true;
+    if (cardTitle === 'infect') player.numOfInfects += 1;
+    if (cardTitle === 'exposed' && !player.hasChastity && !player.hand.includes('chastity')) {
       // Puts spinner while game while updating xenos, every .5s checks if done before continuing.
       player.id === $player1.id ? player1.set({...$player1, isExposed: true}) : player2.set({...$player2, isExposed: true});
       updateClientsForSpecialXenoCards();
@@ -1648,9 +1627,9 @@
       $player1.boosts = [];
       $player1.traps = [];
       $player1.neutrals = [];
-      $player1.chargeDrawnTurns = [];
-      $player1.growthDrawnTurns = [];
-      $player1.infectDrawnTurns = [];
+      $player1.numOfCharges = 0;
+      $player1.numOfGrowths = 0;
+      $player1.numOfInfects = 0;
       $player1.hasChastity = false;
       $player1.hasCorruption = false;
       $player1.hasVision = false;
@@ -1666,9 +1645,9 @@
       $player2.boosts = [];
       $player2.traps = [];
       $player2.neutrals = [];
-      $player2.chargeDrawnTurns = [];
-      $player2.growthDrawnTurns = [];
-      $player2.infectDrawnTurns = [];
+      $player2.numOfCharges = 0;
+      $player2.numOfGrowths = 0;
+      $player2.numOfInfects = 0;
       $player2.hasChastity = false;
       $player2.hasCorruption = false;
       $player2.hasVision = false;
@@ -1808,6 +1787,7 @@
   function isCardVisible(playerSide: 'p1' | 'p2', card: string) {
     const isLookingAtOwnSide = (gameState.playingAs === 'p1' && playerSide === 'p1') || (gameState.playingAs === 'p2' && playerSide === 'p2');
     const hasVision = (playerSide === 'p1' && $player2.hasVision) || (playerSide === 'p2' && $player1.hasVision);
+    // FIXME: should've been exposed with xeno guard in hand, did it block by accident? check whos hand. elisa hand had rhino
     const isExposed = (gameState.playingAs === 'p1' && $player2.isExposed && playerSide === 'p2') || (gameState.playingAs === 'p2' && $player1.isExposed && playerSide === 'p1');
     const visionBlockedByDarkSpirit = (gameState.playingAs === 'p1' && $player2.hand.includes('darkSpirit') && playerSide === 'p2') || (gameState.playingAs === 'p2' && $player1.hand.includes('darkSpirit') && playerSide === 'p1');
     const visionBlockedByChastityOrRhino = (gameState.playingAs === 'p1' && ($player2.hasChastity || $player2.hand.some(card => ['chastity', 'rhino'].includes(card))) || (gameState.playingAs === 'p2' && ($player1.hasChastity || $player2.hand.some(card => ['chastity', 'rhino'].includes(card)))));
