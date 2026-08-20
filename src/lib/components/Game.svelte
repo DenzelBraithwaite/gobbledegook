@@ -109,7 +109,7 @@
       
       const player = gameState.playingAs === 'p1' ? $player1 : $player2;
       calculateCurrentPlayerPoints(player);
-      const gdgButtonAvailable = (!gameState.gameOver && !gameState.gobbledegookDeclared && gameState.turnCount >= 10);
+      const gdgButtonAvailable = (!gameState.gameOver && !gameState.gobbledegookDeclared && gameState.turnCount >= 15);
       if (gdgButtonAvailable && isPlayerTurn()) gameState.gobbledegookDisabled = false;
       if (isPlayerTurn()) showEvent('turn-change');
     });
@@ -206,7 +206,22 @@
       const race = $cardDetails[card].race;
       const deck = getDeckTypeFromRace(race);
       const removedCardIndex = fullDeck[deck].indexOf(card);
-      if (removedCardIndex !== -1) fullDeck[deck].splice(removedCardIndex, 1);
+      if (removedCardIndex !== -1) {
+        fullDeck[deck].splice(removedCardIndex, 1);
+        
+        if (gameState.playingAs === 'p1') {
+          player1.update($player1 => {
+            $player1.cardsDrawn = [...$player1.cardsDrawn, card];
+            return $player1;
+          });
+
+        } else {
+          player2.update($player2 => {
+            $player2.cardsDrawn = [...$player2.cardsDrawn, card];
+            return $player2;
+          });
+        }
+      };
     });
   });
 
@@ -602,7 +617,7 @@
     if (player.hand.includes('kidGiraffe')) cardTitle = 'kidGiraffe';
     if (player.hand.includes('adultGiraffe')) cardTitle = 'adultGiraffe';
 
-    if (player.hand.includes('chjester')) {
+    if (cardTitle === 'chjester') {
       const exemptLegendaries = ['chastity', 'corruption', 'neuralize'];
       const legendariesInHand = player.hand.filter(l => !exemptLegendaries.includes(l) && $cardDetails[l].rarity === 'legendary');
 
@@ -1169,8 +1184,13 @@
       if (cardTitle === 'nelladan') return ($cardDetails[cardTitle].points + 5);
     }
 
+    // King
+    else if (hasElfKing) {
+      return $cardDetails[cardTitle].points * 2;
+    }
+
     // Default
-    return getRaces(cardTitle).includes('elf') ? $cardDetails[cardTitle].points * 2 : $cardDetails[cardTitle].points;
+    return $cardDetails[cardTitle].points;
   }
 
   // --------------------- DWARF CALCULATIONS ----------------------- \\
@@ -2773,6 +2793,7 @@
     align-items: center;
   }
   
+  // TODO: when blocked still have color trim to know which is which
   .bonus-card-icons-section__boosts {
     background: linear-gradient(180deg, #b8ebf380, #90beff70 50%);
     box-shadow: 0 2px 8px 2px #b8ebf331;

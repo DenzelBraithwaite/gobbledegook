@@ -903,7 +903,7 @@ const cardDetails = writable({
     amount: 1,
     rarity: 'great',
     traitTitle: '',
-    trait: '',
+    trait: '', // TODO: ability amkes u draw a blue jinn next
     description: 'The spiritual embodiment of the ocean and rain.',
     race: 'spirit',
     otherRaces: [],
@@ -929,7 +929,7 @@ const cardDetails = writable({
     amount: 1,
     rarity: 'great',
     traitTitle: '',
-    trait: '',
+    trait: '', // TODO: Ability makes u draw a red jinn next
     description: 'The spiritual embodiment of fire and life.',
     race: 'spirit',
     otherRaces: [],
