@@ -23,7 +23,7 @@
 
   // Thanos: http://192.168.2.10:6912; 
   // Work Mac at home: http://192.168.2.19:6912;
-  let socket = io('http://192.168.2.10:6912');
+  let socket = io('http://10.3.144.176:6912');
   $: gameState = {
     gobbledegookDeclared: false,
     gobbledegookDisabled: false,
@@ -74,6 +74,12 @@
     // Takes users from server and sets them on clients' frontend
     socket.on('set-users', users => setUsers(users));
 
+    // Readies up players and starts game if both players ready.
+    socket.on('player-readied-up', data => {
+      player1.set({...$player1, isReady: data.player1.isReady});
+      player2.set({...$player2, isReady: data.player2.isReady});
+    });
+
     // Resets game and updates player hands
     socket.on('game-started', data => {
       resetGame();
@@ -88,7 +94,7 @@
       calculateCurrentPlayerPoints(player);
     });
 
-    // Counts turns
+    // Counts turns, broacast not io emit.
     socket.on('add-turn-count', () => gameState.turnCount++);
 
     // Handles turn change for all users
@@ -199,7 +205,6 @@
 
     // Remove legendary from remainingLegendaries for both players.
     socket.on('remaining-legendary-removed', card => {
-      remainingLegendaries.forEach(l => console.log(card + ' === ' + l[0] + '? | ' + Boolean(card === l[0])));
       remainingLegendaries = remainingLegendaries.filter(l => l[0] !== card);
 
       // Then remove from deck both are using
@@ -250,7 +255,6 @@
   }
 
   async function revealPlayers(): Promise<void> {
-    // FIXME: issue when revealing xenos, voidrunner/warpstalker may appear as 0? Need to confirm, might be fixed i wasn't awaiting
     // Must be before updateClientsForSpecialXenoCards()
     socket.emit('reveal-players');
     updateClientsForSpecialXenoCards();
@@ -280,6 +284,13 @@
 
     // Send data to websocket server
     socket.emit('start-game', {player1: $player1, player2: $player2, fullDeck});
+  }
+
+  // When both players are ready the game starts/restarts
+  async function readyUpPlayer(): Promise<void> {
+    gameState.playingAs === 'p1' ? player1.set({...$player1, isReady: !$player1.isReady}) : player2.set({...$player2, isReady: !$player2.isReady});
+    socket.emit('ready-up-player', {player1: $player1, player2: $player2});
+    if ($player1.isReady && $player2.isReady) await startGame();
   }
 
   // Ends current round
@@ -415,17 +426,14 @@
       const exemptLegendaries = ['nightTerror', 'chastity', 'corruption', 'neutralize'];
       if ($cardDetails[cardDrawn].rarity === 'legendary' && !exemptLegendaries.includes(cardDrawn)) socket.emit('remove-remaining-legendary', cardDrawn);
 
-      // Add to player's hand
-      player.hand.push(cardDrawn);
-
       // If the card is a trap that triggers even without being drawn, handle it.
       if (['corruption'].includes(cardDrawn)) await addTrapCard(player, cardDrawn);
 
       // If the card is a boost that triggers even without being drawn, handle it.
       if (['chastity'].includes(cardDrawn)) addBoostCard(player, cardDrawn);
 
-      // If the card is a neutral that triggers even without being drawn, handle it.
-      if (['switcharoo'].includes(cardDrawn)) await addneutralCard(player, cardDrawn, false);
+      // Add to player's hand
+      player.hand.push(cardDrawn);
     }
 
     // Need to reassign for svelte to be reactive
@@ -849,7 +857,10 @@
   function calculateNewTurn(player: Player) {
     // Not a new turn if player got echo and is drawing/discarding more cards. Must wait for actual turn change.
     if (player.playingTwice || player.hand.length >= 6) return;
-    if (($player1.playedFirst && $player1.turn) || ($player2.playedFirst && $player2.turn)) socket.emit('new-turn');
+    if (($player1.playedFirst && $player1.turn) || ($player2.playedFirst && $player2.turn)) {
+      gameState.turnCount++;
+      socket.emit('new-turn');
+    };
   }
 
   // Checks if it's a new turn (1 full rotation)
@@ -930,20 +941,21 @@
 
   // Modifies card points depending on cards in player hand
   function displayCardPoints(player: Player, cardTitle: string): number {
+    let highestPoints = cardTitle === 'virus' ? -2 : 0; // only virus starts below 0.
     const triggerTwinEffect = player.hand.includes('nelladan') && player.hand.includes('nadallen');
-    if ((player.hand.some(card => ['dreamDestroyer', 'nightTerror'].includes(card)) || cardTitle === 'dog' || cardTitle === 'wolf') && getRaces(cardTitle).includes('beast')) return displayBeastPoints(player, cardTitle);
-    if ((player.hand.includes('ai') || player.hand.includes('protectron')) && getRaces(cardTitle).includes('bot')) return displayBotPoints(player, cardTitle);
-    if (triggerTwinEffect || (player.hand.includes('elfKing') && getRaces(cardTitle).includes('elf'))) return displayElfPoints(player, cardTitle);
-    if ((player.hand.includes('emperor') || player.hand.includes('commander')) && getRaces(cardTitle).includes('human')) return displayHumanPoints(player, cardTitle);
-    if (player.hand.every(card => card === 'redSpirit' || card === 'blueSpirit')) return displaySpiritPoints(player, cardTitle);
-    if (cardTitle === 'longbeardLeader') return displayDwarfPoints(player);
-    if (cardTitle === 'cookieJar' && isCookieJarActive(player)) return 50;
+    if ((player.hand.some(card => ['dreamDestroyer', 'nightTerror'].includes(card)) || cardTitle === 'dog' || cardTitle === 'wolf') && getRaces(cardTitle).includes('beast')) highestPoints = Math.max(highestPoints, displayBeastPoints(player, cardTitle));
+    if ((player.hand.includes('ai') || player.hand.includes('protectron')) && getRaces(cardTitle).includes('bot')) highestPoints = Math.max(highestPoints, displayBotPoints(player, cardTitle));
+    if (triggerTwinEffect || (player.hand.includes('elfKing') && getRaces(cardTitle).includes('elf'))) highestPoints = Math.max(highestPoints, displayElfPoints(player, cardTitle));
+    if ((player.hand.includes('emperor') || player.hand.includes('commander')) && getRaces(cardTitle).includes('human')) highestPoints = Math.max(highestPoints, displayHumanPoints(player, cardTitle));
+    if (player.hand.every(card => card === 'redSpirit' || card === 'blueSpirit')) highestPoints = Math.max(highestPoints, displaySpiritPoints(player, cardTitle));
+    if (cardTitle === 'longbeardLeader') highestPoints = Math.max(highestPoints, displayDwarfPoints(player));
+    if (cardTitle === 'cookieJar' && isCookieJarActive(player)) highestPoints = Math.max(highestPoints, 50);
     
     // If this is being called on player 1/2's hand and the card is a voidrunner/warp and I'm player 2/1 return appropriate points.
     const xenoCards = ['voidRunner', 'warpstalker', 'nebulite'];
-    if (player.hand.some(c => xenoCards.includes(c)) && getRaces(cardTitle).includes('xeno')) return displayXenoPoints(player, cardTitle);
+    if (player.hand.some(c => xenoCards.includes(c)) && getRaces(cardTitle).includes('xeno')) highestPoints = Math.max(highestPoints, displayXenoPoints(player, cardTitle));
 
-    return $cardDetails[cardTitle].points;
+    return Math.max(highestPoints, $cardDetails[cardTitle].points);
   }
 
   // --------------------- HUMAN CALCULATIONS ----------------------- \\
@@ -1581,7 +1593,7 @@
   }
 
   // Calculates special xeno card points
-  function calculateSpecialXenoCard(player: Player, cardTitle: string) {
+  function calculateSpecialXenoCard(player: Player, cardTitle: string): void {
     // If card drawn is warpstalker, generate point value for card between 10-20 inclusive.
     if (cardTitle === 'warpstalker') $cardDetails[cardTitle].points = Math.ceil(Math.random() * 11) + 9;
 
@@ -2095,7 +2107,18 @@
       <div class="results-screen" transition:fade>
         <!-- Play again btn -->
         {#if !gameState.startBtnDisabled}
-          <span class="play-again-btn"><Button on:click={async () => await startGame()} round={true} customClasses="btn__green">Rematch</Button></span>
+          <span class="play-again-btn">
+            <Button on:click={async () => await readyUpPlayer()} round={true} customClasses="btn__green">
+              {#if ($player1.isReady && !$player2.isReady) || ($player2.isReady && !$player1.isReady)}
+                1/2
+                <br>
+              {:else if !$player1.isReady && !$player2.isReady}
+                0/2
+                <br>
+              {/if}
+              Rematch
+            </Button>
+          </span>
         {/if}
 
         <div class="results-messages-flex-wrapper">
@@ -2521,7 +2544,16 @@
           <h1 class="turn-count">Turn {gameState.turnCount}</h1>
           <GGCard on:click={async() => await clickOnDeck()} faceUp={false} />
           {#if !gameState.startBtnDisabled}
-            <Button on:click={async () => await startGame()} round={true} customClasses="btn__green">Start</Button>
+            <Button on:click={async () => await readyUpPlayer()} round={true} customClasses="btn__green">
+              Ready
+              {#if ($player1.isReady && !$player2.isReady) || ($player2.isReady && !$player1.isReady)}
+                <br>
+                1/2
+              {:else if !$player1.isReady && !$player2.isReady}
+                <br>
+                0/2
+              {/if}
+            </Button>
           {:else if gameState.gobbledegookDisabled || gameState.turnCount < 10}
             <Button round={true} customClasses="btn__orange_disabled">GDG</Button>
           {:else}
@@ -2892,8 +2924,10 @@
 
   .play-again-btn {
     font-size: 1.5rem;
+    z-index: 3;
+
     position: absolute;
-    bottom: 0;
+    bottom: 30px;
     right: 46%; // to center between discards
     transform: translateY(42%);
   }

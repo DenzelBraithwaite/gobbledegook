@@ -71,11 +71,14 @@ io.on('connection', socket => {
   // Start game
   socket.on('start-game', data => socket.broadcast.emit('game-started', data));
 
+  // Ready up the player
+  socket.on('ready-up-player', data => socket.broadcast.emit('player-readied-up', data));
+
   // Change username / player title
   socket.on('username-changed', data => socket.broadcast.emit('update-username', data));
 
   // Count turns
-  socket.on('new-turn', () => io.emit('add-turn-count'));
+  socket.on('new-turn', () => socket.broadcast.emit('add-turn-count'));
 
   // Change turns
   socket.on('change-turns', data => io.emit('turn-changed', data));

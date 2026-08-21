@@ -42,6 +42,7 @@ export const player1 = writable<Player>({
   chargePoints: 0,
   growthPoints: 0,
   infectPoints: 0,
+  isReady: false
 });
 
 export const player1Reset = writable<Player>({
@@ -86,6 +87,7 @@ export const player1Reset = writable<Player>({
   chargePoints: 0,
   growthPoints: 0,
   infectPoints: 0,
+  isReady: false
 });
 
 export type Player = {
@@ -130,4 +132,5 @@ export type Player = {
   chargePoints: number; // Total num of charge points (for humans and bots).
   growthPoints: number; // Total num of growth points (for goblins, elves and dwarves).
   infectPoints: number; // Total num of infect points (excludes bots).
+  isReady: boolean; // For starting game and restarting game, both players must be ready.
 };

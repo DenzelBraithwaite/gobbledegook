@@ -780,7 +780,7 @@ const cardDetails = writable({
   warpstalker: {
     title: 'warpstalker',
     displayTitle: 'Warpstalker',
-    points: 0, // random between 10-20
+    points: 10, // random between 10-20
     amount: 3,
     rarity: 'amazing',
     traitTitle: 'Hive Resonance',

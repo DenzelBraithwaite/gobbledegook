@@ -43,6 +43,7 @@ export const player2 = writable<Player>({
   chargePoints: 0,
   growthPoints: 0,
   infectPoints: 0,
+  isReady: false
 });
 
 export const player2Reset = writable<Player>({
@@ -87,4 +88,5 @@ export const player2Reset = writable<Player>({
   chargePoints: 0,
   growthPoints: 0,
   infectPoints: 0,
+  isReady: false
 });
