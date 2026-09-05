@@ -842,6 +842,77 @@ const cardDetails = writable({
     otherRaces: [],
     image: '/xenos/xeno_placeholder.png'
   },
+  // Egg Xenos
+  // TODO: Xeno who starts with high point value but degrades each turn towards 0.
+  drainite: {
+    title: 'drainite',
+    displayTitle: 'Drainite',
+    points: 40, // -4 each turn
+    amount: 1,
+    rarity: 'epic',
+    traitTitle: 'Drain',
+    trait: 'This xeno loses 4 points every turn while in hand.',
+    description: 'A xeno who experiences an entire lifetime in the fraction of that of a human.',
+    race: 'xeno',
+    otherRaces: [],
+    image: '/xenos/drainite.png'
+  },
+  // TODO: Xeno who's points change every turn from 1-30. Only GDG declared will freeze this. Start of turn generates point.
+  xerandium: {
+    title: 'xerandium',
+    displayTitle: 'Xerandium',
+    points: 0, // random between 0-30 each turn.
+    amount: 1,
+    rarity: 'epic',
+    traitTitle: 'Morph',
+    trait: 'This xeno changes value at the start of your turn from 0-30. This only stops once Gobbledegook is declared.',
+    description: 'This xeno lives in a constant state of liminality, morphing every day, sometiems regressing and sometimes progressing.',
+    race: 'xeno',
+    otherRaces: [],
+    image: '/xenos/xerandium.png'
+  },
+  // TODO: Xeno who adds +2 xeno points each turn while in hand.
+  sporax: {
+    title: 'sporax',
+    displayTitle: 'Sporax',
+    points: 0, // +2 each turn
+    amount: 1,
+    rarity: 'epic',
+    traitTitle: 'Mycelial growth',
+    trait: 'This xeno gains +2 points every turn while in hand.',
+    description: 'A xeno who never stops evolving.',
+    race: 'xeno',
+    otherRaces: [],
+    image: '/xenos/sporax.png'
+  },
+  // TODO:
+    growingXeno: {
+    title: 'growingXeno',
+    displayTitle: 'Xenovolve',
+    points: 0,
+    amount: 3,
+    rarity: 'epic',
+    traitTitle: 'Evolve',
+    trait: 'This xeno is about to evolve into 1 of 3 powerful Xenos.',
+    description: 'A young xeno rapidly reaching maturity.',
+    race: 'xeno',
+    otherRaces: [],
+    image: '/xenos/growing_xeno.png'
+  },
+  // TODO:
+  xenoEgg: {
+    title: 'xenoEgg',
+    displayTitle: '👾Egg👾',
+    points: 0,
+    amount: 3,
+    rarity: 'poor',
+    traitTitle: 'Evolve',
+    trait: "Evolves into a more powerful card. Blocks card draw and discards while growing.",
+    description: 'This egg has frightening potential.',
+    race: 'xeno',
+    otherRaces: [],
+    image: '/xenos/xeno_egg.png'
+  },
 
   // Spirits
   spiritKing: {

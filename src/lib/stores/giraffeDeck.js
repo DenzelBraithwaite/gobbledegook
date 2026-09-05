@@ -6,8 +6,8 @@ const giraffeDeck = writable([
   'nightTerror',
   'elderGiraffe',
   'adultGiraffe',
-  'kidGiraffe'
-  // 'eggGiraffe' // technically in beast
+  'kidGiraffe',
+  'eggGiraffe'
 ]);
 
 export default giraffeDeck;

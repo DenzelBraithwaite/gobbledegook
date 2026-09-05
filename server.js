@@ -101,8 +101,11 @@ io.on('connection', socket => {
   // Remove traps from both clients
   socket.on('eradicate-traps', () => io.emit('traps-eradicated'));
 
-  // Update gameState.remainingLegendaries for both players
+  // Update remainingLegendaries for both players
   socket.on('remove-remaining-legendary', data => io.emit('remaining-legendary-removed', data));
+
+  // Update remainingXenoEggs for both players
+  socket.on('remove-xeno-egg', data => io.emit('xeno-egg-removed', data));
 
   // Conceal both player hands
   socket.on('conceal-players', () => io.emit('players-concealed'));

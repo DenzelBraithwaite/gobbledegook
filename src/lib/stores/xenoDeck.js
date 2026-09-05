@@ -21,7 +21,10 @@ const xenoDeck = writable([
   'celenial',
   'celenial',
   'celenial',
-  'celenial'
+  'celenial',
+  'xenoEgg',
+  'xenoEgg',
+  'xenoEgg'
 ]);
 
 export default xenoDeck;

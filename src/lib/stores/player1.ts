@@ -21,6 +21,7 @@ export const player1 = writable<Player>({
   playingTwice: false,
   turn: false,
   giraffeCounter: 0,
+  xenoEggCounter: 0,
   dwarfNextTurn: false,
   redSpiritNextTurn: false,
   blueSpiritNextTurn: false,
@@ -68,6 +69,7 @@ export const player1Reset = writable<Player>({
   playingTwice: false,
   turn: false,
   giraffeCounter: 0,
+  xenoEggCounter: 0,
   dwarfNextTurn: false,
   redSpiritNextTurn: false,
   blueSpiritNextTurn: false,
@@ -115,6 +117,7 @@ export type Player = {
   playingTwice: boolean; // Echo card which allows player to draw multiple.
   turn: boolean; // Is it the player's turn.
   giraffeCounter: number; // Counts how many giraffes player has picked up.
+  xenoEggCounter: number; // Counts how many xenos player has picked up.
   dwarfNextTurn: boolean; // Determines if player's next card will be a dwarf.
   redSpiritNextTurn: boolean; // Determines if player's next card will be a red djinn.
   blueSpiritNextTurn: boolean; // Determines if player's next card will be a blue djinn.

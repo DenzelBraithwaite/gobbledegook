@@ -9,7 +9,7 @@
   import wait from '../helpers/wait';
 
   // Stores
-  import { type Player, player1, player1Reset, player2, player2Reset, cardDetails, beastDeck, botDeck, dwarfDeck, elfDeck, goblinDeck, humanDeck, xenoDeck, spiritDeck, boostDeck,  trapDeck, neutralDeck, giraffeDeck } from '../stores';
+  import { type Player, player1, player1Reset, player2, player2Reset, cardDetails, beastDeck, botDeck, dwarfDeck, elfDeck, goblinDeck, humanDeck, xenoDeck, spiritDeck, boostDeck,  trapDeck, neutralDeck } from '../stores';
 
   // Custom components
   import { Button, Discards, RemainingCardsModal, Library, Spinner, RacePoints } from './index';
@@ -18,7 +18,7 @@
   // Websocket
   import { io } from 'socket.io-client';
 
-  type DeckRace = 'humans' | 'goblins' | 'elves' | 'dwarves' | 'beasts' | 'bots' | 'xenos' | 'spirits' | 'boosts' | 'traps' | 'neutrals' | 'giraffe' | '';
+  type DeckRace = 'humans' | 'goblins' | 'elves' | 'dwarves' | 'beasts' | 'bots' | 'xenos' | 'spirits' | 'boosts' | 'traps' | 'neutrals' | 'giraffe' | 'xenoEgg' | '';
   type Race = 'human' | 'goblin' | 'elf' | 'dwarf' | 'beast' | 'bot' | 'xeno' | 'spirit' | 'boost' | 'trap' | 'neutral' | '';
 
   // Thanos: http://192.168.2.10:6912; 
@@ -45,6 +45,7 @@
     playersRevealed: false,
   };
   let remainingLegendaries = []; // TODO: should i move this back under gameState? It works here but random
+  let remainingXenoEggs = ['drainite', 'xerandium', 'sporax']; // TODO: should i move this back under gameState? It works here but random
   let controlCopyOfCardDetails = {...$cardDetails};
   let remoteCardDetails = {...$cardDetails};
   // Deck players draw from, includes all race decks
@@ -114,6 +115,8 @@
       });
       
       const player = gameState.playingAs === 'p1' ? $player1 : $player2;
+      // TODO: increase points if player has sporax xeno
+      // if (player.hand.includes('sporax')) $cardDetails.sporax.points += 2; // probz not this simple
       calculateCurrentPlayerPoints(player);
       const gdgButtonAvailable = (!gameState.gameOver && !gameState.gobbledegookDeclared && gameState.turnCount >= 15);
       if (gdgButtonAvailable && isPlayerTurn()) gameState.gobbledegookDisabled = false;
@@ -228,6 +231,12 @@
         }
       };
     });
+
+    // Remove xeno egg version from remainingXenoEggs for both players.
+    socket.on('xeno-egg-removed', card => {
+      remainingXenoEggs = remainingXenoEggs.filter(c => c !== card);
+      gameState.showSpinner = false;
+    });
   });
 
   // sets users based on [username, id] from server.js
@@ -326,14 +335,14 @@
     player2.set({...$player2Reset, title: $player2.title});
 
     fullDeck = {
-      humans: [...$humanDeck],
-      goblins: [...$goblinDeck],
-      elves: [...$elfDeck],
-      dwarves: [...$dwarfDeck],
-      beasts: [...$beastDeck],
-      bots: [...$botDeck],
+      // humans: [...$humanDeck],
+      // goblins: [...$goblinDeck],
+      // elves: [...$elfDeck],
+      // dwarves: [...$dwarfDeck],
+      // beasts: [...$beastDeck],
+      // bots: [...$botDeck],
       xenos: [...$xenoDeck],
-      spirits: [...$spiritDeck],
+      // spirits: [...$spiritDeck],
       boosts: [...$boostDeck],
       traps: [...$trapDeck],
       neutrals: [...$neutralDeck]
@@ -358,6 +367,7 @@
     }
 
     remainingLegendaries = getAllLegendaries();
+    remainingXenoEggs = ['drainite', 'xerandium', 'sporax'];
   }
 
   // Ensures player 1 isn't always first to start
@@ -408,7 +418,7 @@
       let cardDrawn = fullDeck[currentDeck][randomNum];
 
       // Make sure player never starts with bonus cards or specific cards.
-      const cardsThatMustBeDrawn = ['goblinLordsMark', 'eggGiraffe', 'spiritKing', 'warpStalker'];
+      const cardsThatMustBeDrawn = ['goblinLordsMark', 'eggGiraffe', 'xenoEgg', 'spiritKing', 'warpStalker'];
       const safeBonusCards = ['chastity', 'corruption'];
       while (!safeBonusCards.includes(cardDrawn) && (cardsThatMustBeDrawn.includes(cardDrawn) || ['boost', 'trap', 'neutral'].some(race => getRaces(cardDrawn).includes(race)))) {
         // Grab new card
@@ -470,15 +480,17 @@
     if ((player.hand.length > 5 && !player.playingTwice) || player.hand.length >= 7) return;
     
     // Checks if there's a giraffe counter, if so return the appropriate giraffe.
-    if ([1, 2, 3, 4].includes(player.giraffeCounter)) {
-      currentDeck = 'giraffe';
+    if ([1, 2, 3, 4].includes(player.giraffeCounter)) currentDeck = 'giraffe';
+    
+    // Checks if there's a xeno egg counter, if so return the appropriate xeno.
+    if ([1, 2].includes(player.xenoEggCounter)) {
+      currentDeck = 'xenoEgg';
 
     } else if (player.dwarfNextTurn) {
-
     // Determines if the next card will be a dwarf or just a random deck.
       currentDeck = setDeckAsDwarfDeck(player);
-    } else {
 
+    } else {
       // If no remaining dwarves, random deck 
       randomNum = Math.floor(Math.random() * deckTypes.length);
       currentDeck = deckTypes[randomNum] as DeckRace; // to appease ts gods
@@ -514,6 +526,9 @@
       } else if (currentDeck === 'giraffe') {
         cardDrawn = drawGiraffeCards(player);
 
+      } else if (currentDeck === 'xenoEgg') {
+        cardDrawn = await drawXenoEggCards(player);
+
       } else if (player.redSpiritNextTurn) {
         cardDrawn = getJinn(player, 'red');
 
@@ -525,6 +540,7 @@
         randomNum = Math.floor(Math.random() * fullDeck[currentDeck].length);
         cardDrawn = fullDeck[currentDeck][randomNum];
       }
+      
       // Change card drawn to goblin lord's mark if player last drew warchief and goblin lord's mark is in deck
       if (player.drewWarchief && canDrawGoblinLordMark(player)) {
         currentDeck = 'goblins';
@@ -540,6 +556,9 @@
 
       // If it's the giraffe egg, get the next giraffe.
       if (cardDrawn === 'eggGiraffe') player.id === $player1.id ? player1.set({...$player1, giraffeCounter: 1}) : player2.set({...$player2, giraffeCounter: 1});
+
+      // If it's the xeno egg, get the next xeno.
+      if (cardDrawn === 'xenoEgg') player.id === $player1.id ? player1.set({...$player1, xenoEggCounter: 1}) : player2.set({...$player2, xenoEggCounter: 1});
 
       // If player traps are blocked but draws the trap card "lost", draw again.
       if (cardDrawn === 'lost' && areTrapsBlocked(player)) {
@@ -596,8 +615,8 @@
       if (getRaces(cardDrawn).includes('neutral')) await addneutralCard(player, cardDrawn);
     }
 
-    // Remove card from deck unless special giraffe deck
-    if (currentDeck !== 'giraffe') {
+    // Remove card from deck unless special giraffe/xeno egg deck
+    if (!['giraffe', 'xenoEgg'].includes(currentDeck)) {
       const removedCardIndex = fullDeck[currentDeck].indexOf(cardDrawn);
       if (removedCardIndex !== -1) fullDeck[currentDeck].splice(removedCardIndex, 1);
 
@@ -636,6 +655,10 @@
     if (player.hand.includes('eggGiraffe')) cardTitle = 'eggGiraffe';
     if (player.hand.includes('kidGiraffe')) cardTitle = 'kidGiraffe';
     if (player.hand.includes('adultGiraffe')) cardTitle = 'adultGiraffe';
+
+    // So player doesn't get extra xenos that should only be temporary.
+    if (player.hand.includes('xenoEgg')) cardTitle = 'xenoEgg';
+    if (player.hand.includes('growingXeno')) cardTitle = 'growingXeno';
 
     if (cardTitle === 'chjester') {
       const exemptLegendaries = ['chastity', 'corruption', 'neuralize'];
@@ -1538,6 +1561,7 @@
 
   // --------------------- XENO CALCULATIONS ----------------------- \\
 
+  // TODO: new xeno cards (3 eggs) implement
   // Calculates all xeno points including boosts, traps, etc.
   function calculateXenoPoints(player: Player, otherPlayer: Player): void {
     const calculatingForSelf = (player.id === $player1.id && gameState.playingAs === 'p1') || (player.id === $player2.id && gameState.playingAs === 'p2');
@@ -1605,6 +1629,7 @@
     }
   }
 
+  // TODO: 3 new xeno cards drainite, xerandium and sporax
   // Calculates special xeno card points
   function calculateSpecialXenoCard(player: Player, cardTitle: string): void {
     // If card drawn is warpstalker, generate point value for card between 10-20 inclusive.
@@ -1639,6 +1664,26 @@
   function updateClientsForSpecialXenoCards() {
     gameState.showSpinner = true;
     socket.emit('start-xeno-sync', {player1: $player1, player2: $player2, cardDetails: $cardDetails});
+  }
+
+  // Draws the xeno egg deck cards.
+  async function drawXenoEggCards(player: Player): Promise<'growingXeno' | 'drainite' | 'xerandium' | 'sporax'> {
+    if (player.xenoEggCounter === 1) {
+      player.xenoEggCounter ++;
+      return 'growingXeno';
+      
+    } else if (player.xenoEggCounter === 2) {
+      gameState.showSpinner = true;
+      player.xenoEggCounter ++; 
+      const randomNum = Math.floor(Math.random() * remainingXenoEggs.length);
+      const cardDrawn = remainingXenoEggs[randomNum] as 'drainite' | 'xerandium' | 'sporax';
+
+      // Make sure client is updated
+      socket.emit('remove-xeno-egg', cardDrawn); 
+      while (gameState.showSpinner) await wait(500);
+
+      return cardDrawn;
+    }
   }
 
   // --------------------- SPIRIT CALCULATIONS ----------------------- \\
@@ -2879,8 +2924,6 @@
   .bonus-card-icons-section__blocked {
     box-shadow: none;
     background: #222;
-    border-left: 4px double #3d3d3d;
-    border-right: 4px double #3d3d3d;
   }
 
   .bonus-card-icon {
