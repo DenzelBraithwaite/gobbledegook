@@ -883,6 +883,58 @@ const cardDetails = writable({
     otherRaces: [],
     image: '/spirits/light_spirit.png'
   },
+    iceSpirit: {
+    title: 'iceSpirit',
+    displayTitle: 'Glacos',
+    points: 10,
+    amount: 1,
+    rarity: 'amazing',
+    traitTitle: 'Cold Streak',
+    trait: 'Draw a blue djinn next if possible.',
+    description: 'The spiritual embodiment of all things lacking energy.',
+    race: 'spirit',
+    otherRaces: [],
+    image: '/spirits/ice_spirit.png'
+  },
+    fireSpirit: {
+    title: 'fireSpirit',
+    displayTitle: 'Ifrit',
+    points: 10,
+    amount: 1,
+    rarity: 'amazing',
+    traitTitle: 'Hot Streak',
+    trait: 'Draw a red djinn next if possible.',
+    description: 'The spiritual embodiment of fire and life.',
+    race: 'spirit',
+    otherRaces: [],
+    image: '/spirits/fire_spirit.png'
+  },
+    waterSpirit: {
+    title: 'waterSpirit',
+    displayTitle: 'Aqueous',
+    points: 10,
+    amount: 1,
+    rarity: 'great',
+    traitTitle: 'Wet Bet',
+    trait: '50% chance to draw a blue djinn next if possible.',
+    description: 'The spiritual embodiment of the ocean and rain.',
+    race: 'spirit',
+    otherRaces: [],
+    image: '/spirits/water_spirit.png'
+  },
+  lightningSpirit: {
+    title: 'lightningSpirit',
+    displayTitle: 'Lighthor',
+    points: 10,
+    amount: 1,
+    rarity: 'great',
+    traitTitle: 'Fast Cash',
+    trait: '50% chance to draw a red djinn next if possible.',
+    description: 'The spiritual embodiment of energy and electricity.',
+    race: 'spirit',
+    otherRaces: [],
+    image: '/spirits/lightning_spirit.png'
+  },
   earthSpirit: {
     title: 'earthSpirit',
     displayTitle: 'Pangee',
@@ -895,58 +947,6 @@ const cardDetails = writable({
     race: 'spirit',
     otherRaces: [],
     image: '/spirits/earth_spirit.png'
-  },
-  waterSpirit: {
-    title: 'waterSpirit',
-    displayTitle: 'Aqueous',
-    points: 10,
-    amount: 1,
-    rarity: 'great',
-    traitTitle: '',
-    trait: '', // TODO: ability amkes u draw a blue jinn next
-    description: 'The spiritual embodiment of the ocean and rain.',
-    race: 'spirit',
-    otherRaces: [],
-    image: '/spirits/water_spirit.png'
-  },
-  iceSpirit: {
-    title: 'iceSpirit',
-    displayTitle: 'Glacos',
-    points: 10,
-    amount: 1,
-    rarity: 'great',
-    traitTitle: '',
-    trait: '',
-    description: 'The spiritual embodiment of all things lacking energy.',
-    race: 'spirit',
-    otherRaces: [],
-    image: '/spirits/ice_spirit.png'
-  },
-  fireSpirit: {
-    title: 'fireSpirit',
-    displayTitle: 'Ifrit',
-    points: 10,
-    amount: 1,
-    rarity: 'great',
-    traitTitle: '',
-    trait: '', // TODO: Ability makes u draw a red jinn next
-    description: 'The spiritual embodiment of fire and life.',
-    race: 'spirit',
-    otherRaces: [],
-    image: '/spirits/fire_spirit.png'
-  },
-  lightningSpirit: {
-    title: 'lightningSpirit',
-    displayTitle: 'Lighthor',
-    points: 10,
-    amount: 1,
-    rarity: 'great',
-    traitTitle: '',
-    trait: '',
-    description: 'The spiritual embodiment of energy and electricity.',
-    race: 'spirit',
-    otherRaces: [],
-    image: '/spirits/lightning_spirit.png'
   },
   windSpirit: {
     title: 'windSpirit',
@@ -1260,7 +1260,7 @@ const cardDetails = writable({
     amount: 2,
     rarity: 'amazing',
     traitTitle: 'Camouflage',
-    trait: "Leon can blend into any race.",
+    trait: "Leon can blend into any race, he can even pose as a red/blue jinn.",
     description: 'A docile chameleon who hates being mistaken for a gecko.',
     race: 'neutral',
     otherRaces: ['human', 'goblin', 'elf', 'dwarf', 'beast', 'bot', 'xeno', 'spirit'],

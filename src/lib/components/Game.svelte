@@ -23,7 +23,7 @@
 
   // Thanos: http://192.168.2.10:6912; 
   // Work Mac at home: http://192.168.2.19:6912;
-  let socket = io('http://10.3.144.176:6912');
+  let socket = io('http://192.168.2.10:6912');
   $: gameState = {
     gobbledegookDeclared: false,
     gobbledegookDisabled: false,
@@ -476,7 +476,7 @@
     } else if (player.dwarfNextTurn) {
 
     // Determines if the next card will be a dwarf or just a random deck.
-      currentDeck = isDwarfNext(player);
+      currentDeck = setDeckAsDwarfDeck(player);
     } else {
 
       // If no remaining dwarves, random deck 
@@ -514,8 +514,14 @@
       } else if (currentDeck === 'giraffe') {
         cardDrawn = drawGiraffeCards(player);
 
+      } else if (player.redSpiritNextTurn) {
+        cardDrawn = getJinn(player, 'red');
+
+      } else if (player.blueSpiritNextTurn) {
+        cardDrawn = getJinn(player, 'blue');
+
       } else {
-        // If the elf champion isn't in deck, grab a random elf
+        // Grab a random card
         randomNum = Math.floor(Math.random() * fullDeck[currentDeck].length);
         cardDrawn = fullDeck[currentDeck][randomNum];
       }
@@ -564,6 +570,12 @@
 
       // If it's the longbeard leader, dwarf commander or dwarvenCall, the next card will be dwarf
       if (cardDrawn === 'longbeardLeader' || cardDrawn === 'dwarfCommander' || cardDrawn === 'dwarvenCall') player.dwarfNextTurn = true;
+
+      // If it's fire spirit the next card will be red jinn. If it's lightning spirit then 50% chance next card is red jinn.
+      if (cardDrawn === 'fireSpirit' || (cardDrawn === 'lightningSpirit' && Math.random() < 0.5)) player.redSpiritNextTurn = true;
+      
+      // If it's ice spirit the next card will be blue jinn. If it's water spirit then 50% chance next card is blue jinn.
+      if (cardDrawn === 'iceSpirit' || (cardDrawn === 'waterSpirit' && Math.random() < 0.5)) player.blueSpiritNextTurn = true;
 
       // If it's the warchief, the next card will be the goblin lord's mark.
       if (cardDrawn === 'warchief') player.drewWarchief = true;
@@ -836,15 +848,16 @@
     if (index !== -1) deckTypes.splice(index, 1); // make sure it was found
   }
 
+  // Optional chaining so if I comment out a race, the game doesn't crash.
   function getAllLegendaries(): string[][] {
     const legendaries = [];
-    if (fullDeck['humans'].includes('emperor')) legendaries.push(['emperor', 'humans']);
-    if (fullDeck['goblins'].includes('goblinLord')) legendaries.push(['goblinLord', 'goblins']);
-    if (fullDeck['elves'].includes('elfKing')) legendaries.push(['elfKing', 'elves']);
-    if (fullDeck['dwarves'].includes('longbeardLeader')) legendaries.push(['longbeardLeader', 'dwarves']);
-    if (fullDeck['beasts'].includes('dreamDestroyer')) legendaries.push(['dreamDestroyer', 'beasts']);
-    if (fullDeck['bots'].includes('ai')) legendaries.push(['ai', 'bots']);
-    if (fullDeck['spirits'].includes('spiritKing')) legendaries.push(['spiritKing', 'spirits']);
+    if (fullDeck['humans']?.includes('emperor')) legendaries.push(['emperor', 'humans']);
+    if (fullDeck['goblins']?.includes('goblinLord')) legendaries.push(['goblinLord', 'goblins']);
+    if (fullDeck['elves']?.includes('elfKing')) legendaries.push(['elfKing', 'elves']);
+    if (fullDeck['dwarves']?.includes('longbeardLeader')) legendaries.push(['longbeardLeader', 'dwarves']);
+    if (fullDeck['beasts']?.includes('dreamDestroyer')) legendaries.push(['dreamDestroyer', 'beasts']);
+    if (fullDeck['bots']?.includes('ai')) legendaries.push(['ai', 'bots']);
+    if (fullDeck['spirits']?.includes('spiritKing')) legendaries.push(['spiritKing', 'spirits']);
 
     return legendaries;
   }
@@ -947,7 +960,7 @@
     if ((player.hand.includes('ai') || player.hand.includes('protectron')) && getRaces(cardTitle).includes('bot')) highestPoints = Math.max(highestPoints, displayBotPoints(player, cardTitle));
     if (triggerTwinEffect || (player.hand.includes('elfKing') && getRaces(cardTitle).includes('elf'))) highestPoints = Math.max(highestPoints, displayElfPoints(player, cardTitle));
     if ((player.hand.includes('emperor') || player.hand.includes('commander')) && getRaces(cardTitle).includes('human')) highestPoints = Math.max(highestPoints, displayHumanPoints(player, cardTitle));
-    if (player.hand.every(card => card === 'redSpirit' || card === 'blueSpirit')) highestPoints = Math.max(highestPoints, displaySpiritPoints(player, cardTitle));
+    if (player.hand.every(card => ['redSpirit', 'leon'].includes(card) || ['blueSpirit', 'leon'].includes(card))) highestPoints = Math.max(highestPoints, displaySpiritPoints(player, cardTitle));
     if (cardTitle === 'longbeardLeader') highestPoints = Math.max(highestPoints, displayDwarfPoints(player));
     if (cardTitle === 'cookieJar' && isCookieJarActive(player)) highestPoints = Math.max(highestPoints, 50);
     
@@ -1250,7 +1263,7 @@
   }
   
   // Attempts to draw a dwarf next if there are dwarves remaining.
-  function isDwarfNext(player: Player): DeckRace {
+  function setDeckAsDwarfDeck(player: Player): DeckRace {
     player.dwarfNextTurn = false;
     let currentDeck: DeckRace = '';
     let randomNum = 0;
@@ -1668,19 +1681,35 @@
   }
 
   function displaySpiritPoints(player: Player, cardTitle: string): number {
-    if (player.hand.every(card => card === 'redSpirit') && cardTitle === 'redSpirit') return 20;
-    if (player.hand.every(card => card === 'blueSpirit') && cardTitle === 'blueSpirit') return 40;
+    if (player.hand.every(card => ['redSpirit', 'leon'].includes(card)) && ['redSpirit', 'leon'].includes(cardTitle)) return 20;
+    if (player.hand.every(card => ['blueSpirit', 'leon'].includes(card)) && ['blueSpirit', 'leon'].includes(cardTitle)) return 40;
     
     return $cardDetails[cardTitle].points;
   }
 
   // Calculates special xeno card points
   function calculateSpecialSpiritCard(player: Player) {
-    const fullRedSpiritHand = player.hand.every(card => card === 'redSpirit');
-    const fullBlueSpiritHand = player.hand.every(card => card === 'blueSpirit');
+    const fullRedSpiritHand = player.hand.every(card => ['redSpirit', 'leon'].includes(card));
+    const fullBlueSpiritHand = player.hand.every(card => ['blueSpirit', 'leon'].includes(card));
     
     if (fullRedSpiritHand) player.points.spirits = 100;
     if (fullBlueSpiritHand) player.points.spirits = 200;
+  }
+
+  // Attempts to draw a red jinn next if there are any remaining.
+  function getJinn(player: Player, color: 'red' | 'blue'): 'redSpirit' | 'blueSpirit' | string {
+    color === 'red' ? player.redSpiritNextTurn = false : player.blueSpiritNextTurn = false;
+    if (color === 'red' && fullDeck['spirits'] && fullDeck['spirits'].includes('redSpirit')) return 'redSpirit';
+    if (color === 'blue' && fullDeck['spirits'] && fullDeck['spirits'].includes('blueSpirit')) return 'blueSpirit';
+
+    // But if no red jinns remain
+    const randomNum = Math.floor(Math.random() * deckTypes.length);
+    const randomDeck = deckTypes[randomNum] as DeckRace;
+    const deck = fullDeck['spirits'] ? 'spirits' : randomDeck; 
+    const randomNum2 = Math.floor(Math.random() * fullDeck[deck].length);
+    const cardDrawn = fullDeck[deck][randomNum2];
+    
+    return cardDrawn;
   }
 
   // -------------- BOOST/TRAP/NEUTRAL CALCULATIONS ---------------- \\
