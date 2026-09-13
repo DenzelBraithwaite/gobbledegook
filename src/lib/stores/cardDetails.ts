@@ -856,6 +856,7 @@ const cardDetails = writable({
     otherRaces: [],
     image: '/xenos/drainite.png'
   },
+  // TODO: gobbledegooked and shoulda won but card was at 0 points at end?FIXME:
   xerandium: {
     title: 'xerandium',
     displayTitle: 'Xerandium',
@@ -1326,7 +1327,7 @@ const cardDetails = writable({
     amount: 2,
     rarity: 'amazing',
     traitTitle: 'Camouflage',
-    trait: "Leon can blend into any race, he can even pose as a red/blue jinn.",
+    trait: "Leon can blend into any race, he can even pose as a red/blue jinn, blend into wolf pack, imitate nelladan.",
     description: 'A docile chameleon who hates being mistaken for a gecko.',
     race: 'neutral',
     otherRaces: ['human', 'goblin', 'elf', 'dwarf', 'beast', 'bot', 'xeno', 'spirit'],

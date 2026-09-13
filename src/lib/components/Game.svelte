@@ -99,7 +99,7 @@
     socket.on('add-turn-count', () => gameState.turnCount++);
 
     // Handles turn change for all users
-    socket.on('turn-changed', async data => {
+    socket.on('turn-changed', data => {
       player1.update($player1 => {
         $player1.turn = !data.player1.turn;
         $player1.playingTwice = false;
@@ -115,7 +115,7 @@
       });
       
       const player = gameState.playingAs === 'p1' ? $player1 : $player2;
-      if (player.turn && player.hand.some(c => ['drainite', 'xerandium', 'sporax'].includes(c))) await calculateXenoEggs(player);
+      if (player.turn && player.hand.some(c => ['drainite', 'xerandium', 'sporax'].includes(c))) calculateXenoEggs(player);
 
       calculateCurrentPlayerPoints(player);
       const gdgButtonAvailable = (!gameState.gameOver && !gameState.gobbledegookDeclared && gameState.turnCount >= 15);
@@ -535,16 +535,15 @@
       } else if (player.blueSpiritNextTurn) {
         cardDrawn = getJinn(player, 'blue');
 
+      } else if (player.drewWarchief && canDrawGoblinLordMark(player)) {
+        // Change card drawn to goblin lord's mark if player last drew warchief and goblin lord's mark is in deck
+        currentDeck = 'goblins';
+        cardDrawn = 'goblinLordsMark';
+
       } else {
         // Grab a random card
         randomNum = Math.floor(Math.random() * fullDeck[currentDeck].length);
         cardDrawn = fullDeck[currentDeck][randomNum];
-      }
-      
-      // Change card drawn to goblin lord's mark if player last drew warchief and goblin lord's mark is in deck
-      if (player.drewWarchief && canDrawGoblinLordMark(player)) {
-        currentDeck = 'goblins';
-        cardDrawn = 'goblinLordsMark';
       }
 
       // other client getting update? if a legendary is drawn must also remove it from gamestate so no duplicates
@@ -661,7 +660,7 @@
     if (player.hand.includes('growingXeno')) cardTitle = 'growingXeno';
 
     if (cardTitle === 'chjester') {
-      const exemptLegendaries = ['chastity', 'corruption', 'neuralize'];
+      const exemptLegendaries = ['chastity', 'corruption', 'neutralize'];
       const legendariesInHand = player.hand.filter(l => !exemptLegendaries.includes(l) && $cardDetails[l].rarity === 'legendary');
 
       // Remove legendaries if they are found
@@ -978,7 +977,7 @@
   // Modifies card points depending on cards in player hand
   function displayCardPoints(player: Player, cardTitle: string): number {
     let highestPoints = cardTitle === 'virus' ? -2 : 0; // only virus starts below 0.
-    const triggerTwinEffect = player.hand.includes('nelladan') && player.hand.includes('nadallen');
+    const triggerTwinEffect = player.hand.some(c => ['nelladan', 'leon'].includes(c)) && player.hand.includes('nadallen');
     if ((player.hand.some(card => ['dreamDestroyer', 'nightTerror'].includes(card)) || cardTitle === 'dog' || cardTitle === 'wolf') && getRaces(cardTitle).includes('beast')) highestPoints = Math.max(highestPoints, displayBeastPoints(player, cardTitle));
     if ((player.hand.includes('ai') || player.hand.includes('protectron')) && getRaces(cardTitle).includes('bot')) highestPoints = Math.max(highestPoints, displayBotPoints(player, cardTitle));
     if (triggerTwinEffect || (player.hand.includes('elfKing') && getRaces(cardTitle).includes('elf'))) highestPoints = Math.max(highestPoints, displayElfPoints(player, cardTitle));
@@ -1139,7 +1138,7 @@
     elfCards.forEach(card => player.points.elves += $cardDetails[card].points);
 
     // Handles elf twins. Must calculate before elf king since elf king multiples elf points *2/*3
-    if (player.hand.includes('nelladan') && player.hand.includes('nadallen')) calculateElfTwins(player);
+    if (player.hand.some(c => ['nelladan', 'leon'].includes(c)) && player.hand.includes('nadallen')) calculateElfTwins(player);
 
     // Determines if otherPlayer has full goblin hand and if player has full elf hand, assigns points accordingly.
     if (player.hand.includes('elfKing')) calculateElfKing(player, otherPlayer, forEndGameCalculation);
@@ -1182,7 +1181,7 @@
   // Adds bonus points for matching elf twins
   function calculateElfTwins(player: Player) {
     // Each Nelladan gets +5 points and Nadallen gets +5p for each Nelladan. So +10 per Nelladan.
-    const bonusTwinPoints = player.hand.filter(card => card === 'nelladan').length * 10;
+    const bonusTwinPoints = player.hand.filter(card => card === 'nelladan' || card === 'leon').length * 10;
     player.points.elves += bonusTwinPoints;
   }
 
@@ -1212,7 +1211,7 @@
   // Only called if twins OR elf king + full elf hand (including faeBot)
   function displayElfPoints(player: Player, cardTitle: string): number {
     const hasElfKing = player.hand.includes('elfKing');
-    const numOfNelladans = player.hand.filter(card => card === 'nelladan').length;
+    const numOfNelladans = player.hand.filter(card => card === 'nelladan' || card === 'leon').length;
     const numOfNadallens = player.hand.filter(card => card === 'nadallen').length;
     const fullElfHand = player.hand.every(c => getRaces(c).includes('elf'));
     const triggerTwinEffect = numOfNelladans > 0 && numOfNadallens > 0;
@@ -1220,7 +1219,7 @@
     // Elf king, full hand and twins
     if ((hasElfKing && fullElfHand && triggerTwinEffect)) {
       if (cardTitle === 'nadallen') return ($cardDetails[cardTitle].points + (numOfNelladans * 5) * 3);
-      if (cardTitle === 'nelladan') return (($cardDetails[cardTitle].points + 5) * 3);
+      if (cardTitle === 'nelladan' || cardTitle === 'leon') return (($cardDetails[cardTitle].points + 5) * 3);
       
       // Elf king and full hand
     } else if (hasElfKing && fullElfHand) {
@@ -1229,7 +1228,7 @@
       // Twins
     } else if (triggerTwinEffect) {
       if (cardTitle === 'nadallen') return ($cardDetails[cardTitle].points + (numOfNelladans * 5));
-      if (cardTitle === 'nelladan') return ($cardDetails[cardTitle].points + 5);
+      if (cardTitle === 'nelladan' || cardTitle === 'leon') return ($cardDetails[cardTitle].points + 5);
     }
 
     // King
@@ -1401,7 +1400,7 @@
 
   // +2 points for every wolf on the field, including himself (base wolf points already calculated in calculateBasePoints)
   function calculateWolfPack(player: Player) {
-    const numOfWolves = player.hand.filter(card => card === 'wolf').length;
+    const numOfWolves = player.hand.filter(card => card === 'wolf' || card === 'leon').length;
     const numOfWereWolves = player.hand.filter(card => card === 'lupin').length;
     player.points.beasts += numOfWolves * (numOfWolves * 2) + (numOfWereWolves * 2);
   }
@@ -1411,8 +1410,8 @@
     const hasNightTerror = player.hand.includes('nightTerror');
     const hasDreamDestroyer = player.hand.includes('dreamDestroyer');
 
-    if (cardTitle === 'wolf') {
-      const numOfWolves = player.hand.filter(card => card === 'wolf').length;
+    if (cardTitle === 'wolf' || cardTitle === 'leon') {
+      const numOfWolves = player.hand.filter(card => card === 'wolf' || card === 'leon').length;
       const numOfWerewolves = player.hand.filter(card => card === 'lupin').length;
       let leaderBonus = 0;
       if (hasNightTerror) leaderBonus = 12;
@@ -1655,7 +1654,7 @@
 
     // So both clients show the same points for these cards
     updateClientsForSpecialXenoCards();
-    while (gameState.showSpinner) await wait(500);
+    // while (gameState.showSpinner) await wait(500); // TODO: put this back in if this is not causing issue with giraff egg
   }
 
   // Return regular points if it's not special xeno card
