@@ -99,7 +99,7 @@
     socket.on('add-turn-count', () => gameState.turnCount++);
 
     // Handles turn change for all users
-    socket.on('turn-changed', data => {
+    socket.on('turn-changed', async data => {
       player1.update($player1 => {
         $player1.turn = !data.player1.turn;
         $player1.playingTwice = false;
@@ -115,8 +115,8 @@
       });
       
       const player = gameState.playingAs === 'p1' ? $player1 : $player2;
-      // TODO: increase points if player has sporax xeno
-      // if (player.hand.includes('sporax')) $cardDetails.sporax.points += 2; // probz not this simple
+      if (player.turn && player.hand.some(c => ['drainite', 'xerandium', 'sporax'].includes(c))) await calculateXenoEggs(player);
+
       calculateCurrentPlayerPoints(player);
       const gdgButtonAvailable = (!gameState.gameOver && !gameState.gobbledegookDeclared && gameState.turnCount >= 15);
       if (gdgButtonAvailable && isPlayerTurn()) gameState.gobbledegookDisabled = false;
@@ -335,14 +335,14 @@
     player2.set({...$player2Reset, title: $player2.title});
 
     fullDeck = {
-      // humans: [...$humanDeck],
-      // goblins: [...$goblinDeck],
-      // elves: [...$elfDeck],
-      // dwarves: [...$dwarfDeck],
-      // beasts: [...$beastDeck],
-      // bots: [...$botDeck],
+      humans: [...$humanDeck],
+      goblins: [...$goblinDeck],
+      elves: [...$elfDeck],
+      dwarves: [...$dwarfDeck],
+      beasts: [...$beastDeck],
+      bots: [...$botDeck],
       xenos: [...$xenoDeck],
-      // spirits: [...$spiritDeck],
+      spirits: [...$spiritDeck],
       boosts: [...$boostDeck],
       traps: [...$trapDeck],
       neutrals: [...$neutralDeck]
@@ -1561,7 +1561,6 @@
 
   // --------------------- XENO CALCULATIONS ----------------------- \\
 
-  // TODO: new xeno cards (3 eggs) implement
   // Calculates all xeno points including boosts, traps, etc.
   function calculateXenoPoints(player: Player, otherPlayer: Player): void {
     const calculatingForSelf = (player.id === $player1.id && gameState.playingAs === 'p1') || (player.id === $player2.id && gameState.playingAs === 'p2');
@@ -1629,7 +1628,6 @@
     }
   }
 
-  // TODO: 3 new xeno cards drainite, xerandium and sporax
   // Calculates special xeno card points
   function calculateSpecialXenoCard(player: Player, cardTitle: string): void {
     // If card drawn is warpstalker, generate point value for card between 10-20 inclusive.
@@ -1643,6 +1641,21 @@
       const numOfNonNebuliteXenos = player.hand.filter(card => getRaces(card).includes('xeno') && card !== 'nebulite').length;
       player.points.xenos += (numOfNonNebuliteXenos * 5);
     }
+  }
+
+  async function calculateXenoEggs(player: Player) {
+    // If sporax gain +2
+    if (player.hand.includes('sporax')) $cardDetails['sporax'].points += 2;
+
+    // If xerandium randomize points between 0 - 30
+    if (!gameState.gobbledegookDeclared && player.hand.includes('xerandium')) $cardDetails['xerandium'].points = Math.floor(Math.random() * 31);
+
+    // If sporax gain +2
+    if (player.hand.includes('drainite') && $cardDetails['drainite'].points >= 2) $cardDetails['drainite'].points -= 2;
+
+    // So both clients show the same points for these cards
+    updateClientsForSpecialXenoCards();
+    while (gameState.showSpinner) await wait(500);
   }
 
   // Return regular points if it's not special xeno card
@@ -2899,7 +2912,6 @@
     align-items: center;
   }
   
-  // TODO: when blocked still have color trim to know which is which
   .bonus-card-icons-section__boosts {
     background: linear-gradient(180deg, #b8ebf380, #90beff70 50%);
     box-shadow: 0 2px 8px 2px #b8ebf331;

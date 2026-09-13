@@ -843,21 +843,19 @@ const cardDetails = writable({
     image: '/xenos/xeno_placeholder.png'
   },
   // Egg Xenos
-  // TODO: Xeno who starts with high point value but degrades each turn towards 0.
   drainite: {
     title: 'drainite',
     displayTitle: 'Drainite',
-    points: 40, // -4 each turn
+    points: 30, // -2 each turn
     amount: 1,
     rarity: 'epic',
     traitTitle: 'Drain',
-    trait: 'This xeno loses 4 points every turn while in hand.',
+    trait: 'This xeno loses 2 points every turn while in hand.',
     description: 'A xeno who experiences an entire lifetime in the fraction of that of a human.',
     race: 'xeno',
     otherRaces: [],
     image: '/xenos/drainite.png'
   },
-  // TODO: Xeno who's points change every turn from 1-30. Only GDG declared will freeze this. Start of turn generates point.
   xerandium: {
     title: 'xerandium',
     displayTitle: 'Xerandium',
@@ -871,7 +869,6 @@ const cardDetails = writable({
     otherRaces: [],
     image: '/xenos/xerandium.png'
   },
-  // TODO: Xeno who adds +2 xeno points each turn while in hand.
   sporax: {
     title: 'sporax',
     displayTitle: 'Sporax',
@@ -879,13 +876,12 @@ const cardDetails = writable({
     amount: 1,
     rarity: 'epic',
     traitTitle: 'Mycelial growth',
-    trait: 'This xeno gains +2 points every turn while in hand.',
+    trait: 'This xeno gains +2 points at the start of your turn.',
     description: 'A xeno who never stops evolving.',
     race: 'xeno',
     otherRaces: [],
     image: '/xenos/sporax.png'
   },
-  // TODO:
     growingXeno: {
     title: 'growingXeno',
     displayTitle: 'Xenovolve',
@@ -893,13 +889,12 @@ const cardDetails = writable({
     amount: 3,
     rarity: 'epic',
     traitTitle: 'Evolve',
-    trait: 'This xeno is about to evolve into 1 of 3 powerful Xenos.',
+    trait: 'This xeno is about to evolve into a powerful Xeno.',
     description: 'A young xeno rapidly reaching maturity.',
     race: 'xeno',
     otherRaces: [],
     image: '/xenos/growing_xeno.png'
   },
-  // TODO:
   xenoEgg: {
     title: 'xenoEgg',
     displayTitle: '👾Egg👾',
