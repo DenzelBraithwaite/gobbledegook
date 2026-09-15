@@ -1,5 +1,7 @@
 import { writable } from 'svelte/store';
 
+// TODO: gaqme option to decide fast/med/long/random game length e.g. 10 turn/15/20 wtv till gdg available
+// TODO: card called cookie crumbs gives +3 to all races (many in deck). Maybe rotten crumbs counter?
 /*
  * Legendary = leader
  * Epic = Great ability, usually 2nd in command
@@ -247,6 +249,8 @@ const cardDetails = writable({
     otherRaces: [],
     image: '/elves/elf_king.png'
   },
+  // TODO: second ability triggers if elf king not in draw pile when u draw him.
+  // Second ability: player only draws elves until elf deck is empty, all elves worth *2.
   elfChampion: {
     title: 'elfChampion',
     displayTitle: 'Elf Champion',
@@ -939,7 +943,7 @@ const cardDetails = writable({
     displayTitle: 'Xenovolve',
     points: 0,
     amount: 3,
-    rarity: 'epic',
+    rarity: 'amazing',
     traitTitle: 'Evolve',
     trait: 'This xeno is about to evolve into a powerful Xeno.',
     description: 'A young xeno rapidly reaching maturity.',
@@ -1378,7 +1382,7 @@ const cardDetails = writable({
     amount: 2,
     rarity: 'amazing',
     traitTitle: 'Camouflage',
-    trait: "Leon can blend into any race, he can even pose as a red/blue jinn, blend into wolf/lion pack, nelladan, a bear and even a bard. In events where it can blend into multiple, it will choose the highest point value.",
+    trait: "Leon can blend into any race and can mimic abilities that rely on card synergies such as a red/blue jinn, wolf/lion pack, elf twin (nelladan), bears and even bards. In events where it can blend into multiple, it will choose the highest point value.",
     description: 'A docile chameleon who hates being mistaken for a gecko.',
     race: 'neutral',
     otherRaces: ['human', 'goblin', 'elf', 'dwarf', 'beast', 'bot', 'xeno', 'spirit'],

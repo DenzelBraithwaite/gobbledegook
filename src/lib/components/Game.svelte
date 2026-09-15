@@ -222,6 +222,7 @@
     // Conceal both players (this is an io emit)
     socket.on('players-concealed', () => gameState.playersRevealed = false);
 
+    // TODO:FIXME: gaze still shows number e.g. 12 after eradicate (but no traps visible)
     // Eradicate traps (this is an io emit)
     socket.on('traps-eradicated', () => {
       removeRaceDeck('traps');
@@ -292,8 +293,6 @@
 
   function markOtherClientAsDisconnected() {
     gameState.playingAs === 'p1' ? p2Connected = false : p1Connected = false;
-    console.log('markOtherClientAsDisconnected() just ran...');
-    console.log(gameState.playingAs === 'p1' ? `p2Connected = ${p2Connected}` : `p1Connected = ${p1Connected}`);
   }
 
   // ---------------------------------------------------------------- \\
@@ -1488,13 +1487,12 @@
   function deductBearPoints(player: Player) {
     // Here Leon shouldn't always count since he starts at 0 points.
     const numOfBears = player.hand.filter(card => card === 'bear').length;
-    const numOfBearsAndLeon = player.hand.filter(card => ['bear', 'leon'].includes(card)).length;
 
     if (player.hand.includes('dreamDestroyer')) {
-      player.points.beasts -= numOfBearsAndLeon * 14; // Since she buffs to 14
+      player.points.beasts -= numOfBears * 14; // Since she buffs to 14
       
     } else if (player.hand.includes('nightTerror')) {
-      player.points.beasts -= numOfBearsAndLeon * 12; // Since she buffs to 12
+      player.points.beasts -= numOfBears * 12; // Since she buffs to 12
 
     } else {
       player.points.beasts -= numOfBears * $cardDetails['bear'].points;
@@ -1505,12 +1503,14 @@
     const hasHumans = player.hand.some(c => getRaces(c).includes('human'));
     const hasNightTerror = player.hand.includes('nightTerror');
     const hasDreamDestroyer = player.hand.includes('dreamDestroyer');
+    const numOfWolves = player.hand.filter(card => ['wolf', 'leon'].includes(card)).length;
+    const numOfWerewolves = player.hand.filter(card => card === 'lupin').length;
+    const numOfLions = player.hand.filter(card => ['lion', 'leon'].includes(card)).length;
     const numOfBears = player.hand.filter(card => ['bear', 'leon'].includes(card)).length;
     let wolfPackPoints = 0;
     let lionPridePoints = 0;
 
     if (['lion', 'leon'].includes(cardTitle)) {
-      const numOfLions = player.hand.filter(card => ['lion', 'leon'].includes(card)).length;
       let leaderBonus = 0;
       if (hasNightTerror) leaderBonus = 12;
       if (hasDreamDestroyer) leaderBonus = 14; // overwrites night terror
@@ -1520,8 +1520,6 @@
     }
     
     if (['wolf', 'leon'].includes(cardTitle)) {
-      const numOfWolves = player.hand.filter(card => ['wolf', 'leon'].includes(card)).length;
-      const numOfWerewolves = player.hand.filter(card => card === 'lupin').length;
       let leaderBonus = 0;
       if (hasNightTerror) leaderBonus = 12;
       if (hasDreamDestroyer) leaderBonus = 14; // overwrites night terror
@@ -1530,11 +1528,11 @@
       if (cardTitle === 'wolf') return wolfPackPoints;
     }
     
-    // So Leon takes highest point value
-    if (player.hand.some(c => ['wolf', 'lion'.includes(c)]) && cardTitle === 'leon') return Math.max(wolfPackPoints, lionPridePoints);
+    // So Leon takes highest point value. I deduct points since he shouldn't really buff himself as wolf or lion.
+    if (player.hand.some(c => ['wolf', 'lion'.includes(c)]) && cardTitle === 'leon') return Math.max((wolfPackPoints - 2), (lionPridePoints - 3));
 
-    // If no buffs, check for bears/leon point loss (cuz highest always wins so 0 checked last).
-    if (['bear', 'leon'].includes(cardTitle) && numOfBears > 1) return 0;
+    // Check for extra bears, wipe points if multiple.
+    if (cardTitle === 'bear' && numOfBears > 1) return 0;
 
     // dog base points already calculated
     if (cardTitle === 'dog' && hasHumans && hasDreamDestroyer) return 24;
@@ -1791,6 +1789,7 @@
     }
   }
 
+  // TODO: update name to make sense
   // Trades warpstalker and voidrunner client values before calculation
   function updateClientsForSpecialXenoCards() {
     gameState.showSpinner = true;
