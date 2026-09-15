@@ -48,6 +48,13 @@
   let remainingXenoEggs = ['drainite', 'xerandium', 'sporax']; // TODO: should i move this back under gameState? It works here but random
   let controlCopyOfCardDetails = {...$cardDetails};
   let remoteCardDetails = {...$cardDetails};
+  // For checking if user is connected
+  let p1Connected = false;
+  let p2Connected = false;
+  let intervalId;
+  let timeoutId;
+  const heartBeatInterval = 500;
+  const heartBeatTimeout = 1000;
   // Deck players draw from, includes all race decks
   let fullDeck = {
     humans: [...$humanDeck],
@@ -64,8 +71,23 @@
   };
   // array for each deck, humans, goblins, elves and dwarves
   let deckTypes: DeckRace[] | string[] = Object.keys(fullDeck);
-  
+
   onMount(() => {
+    // Send periodic pings, reseting timeout each tiem we send a new ping.
+    intervalId = setInterval(() => {
+      socket.emit('check-connected-users');
+    }, heartBeatInterval);
+    
+    // Respons to connection 
+    socket.on('check-connected-users-response', () => {
+      // If we get a reply, cancel the "disconnect" timeout and mark connected
+      if (timeoutId) clearTimeout(timeoutId);
+      markOtherClientAsConnected();
+
+      // Schedule next timeout for the next ping
+      timeoutId = setTimeout(markOtherClientAsDisconnected, heartBeatTimeout);
+    });
+
     // Handles connects
     socket.on('connect', () => console.log(`User ID: ${socket.id} connected!`));
 
@@ -261,26 +283,22 @@
 
     if (socket.id === $player1.id) gameState.playingAs = 'p1';
     if (socket.id === $player2.id) gameState.playingAs = 'p2';
+    gameState.playingAs === 'p1' ? p1Connected = true : p2Connected = true;
   }
 
-  async function revealPlayers(): Promise<void> {
-    // Must be before updateClientsForSpecialXenoCards()
-    socket.emit('reveal-players');
-    updateClientsForSpecialXenoCards();
-    while (gameState.showSpinner) await wait(500);
-    socket.emit('display-event', 'revealed');
+  function markOtherClientAsConnected() {
+    gameState.playingAs === 'p1' ? p2Connected = true : p1Connected = true;
   }
 
-  async function concealPlayers(): Promise<void> {
-    socket.emit('conceal-players');
-    updateClientsForSpecialXenoCards();
-    while (gameState.showSpinner) await wait(500);
+  function markOtherClientAsDisconnected() {
+    gameState.playingAs === 'p1' ? p2Connected = false : p1Connected = false;
+    console.log('markOtherClientAsDisconnected() just ran...');
+    console.log(gameState.playingAs === 'p1' ? `p2Connected = ${p2Connected}` : `p1Connected = ${p1Connected}`);
   }
 
   // ---------------------------------------------------------------- \\
   // --------------------- GAME STATE CONTROLS ---------------------- \\
   // ---------------------------------------------------------------- \\
-
   // Initiaties a new round
   async function startGame() {
     resetGame();
@@ -885,6 +903,19 @@
     return legendaries;
   }
   
+  async function revealPlayers(): Promise<void> {
+    // Must be before updateClientsForSpecialXenoCards()
+    socket.emit('reveal-players');
+    updateClientsForSpecialXenoCards();
+    while (gameState.showSpinner) await wait(500);
+    socket.emit('display-event', 'revealed');
+  }
+
+  async function concealPlayers(): Promise<void> {
+    socket.emit('conceal-players');
+    updateClientsForSpecialXenoCards();
+    while (gameState.showSpinner) await wait(500);
+  }
   // ---------------------------------------------------------------- \\
   // ------------------------- CALCULATIONS ------------------------- \\
   // ---------------------------------------------------------------- \\
@@ -2252,6 +2283,14 @@
 <!-- svelte-ignore a11y-click-events-have-key-events -->
  {#if ['p1', 'p2'].includes(gameState.playingAs)}
   <main class="main-content">
+  
+  {#if gameState.gameOver}
+    <div class="connected-users">
+      <p>{p1Connected ? '🟢 ' + $player1.title : '🔴 Player 1'}</p>
+      <p>{p2Connected ? '🟢 ' + $player2.title : '🔴 Player 2'}</p>
+    </div>
+  {/if}
+
     <!-- Discards -->
      <svg on:click={toggleDiscardVisibility} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="card-discards-btn">
       <path d="M15 12h-5"/>
@@ -2745,6 +2784,31 @@
     position: relative;
     overflow-y: hidden;
     padding: 16px;
+  }
+
+  .connected-users {
+    z-index: 1;
+    border-radius: 0.5rem;
+    color: #d44215;
+    border: 1px solid #d44215;
+    stroke-width: 1.5;
+    background-color: #0c0c0cd3;
+    padding: 0.25rem;
+    transition: all 0.15s ease-out;
+    box-shadow: 0 4px 8px #d44215;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    position: absolute;
+    top: 2px;
+    left: 8px;
+
+    p:first-child {
+      padding-bottom: 4px;
+      margin-bottom: 4px;
+      border-bottom: 1px solid #d4421527;
+    }
   }
 
   .card-library-btn, .card-discards-btn {

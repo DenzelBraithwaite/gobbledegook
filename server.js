@@ -68,6 +68,9 @@ io.on('connection', socket => {
     logUsers();
   });
 
+  // For frontend, checks if other client is still connected.
+  socket.on('check-connected-users', () => socket.broadcast.emit('check-connected-users-response'));
+
   // Start game
   socket.on('start-game', data => socket.broadcast.emit('game-started', data));
 
