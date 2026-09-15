@@ -338,6 +338,7 @@ const cardDetails = writable({
     otherRaces: [],
     image: '/elves/forest_dweller.png'
   },
+  // TODO: like villager, new art? maybe 3 bards with diff instruments. if possible, if player has 3 then elves gain +15 points or soemthing at the end idk. Or they all set their points to 10.
   bard: {
     title: 'bard',
     displayTitle: 'Bard',
@@ -649,9 +650,9 @@ const cardDetails = writable({
     displayTitle: 'Theo Thunderpaw',
     points: 9,
     amount: 2,
-    rarity: 'great',
+    rarity: 'great', // TODO: increase when train in effect
     traitTitle: '',
-    trait: '',
+    trait: '', // TODO: bonus points if the only bear in hand.
     description: 'A powerful top level beast, matched by few.',
     race: 'beast',
     otherRaces: [],
@@ -662,9 +663,9 @@ const cardDetails = writable({
     displayTitle: 'Goldenmane',
     points: 8,
     amount: 3,
-    rarity: 'great',
+    rarity: 'great', // TODO: increase when train in effect
     traitTitle: '',
-    trait: '',
+    trait: '', // TODO: same as wolves but +3
     description: 'The original kings of the jungle.',
     race: 'beast',
     otherRaces: [],
@@ -856,7 +857,6 @@ const cardDetails = writable({
     otherRaces: [],
     image: '/xenos/drainite.png'
   },
-  // TODO: gobbledegooked and shoulda won but card was at 0 points at end?FIXME:
   xerandium: {
     title: 'xerandium',
     displayTitle: 'Xerandium',

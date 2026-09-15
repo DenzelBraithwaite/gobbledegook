@@ -99,7 +99,7 @@
     socket.on('add-turn-count', () => gameState.turnCount++);
 
     // Handles turn change for all users
-    socket.on('turn-changed', data => {
+    socket.on('turn-changed', async data => {
       player1.update($player1 => {
         $player1.turn = !data.player1.turn;
         $player1.playingTwice = false;
@@ -115,7 +115,7 @@
       });
       
       const player = gameState.playingAs === 'p1' ? $player1 : $player2;
-      if (player.turn && player.hand.some(c => ['drainite', 'xerandium', 'sporax'].includes(c))) calculateXenoEggs(player);
+      if (player.turn && player.hand.some(c => ['drainite', 'xerandium', 'sporax'].includes(c))) await calculateXenoEggs(player);
 
       calculateCurrentPlayerPoints(player);
       const gdgButtonAvailable = (!gameState.gameOver && !gameState.gobbledegookDeclared && gameState.turnCount >= 15);
@@ -480,18 +480,19 @@
     if ((player.hand.length > 5 && !player.playingTwice) || player.hand.length >= 7) return;
     
     // Checks if there's a giraffe counter, if so return the appropriate giraffe.
-    if ([1, 2, 3, 4].includes(player.giraffeCounter)) currentDeck = 'giraffe';
+    if ([1, 2, 3, 4].includes(player.giraffeCounter)) {
+      currentDeck = 'giraffe';
     
     // Checks if there's a xeno egg counter, if so return the appropriate xeno.
-    if ([1, 2].includes(player.xenoEggCounter)) {
+    } else if ([1, 2].includes(player.xenoEggCounter)) {
       currentDeck = 'xenoEgg';
-
-    } else if (player.dwarfNextTurn) {
+    
     // Determines if the next card will be a dwarf or just a random deck.
+    } else if (player.dwarfNextTurn) {
       currentDeck = setDeckAsDwarfDeck(player);
 
+    // Otherwise draw a random deck (must be if/else or wipes eggs)
     } else {
-      // If no remaining dwarves, random deck 
       randomNum = Math.floor(Math.random() * deckTypes.length);
       currentDeck = deckTypes[randomNum] as DeckRace; // to appease ts gods
     }
@@ -651,13 +652,13 @@
     const player = gameState.playingAs === 'p1' ? $player1 : $player2;
 
     // So player doesn't get free hand of beasts as giraffe grows.
-    if (player.hand.includes('eggGiraffe')) cardTitle = 'eggGiraffe';
-    if (player.hand.includes('kidGiraffe')) cardTitle = 'kidGiraffe';
     if (player.hand.includes('adultGiraffe')) cardTitle = 'adultGiraffe';
+    if (player.hand.includes('kidGiraffe')) cardTitle = 'kidGiraffe';
+    if (player.hand.includes('eggGiraffe')) cardTitle = 'eggGiraffe';
 
     // So player doesn't get extra xenos that should only be temporary.
-    if (player.hand.includes('xenoEgg')) cardTitle = 'xenoEgg';
     if (player.hand.includes('growingXeno')) cardTitle = 'growingXeno';
+    if (player.hand.includes('xenoEgg')) cardTitle = 'xenoEgg';
 
     if (cardTitle === 'chjester') {
       const exemptLegendaries = ['chastity', 'corruption', 'neutralize'];
@@ -1654,22 +1655,25 @@
 
     // So both clients show the same points for these cards
     updateClientsForSpecialXenoCards();
-    // while (gameState.showSpinner) await wait(500); // TODO: put this back in if this is not causing issue with giraff egg
+    while (gameState.showSpinner) await wait(500);
   }
 
   // Return regular points if it's not special xeno card
   function endGameXenoPointHandler(cardTitle: string, player: 'p1' | 'p2'): number {
-    if (!['warpstalker', 'voidRunner'].includes(cardTitle)) return $cardDetails[cardTitle].points;
-    
-    if (gameState.playingAs === player) {
-      if (cardTitle === 'warpstalker') return $cardDetails['warpstalker'].points;
-      if (cardTitle === 'voidRunner') return $cardDetails['voidRunner'].points;
-    } else {
-      if (cardTitle === 'warpstalker') return remoteCardDetails['warpstalker'].points;
-      if (cardTitle === 'voidRunner') return remoteCardDetails['voidRunner'].points;
-    } 
-    
-    return 0; // Should not run, just to appease the ts gods
+    switch (cardTitle) {
+      case 'warpstalker':
+        return gameState.playingAs === player ? $cardDetails['warpstalker'].points : remoteCardDetails['warpstalker'].points;
+      case 'voidRunner':
+        return gameState.playingAs === player ? $cardDetails['voidRunner'].points : remoteCardDetails['voidRunner'].points;
+      case 'drainite':
+        return gameState.playingAs === player ? $cardDetails['drainite'].points : remoteCardDetails['drainite'].points;
+      case 'xerandium':
+        return gameState.playingAs === player ? $cardDetails['xerandium'].points : remoteCardDetails['xerandium'].points;
+      case 'sporax':
+        return gameState.playingAs === player ? $cardDetails['sporax'].points : remoteCardDetails['sporax'].points;
+      default:
+        return $cardDetails[cardTitle].points;
+    }
   }
 
   // Trades warpstalker and voidrunner client values before calculation
@@ -2245,7 +2249,7 @@
             </p>
 
             <p>Neutralized Cards: 
-              {#each $player2.neutralizedCards as card}
+              {#each $player1.neutralizedCards as card}
                 <span class="line-through"
                   class:color-purple={getRaces(card).includes('neutral')}
                   class:color-blue={getRaces(card).includes('boost')}
@@ -2298,7 +2302,7 @@
             </p>
 
             <p>Neutralized Cards: 
-              {#each $player1.neutralizedCards as card}
+              {#each $player2.neutralizedCards as card}
                 <span class="line-through"
                   class:color-purple={getRaces(card).includes('neutral')}
                   class:color-blue={getRaces(card).includes('boost')}
