@@ -21,9 +21,11 @@ const elfDeck = writable([
   'forestDweller',
   'forestDweller',
   'forestDweller',
-  'bard',
-  'bard',
-  'bard'
+  'bardLute',
+  'bardFlute',
+  'bardHorn',
+  'bardDrum',
+  'bardSinger'
 ]);
 
 export default elfDeck;

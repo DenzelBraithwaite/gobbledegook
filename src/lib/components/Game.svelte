@@ -979,9 +979,9 @@
   function displayCardPoints(player: Player, cardTitle: string): number {
     let highestPoints = cardTitle === 'virus' ? -2 : 0; // only virus starts below 0.
     const triggerTwinEffect = player.hand.some(c => ['nelladan', 'leon'].includes(c)) && player.hand.includes('nadallen');
-    if ((player.hand.some(card => ['dreamDestroyer', 'nightTerror'].includes(card)) || cardTitle === 'dog' || cardTitle === 'wolf') && getRaces(cardTitle).includes('beast')) highestPoints = Math.max(highestPoints, displayBeastPoints(player, cardTitle));
+    if ((player.hand.some(card => ['dreamDestroyer', 'nightTerror'].includes(card)) || ['dog', 'wolf', 'lion', 'bear'].includes(cardTitle)) && getRaces(cardTitle).includes('beast')) highestPoints = Math.max(highestPoints, displayBeastPoints(player, cardTitle));
     if ((player.hand.includes('ai') || player.hand.includes('protectron')) && getRaces(cardTitle).includes('bot')) highestPoints = Math.max(highestPoints, displayBotPoints(player, cardTitle));
-    if (triggerTwinEffect || (player.hand.includes('elfKing') && getRaces(cardTitle).includes('elf'))) highestPoints = Math.max(highestPoints, displayElfPoints(player, cardTitle));
+    if (triggerTwinEffect || player.hand.includes('bard') || (player.hand.includes('elfKing') && getRaces(cardTitle).includes('elf'))) highestPoints = Math.max(highestPoints, displayElfPoints(player, cardTitle));
     if ((player.hand.includes('emperor') || player.hand.includes('commander')) && getRaces(cardTitle).includes('human')) highestPoints = Math.max(highestPoints, displayHumanPoints(player, cardTitle));
     if (player.hand.every(card => ['redSpirit', 'leon'].includes(card) || ['blueSpirit', 'leon'].includes(card))) highestPoints = Math.max(highestPoints, displaySpiritPoints(player, cardTitle));
     if (cardTitle === 'longbeardLeader') highestPoints = Math.max(highestPoints, displayDwarfPoints(player));
@@ -1138,8 +1138,11 @@
     const elfCards = player.hand.filter(card => getRaces(card).includes('elf'));
     elfCards.forEach(card => player.points.elves += $cardDetails[card].points);
 
-    // Handles elf twins. Must calculate before elf king since elf king multiples elf points *2/*3
+    // Handles elf twins. Must calculate before elf king since elf king multiples elf points *2/*3. Worth more than bards so put first.
     if (player.hand.some(c => ['nelladan', 'leon'].includes(c)) && player.hand.includes('nadallen')) calculateElfTwins(player);
+
+    // Handles bards Must calculate before elf king since elf king multiples elf points *2/*3
+    if (player.hand.some(c => ['bard', 'leon'].includes(c))) calculateBards(player);
 
     // Determines if otherPlayer has full goblin hand and if player has full elf hand, assigns points accordingly.
     if (player.hand.includes('elfKing')) calculateElfKing(player, otherPlayer, forEndGameCalculation);
@@ -1186,6 +1189,16 @@
     player.points.elves += bonusTwinPoints;
   }
 
+  // Adds bonus points for matching bards
+  function calculateBards(player: Player) {
+    // Each bard gets +1 point for every OTHER bard. If full bard hand, elves gain +20 points.
+    const fullBand = player.hand.every(c => ['bard', 'leon'].includes(c));
+    const numOfBards = player.hand.filter(card => ['bard', 'leon'].includes(card)).length;
+
+    if (fullBand) player.points.elves += 20;
+    player.points.elves += numOfBards * (numOfBards - 1);
+  }
+
   // Calculates special elf king effects
   function calculateElfKing(player: Player, otherPlayer: Player, calculateGoblinKing = false) {
     // Checks if hand has only elves or faebots
@@ -1214,27 +1227,47 @@
     const hasElfKing = player.hand.includes('elfKing');
     const numOfNelladans = player.hand.filter(card => card === 'nelladan' || card === 'leon').length;
     const numOfNadallens = player.hand.filter(card => card === 'nadallen').length;
-    const fullElfHand = player.hand.every(c => getRaces(c).includes('elf'));
     const triggerTwinEffect = numOfNelladans > 0 && numOfNadallens > 0;
+    const numOfBards = player.hand.filter(card => ['bard', 'leon'].includes(card)).length;
+    const fullElfHand = player.hand.every(c => getRaces(c).includes('elf'));
 
-    // Elf king, full hand and twins
+    // Elf king, full hand and twins (can't have full band + elf king)
     if ((hasElfKing && fullElfHand && triggerTwinEffect)) {
       if (cardTitle === 'nadallen') return ($cardDetails[cardTitle].points + (numOfNelladans * 5) * 3);
+      // Leon can't be a bard here since being nelladan is always better. Also, bard doesn't buff self.
       if (cardTitle === 'nelladan' || cardTitle === 'leon') return (($cardDetails[cardTitle].points + 5) * 3);
+      if (cardTitle === 'bard' && numOfBards > 1) return (($cardDetails[cardTitle].points + (numOfBards - 1)) * 3);
       
-      // Elf king and full hand
+      // Elf king and full hand (can't have full band + elf king)
     } else if (hasElfKing && fullElfHand) {
+      if (cardTitle === 'bard' || cardTitle === 'leon') return (($cardDetails[cardTitle].points + (numOfBards - 1)) * 3);
       return $cardDetails[cardTitle].points * 3;
       
+
+      // Elf King + Twins
+    } else if (hasElfKing && triggerTwinEffect) {
+      if (cardTitle === 'nadallen') return (($cardDetails[cardTitle].points + (numOfNelladans * 5)) * 2);
+      if (cardTitle === 'nelladan' || cardTitle === 'leon') return ($cardDetails[cardTitle].points + 5) * 2;
+    
       // Twins
     } else if (triggerTwinEffect) {
       if (cardTitle === 'nadallen') return ($cardDetails[cardTitle].points + (numOfNelladans * 5));
       if (cardTitle === 'nelladan' || cardTitle === 'leon') return ($cardDetails[cardTitle].points + 5);
     }
 
+    // Bards and elf king
+    else if (hasElfKing && numOfBards > 1) {
+      if (cardTitle === 'bard' || cardTitle === 'leon') return (($cardDetails[cardTitle].points + (numOfBards - 1)) * 2);
+    }
+    
     // King
     else if (hasElfKing) {
       return $cardDetails[cardTitle].points * 2;
+    }
+
+    // Bards
+    else if (numOfBards > 1) {
+      if (cardTitle === 'bard' || cardTitle === 'leon') return ($cardDetails[cardTitle].points + (numOfBards - 1));
     }
 
     // Default
@@ -1335,6 +1368,8 @@
 
   function calculateBeastPoints(player: Player): void {
     const beastCards = player.hand.filter(card => getRaces(card).includes('beast'));
+    const numOfBears = player.hand.filter(card => ['bear', 'leon'].includes(card)).length;
+
     beastCards.forEach(card => player.points.beasts += $cardDetails[card].points);
 
     if (player.hand.includes('nightTerror')) calculateNightTerror(player);
@@ -1346,8 +1381,14 @@
       player.points.beasts += (10 * numOfDogs);
     }
 
+    // Player gains +3 for every lion on the field, including himself.
+    if (player.hand.includes('lion')) calculateLionPride(player);
+
     // Player gains +2 for every wolf on the field, including himself.
     if (player.hand.includes('wolf')) calculateWolfPack(player);
+
+    // Bears worth 0 points if other bears in hand.
+    if (numOfBears > 1) deductBearPoints(player);
     
     // Currently no neutrals that affect beast points
     calculateBeastBoosts(player);
@@ -1399,6 +1440,12 @@
     player.points.beasts += (numOfBeastCards * 14);
   }
 
+  // +3 points for every lion on the field, including himself (base lion points already calculated in calculateBasePoints)
+  function calculateLionPride(player: Player) {
+    const numOfLions = player.hand.filter(card => card === 'lion' || card === 'leon').length;
+    player.points.beasts += numOfLions * (numOfLions * 3);
+  }
+
   // +2 points for every wolf on the field, including himself (base wolf points already calculated in calculateBasePoints)
   function calculateWolfPack(player: Player) {
     const numOfWolves = player.hand.filter(card => card === 'wolf' || card === 'leon').length;
@@ -1406,20 +1453,57 @@
     player.points.beasts += numOfWolves * (numOfWolves * 2) + (numOfWereWolves * 2);
   }
 
+  // Remove bear points if player has more than 1 bear in hand.
+  function deductBearPoints(player: Player) {
+    // Here Leon shouldn't always count since he starts at 0 points.
+    const numOfBears = player.hand.filter(card => card === 'bear').length;
+    const numOfBearsAndLeon = player.hand.filter(card => ['bear', 'leon'].includes(card)).length;
+
+    if (player.hand.includes('dreamDestroyer')) {
+      player.points.beasts -= numOfBearsAndLeon * 14; // Since she buffs to 14
+      
+    } else if (player.hand.includes('nightTerror')) {
+      player.points.beasts -= numOfBearsAndLeon * 12; // Since she buffs to 12
+
+    } else {
+      player.points.beasts -= numOfBears * $cardDetails['bear'].points;
+    }
+  }
+
   function displayBeastPoints(player: Player, cardTitle: string): number {
     const hasHumans = player.hand.some(c => getRaces(c).includes('human'));
     const hasNightTerror = player.hand.includes('nightTerror');
     const hasDreamDestroyer = player.hand.includes('dreamDestroyer');
+    const numOfBears = player.hand.filter(card => ['bear', 'leon'].includes(card)).length;
+    let wolfPackPoints = 0;
+    let lionPridePoints = 0;
 
-    if (cardTitle === 'wolf' || cardTitle === 'leon') {
-      const numOfWolves = player.hand.filter(card => card === 'wolf' || card === 'leon').length;
-      const numOfWerewolves = player.hand.filter(card => card === 'lupin').length;
+    if (['lion', 'leon'].includes(cardTitle)) {
+      const numOfLions = player.hand.filter(card => ['lion', 'leon'].includes(card)).length;
       let leaderBonus = 0;
       if (hasNightTerror) leaderBonus = 12;
       if (hasDreamDestroyer) leaderBonus = 14; // overwrites night terror
 
-      return $cardDetails[cardTitle].points + (numOfWolves * 2) + (numOfWerewolves * 2) + ((hasDreamDestroyer || hasNightTerror) ? (leaderBonus - $cardDetails[cardTitle].points) : 0);
+      lionPridePoints = $cardDetails[cardTitle].points + (numOfLions * 3) + ((hasDreamDestroyer || hasNightTerror) ? (leaderBonus - $cardDetails[cardTitle].points) : 0);
+      if (cardTitle === 'lion') return lionPridePoints;
     }
+    
+    if (['wolf', 'leon'].includes(cardTitle)) {
+      const numOfWolves = player.hand.filter(card => ['wolf', 'leon'].includes(card)).length;
+      const numOfWerewolves = player.hand.filter(card => card === 'lupin').length;
+      let leaderBonus = 0;
+      if (hasNightTerror) leaderBonus = 12;
+      if (hasDreamDestroyer) leaderBonus = 14; // overwrites night terror
+      
+      wolfPackPoints = $cardDetails[cardTitle].points + (numOfWolves * 2) + (numOfWerewolves * 2) + ((hasDreamDestroyer || hasNightTerror) ? (leaderBonus - $cardDetails[cardTitle].points) : 0);
+      if (cardTitle === 'wolf') return wolfPackPoints;
+    }
+    
+    // So Leon takes highest point value
+    if (player.hand.some(c => ['wolf', 'lion'.includes(c)]) && cardTitle === 'leon') return Math.max(wolfPackPoints, lionPridePoints);
+
+    // If no buffs, check for bears/leon point loss (cuz highest always wins so 0 checked last).
+    if (['bear', 'leon'].includes(cardTitle) && numOfBears > 1) return 0;
 
     // dog base points already calculated
     if (cardTitle === 'dog' && hasHumans && hasDreamDestroyer) return 24;

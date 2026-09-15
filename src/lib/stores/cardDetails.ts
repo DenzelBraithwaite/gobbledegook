@@ -325,6 +325,71 @@ const cardDetails = writable({
     otherRaces: [],
     image: '/elves/wood_elf.png'
   },
+  bardLute: {
+    title: 'bardLute',
+    displayTitle: 'Bard',
+    points: 2,
+    amount: 1,
+    rarity: 'great',
+    traitTitle: 'Concert',
+    trait: 'Bards buff each other by +1. If you hold a full band (5), elves gain + 20 points at the end of the match.',
+    description: 'A common musician who enjoys the lute.',
+    race: 'elf',
+    otherRaces: [],
+    image: '/elves/bard_lute.png'
+  },
+  bardFlute: {
+    title: 'bardFlute',
+    displayTitle: 'Bard',
+    points: 2,
+    amount: 1,
+    rarity: 'great',
+    traitTitle: 'Concert',
+    trait: 'Bards buff each other by +1. If you hold a full band (5), elves gain + 20 points at the end of the match.',
+    description: 'A noble bard who performs for children.',
+    race: 'elf',
+    otherRaces: [],
+    image: '/elves/bard_flute.png'
+  },
+  bardHorn: {
+    title: 'bardHorn',
+    displayTitle: 'Bard',
+    points: 2,
+    amount: 1,
+    rarity: 'great',
+    traitTitle: 'Concert',
+    trait: 'Bards buff each other by +1. If you hold a full band (5), elves gain + 20 points at the end of the match.',
+    description: 'A sackbut (horn) professional reknown in the elf community.',
+    race: 'elf',
+    otherRaces: [],
+    image: '/elves/bard_horn.png'
+  },
+  bardDrum: {
+    title: 'bardDrum',
+    displayTitle: 'Bard',
+    points: 2,
+    amount: 1,
+    rarity: 'great',
+    traitTitle: 'Concert',
+    trait: 'Bards buff each other by +1. If you hold a full band (5), elves gain + 20 points at the end of the match.',
+    description: 'A musician who uses drums to bring joys to other elves.',
+    race: 'elf',
+    otherRaces: [],
+    image: '/elves/bard_drum.png'
+  },
+  bardSinger: {
+    title: 'bardSinger',
+    displayTitle: 'Bard',
+    points: 2,
+    amount: 1,
+    rarity: 'great',
+    traitTitle: 'Concert',
+    trait: 'Bards buff each other by +1. If you hold a full band (5), elves gain + 20 points at the end of the match.',
+    description: 'A traveling musician who sings with various groups.',
+    race: 'elf',
+    otherRaces: [],
+    image: '/elves/bard_singer.png'
+  },
   forestDweller: {
     title: 'forestDweller',
     displayTitle: 'Wild Elf',
@@ -337,20 +402,6 @@ const cardDetails = writable({
     race: 'elf',
     otherRaces: [],
     image: '/elves/forest_dweller.png'
-  },
-  // TODO: like villager, new art? maybe 3 bards with diff instruments. if possible, if player has 3 then elves gain +15 points or soemthing at the end idk. Or they all set their points to 10.
-  bard: {
-    title: 'bard',
-    displayTitle: 'Bard',
-    points: 2,
-    amount: 3,
-    rarity: 'poor',
-    traitTitle: '',
-    trait: '',
-    description: 'A weak musician.',
-    race: 'elf',
-    otherRaces: [],
-    image: '/elves/bard.png'
   },
 
   // Dwarves
@@ -619,6 +670,19 @@ const cardDetails = writable({
     otherRaces: [],
     image: '/beasts/rhino.png'
   },
+  lion: {
+    title: 'lion',
+    displayTitle: 'Goldenmane',
+    points: 8,
+    amount: 3,
+    rarity: 'amazing',
+    traitTitle: 'Pride',
+    trait: 'Receive +3 points for every lion in your hand, including this one.',
+    description: 'The original kings of the jungle.',
+    race: 'beast',
+    otherRaces: [],
+    image: '/beasts/lion.png'
+  },
   wolf: {
     title: 'wolf',
     displayTitle: 'Alpha Wolfbane',
@@ -650,26 +714,13 @@ const cardDetails = writable({
     displayTitle: 'Theo Thunderpaw',
     points: 9,
     amount: 2,
-    rarity: 'great', // TODO: increase when train in effect
-    traitTitle: '',
-    trait: '', // TODO: bonus points if the only bear in hand.
+    rarity: 'great',
+    traitTitle: 'Territorial',
+    trait: 'Theo loses all points if another bear is in your hand (leon triggers this).',
     description: 'A powerful top level beast, matched by few.',
     race: 'beast',
     otherRaces: [],
     image: '/beasts/bear.png'
-  },
-  lion: {
-    title: 'lion',
-    displayTitle: 'Goldenmane',
-    points: 8,
-    amount: 3,
-    rarity: 'great', // TODO: increase when train in effect
-    traitTitle: '',
-    trait: '', // TODO: same as wolves but +3
-    description: 'The original kings of the jungle.',
-    race: 'beast',
-    otherRaces: [],
-    image: '/beasts/lion.png'
   },
   panther: {
     title: 'panther',
@@ -1327,7 +1378,7 @@ const cardDetails = writable({
     amount: 2,
     rarity: 'amazing',
     traitTitle: 'Camouflage',
-    trait: "Leon can blend into any race, he can even pose as a red/blue jinn, blend into wolf pack, imitate nelladan.",
+    trait: "Leon can blend into any race, he can even pose as a red/blue jinn, blend into wolf/lion pack, nelladan, a bear and even a bard. In events where it can blend into multiple, it will choose the highest point value.",
     description: 'A docile chameleon who hates being mistaken for a gecko.',
     race: 'neutral',
     otherRaces: ['human', 'goblin', 'elf', 'dwarf', 'beast', 'bot', 'xeno', 'spirit'],
