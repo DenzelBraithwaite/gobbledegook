@@ -16,7 +16,14 @@ const boostDeck = writable([
   'feast',
   'cookieJar',
   'cookieJar',
-  'cookieJar'
+  'oreoCookie',
+  'chocoChipCookie',
+  'thumbprintCookie',
+  'oatmealCookie',
+  'cookieCrumbs',
+  'cookieCrumbs',
+  'cookieCrumbs',
+  'cookieCrumbs'
 ]);
 
 export default boostDeck;

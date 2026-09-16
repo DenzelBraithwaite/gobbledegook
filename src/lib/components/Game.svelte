@@ -352,17 +352,17 @@
     player2.set({...$player2Reset, title: $player2.title});
 
     fullDeck = {
-      humans: [...$humanDeck],
-      goblins: [...$goblinDeck],
-      elves: [...$elfDeck],
-      dwarves: [...$dwarfDeck],
-      beasts: [...$beastDeck],
+      // humans: [...$humanDeck],
+      // goblins: [...$goblinDeck],
+      // elves: [...$elfDeck],
+      // dwarves: [...$dwarfDeck],
+      // beasts: [...$beastDeck],
       bots: [...$botDeck],
       xenos: [...$xenoDeck],
       spirits: [...$spiritDeck],
       boosts: [...$boostDeck],
       traps: [...$trapDeck],
-      neutrals: [...$neutralDeck]
+      // neutrals: [...$neutralDeck]
     };
 
     cardDetails.set({...controlCopyOfCardDetails});
@@ -1015,7 +1015,7 @@
     if ((player.hand.includes('emperor') || player.hand.includes('commander')) && getRaces(cardTitle).includes('human')) highestPoints = Math.max(highestPoints, displayHumanPoints(player, cardTitle));
     if (player.hand.every(card => ['redSpirit', 'leon'].includes(card) || ['blueSpirit', 'leon'].includes(card))) highestPoints = Math.max(highestPoints, displaySpiritPoints(player, cardTitle));
     if (cardTitle === 'longbeardLeader') highestPoints = Math.max(highestPoints, displayDwarfPoints(player));
-    if (cardTitle === 'cookieJar' && isCookieJarActive(player)) highestPoints = Math.max(highestPoints, 50);
+    if (cardTitle === 'cookieJar' && isCookieJarActive(player)) highestPoints = Math.max(highestPoints, 40);
     
     // If this is being called on player 1/2's hand and the card is a voidrunner/warp and I'm player 2/1 return appropriate points.
     const xenoCards = ['voidRunner', 'warpstalker', 'nebulite'];
@@ -1051,10 +1051,20 @@
     const numOfRejuvenates = player.boosts.filter(boost => boost === 'rejuvenate').length;
     player.points.humans += (numOfRejuvenates * 10);
 
+    // Add cookie points
+    const cookies = ['oreoCookie', 'chocoChipCookie', 'thumbprintCookie', 'oatmealCookie'];
+    const numOfCookies = player.boosts.filter(boost => cookies.includes(boost)).length;
+    player.points.humans += (numOfCookies * 5);
+
+    // Add cookie crumbs points
+    const numOfCookieCrumbs = player.boosts.filter(boost => boost === 'cookieCrumbs').length;
+    player.points.humans += (numOfCookieCrumbs * 3);
+
     // Add cookie jar points
     if (isCookieJarActive(player)) {
       const numOfCookieJars = player.hand.filter(card => card === 'cookieJar').length;
-      player.points.humans += (numOfCookieJars * 50);
+      const fullCookieJar = player.hand.every(c => cookies.includes(c) || (c === 'cookieJar' && numOfCookieJars === 1));
+      fullCookieJar ? player.points.humans += 100 : player.points.humans += (numOfCookieJars * 40);
     }
   }
 
@@ -1068,6 +1078,10 @@
     // Saps
     const numOfSaps = player.traps.filter(trap => trap === 'sap').length;
     player.points.humans -= (numOfSaps * 10);
+
+    // Rotten Cookie Crumbs
+    const numOfRottenCrumbs = player.traps.filter(trap => trap === 'rottenCookieCrumbs').length;
+    player.points.humans -= (numOfRottenCrumbs * 3);
   }
 
   // Doubles human points and adds other races as well except Xenos.
@@ -1116,10 +1130,20 @@
     const numOfRejuvenates = player.boosts.filter(boost => boost === 'rejuvenate').length;
     player.points.goblins += (numOfRejuvenates * 10);
 
+    // Add cookie points
+    const cookies = ['oreoCookie', 'chocoChipCookie', 'thumbprintCookie', 'oatmealCookie'];
+    const numOfCookies = player.boosts.filter(boost => cookies.includes(boost)).length;
+    player.points.goblins += (numOfCookies * 5);
+
+    // Add cookie crumbs points
+    const numOfCookieCrumbs = player.boosts.filter(boost => boost === 'cookieCrumbs').length;
+    player.points.goblins += (numOfCookieCrumbs * 3);
+
     // Add cookie jar points
     if (isCookieJarActive(player)) {
       const numOfCookieJars = player.hand.filter(card => card === 'cookieJar').length;
-      player.points.goblins += (numOfCookieJars * 50);
+      const fullCookieJar = player.hand.every(c => cookies.includes(c) || (c === 'cookieJar' && numOfCookieJars === 1));
+      fullCookieJar ? player.points.goblins += 100 : player.points.goblins += (numOfCookieJars * 40);
     }
   }
 
@@ -1133,6 +1157,10 @@
     // Saps
     const numOfSaps = player.traps.filter(trap => trap === 'sap').length;
     player.points.goblins -= (numOfSaps * 10);
+
+    // Rotten Cookie Crumbs
+    const numOfRottenCrumbs = player.traps.filter(trap => trap === 'rottenCookieCrumbs').length;
+    player.points.goblins -= (numOfRottenCrumbs * 3);
   }
   
   // Determins if goblin mark can be drawn.
@@ -1193,10 +1221,20 @@
     const numOfRejuvenates = player.boosts.filter(boost => boost === 'rejuvenate').length;
     player.points.elves += (numOfRejuvenates * 10);
 
+    // Add cookie points
+    const cookies = ['oreoCookie', 'chocoChipCookie', 'thumbprintCookie', 'oatmealCookie'];
+    const numOfCookies = player.boosts.filter(boost => cookies.includes(boost)).length;
+    player.points.elves += (numOfCookies * 5);
+
+    // Add cookie crumbs points
+    const numOfCookieCrumbs = player.boosts.filter(boost => boost === 'cookieCrumbs').length;
+    player.points.elves += (numOfCookieCrumbs * 3);
+
     // Add cookie jar points
     if (isCookieJarActive(player)) {
       const numOfCookieJars = player.hand.filter(card => card === 'cookieJar').length;
-      player.points.elves += (numOfCookieJars * 50);
+      const fullCookieJar = player.hand.every(c => cookies.includes(c) || (c === 'cookieJar' && numOfCookieJars === 1));
+      fullCookieJar ? player.points.elves += 100 : player.points.elves += (numOfCookieJars * 40);
     }
   }
 
@@ -1210,6 +1248,10 @@
     // Saps
     const numOfSaps = player.traps.filter(trap => trap === 'sap').length;
     player.points.elves -= (numOfSaps * 10);
+
+    // Rotten Cookie Crumbs
+    const numOfRottenCrumbs = player.traps.filter(trap => trap === 'rottenCookieCrumbs').length;
+    player.points.elves -= (numOfRottenCrumbs * 3);
   }
 
   // Adds bonus points for matching elf twins
@@ -1329,10 +1371,20 @@
     const numOfRejuvenates = player.boosts.filter(boost => boost === 'rejuvenate').length;
     player.points.dwarves += (numOfRejuvenates * 10);
 
+    // Add cookie points
+    const cookies = ['oreoCookie', 'chocoChipCookie', 'thumbprintCookie', 'oatmealCookie'];
+    const numOfCookies = player.boosts.filter(boost => cookies.includes(boost)).length;
+    player.points.dwarves += (numOfCookies * 5);
+
+    // Add cookie crumbs points
+    const numOfCookieCrumbs = player.boosts.filter(boost => boost === 'cookieCrumbs').length;
+    player.points.dwarves += (numOfCookieCrumbs * 3);
+
     // Add cookie jar points
     if (isCookieJarActive(player)) {
       const numOfCookieJars = player.hand.filter(card => card === 'cookieJar').length;
-      player.points.dwarves += (numOfCookieJars * 50);
+      const fullCookieJar = player.hand.every(c => cookies.includes(c) || (c === 'cookieJar' && numOfCookieJars === 1));
+      fullCookieJar ? player.points.dwarves += 100 : player.points.dwarves += (numOfCookieJars * 40);
     }
   }
 
@@ -1346,6 +1398,10 @@
     // Saps
     const numOfSaps = player.traps.filter(trap => trap === 'sap').length;
     player.points.dwarves -= (numOfSaps * 10);
+
+    // Rotten Cookie Crumbs
+    const numOfRottenCrumbs = player.traps.filter(trap => trap === 'rottenCookieCrumbs').length;
+    player.points.dwarves -= (numOfRottenCrumbs * 3);
   }
   
   // Attempts to draw a dwarf next if there are dwarves remaining.
@@ -1437,10 +1493,20 @@
     const numOfRejuvenates = player.boosts.filter(boost => boost === 'rejuvenate').length;
     player.points.beasts += (numOfRejuvenates * 10);
 
+    // Add cookie points
+    const cookies = ['oreoCookie', 'chocoChipCookie', 'thumbprintCookie', 'oatmealCookie'];
+    const numOfCookies = player.boosts.filter(boost => cookies.includes(boost)).length;
+    player.points.beasts += (numOfCookies * 5);
+
+    // Add cookie crumbs points
+    const numOfCookieCrumbs = player.boosts.filter(boost => boost === 'cookieCrumbs').length;
+    player.points.beasts += (numOfCookieCrumbs * 3);
+
     // Add cookie jar points
     if (isCookieJarActive(player)) {
       const numOfCookieJars = player.hand.filter(card => card === 'cookieJar').length;
-      player.points.beasts += (numOfCookieJars * 50);
+      const fullCookieJar = player.hand.every(c => cookies.includes(c) || (c === 'cookieJar' && numOfCookieJars === 1));
+      fullCookieJar ? player.points.beasts += 100 : player.points.beasts += (numOfCookieJars * 40);
     }
   }
 
@@ -1454,6 +1520,10 @@
     // Saps
     const numOfSaps = player.traps.filter(trap => trap === 'sap').length;
     player.points.beasts -= (numOfSaps * 10);
+
+    // Rotten Cookie Crumbs
+    const numOfRottenCrumbs = player.traps.filter(trap => trap === 'rottenCookieCrumbs').length;
+    player.points.beasts -= (numOfRottenCrumbs * 3);
   }
 
   // Sets all beast bast points to 12
@@ -1599,10 +1669,20 @@
     const numOfRejuvenates = player.boosts.filter(boost => boost === 'rejuvenate').length;
     player.points.bots += (numOfRejuvenates * 10);
 
+    // Add cookie points
+    const cookies = ['oreoCookie', 'chocoChipCookie', 'thumbprintCookie', 'oatmealCookie'];
+    const numOfCookies = player.boosts.filter(boost => cookies.includes(boost)).length;
+    player.points.bots += (numOfCookies * 10); // doubled for bots
+
+    // Add cookie crumbs points
+    const numOfCookieCrumbs = player.boosts.filter(boost => boost === 'cookieCrumbs').length;
+    player.points.bots += (numOfCookieCrumbs * 6); // doubled for bots
+
     // Add cookie jar points
     if (isCookieJarActive(player)) {
       const numOfCookieJars = player.hand.filter(card => card === 'cookieJar').length;
-      player.points.bots += (numOfCookieJars * 50);
+      const fullCookieJar = player.hand.every(c => cookies.includes(c) || (c === 'cookieJar' && numOfCookieJars === 1));
+      fullCookieJar ? player.points.bots += 200 : player.points.bots += (numOfCookieJars * 80);
     }
   }
 
@@ -1696,10 +1776,20 @@
     const numOfRejuvenates = player.boosts.filter(boost => boost === 'rejuvenate').length;
     player.points.xenos += (numOfRejuvenates * 10);
 
+    // Add cookie points
+    const cookies = ['oreoCookie', 'chocoChipCookie', 'thumbprintCookie', 'oatmealCookie'];
+    const numOfCookies = player.boosts.filter(boost => cookies.includes(boost)).length;
+    player.points.xenos += (numOfCookies * 5);
+
+    // Add cookie crumbs points
+    const numOfCookieCrumbs = player.boosts.filter(boost => boost === 'cookieCrumbs').length;
+    player.points.xenos += (numOfCookieCrumbs * 3);
+
     // Add cookie jar points
     if (isCookieJarActive(player)) {
       const numOfCookieJars = player.hand.filter(card => card === 'cookieJar').length;
-      player.points.xenos += (numOfCookieJars * 50);
+      const fullCookieJar = player.hand.every(c => cookies.includes(c) || (c === 'cookieJar' && numOfCookieJars === 1));
+      fullCookieJar ? player.points.xenos += 100 : player.points.xenos += (numOfCookieJars * 40);
     }
   }
 
@@ -1713,6 +1803,10 @@
     // Saps
     const numOfSaps = player.traps.filter(trap => trap === 'sap').length;
     player.points.xenos -= (numOfSaps * 10);
+
+    // Rotten Cookie Crumbs
+    const numOfRottenCrumbs = player.traps.filter(trap => trap === 'rottenCookieCrumbs').length;
+    player.points.xenos -= (numOfRottenCrumbs * 3);
 
     // Xenophobia
     const numOfXenophobias = player.traps.filter(trap => trap === 'xenophobia').length;
@@ -1838,12 +1932,6 @@
     // Add rejuvenate points
     const numOfRejuvenates = player.boosts.filter(boost => boost === 'rejuvenate').length;
     player.points.spirits += (numOfRejuvenates * 10);
-
-    // Add cookie jar points
-    if (isCookieJarActive(player)) {
-      const numOfCookieJars = player.hand.filter(card => card === 'cookieJar').length;
-      player.points.spirits += (numOfCookieJars * 50);
-    }
   }
 
   // Calculates all traps that apply to spirits and deducts them from spirit points.
