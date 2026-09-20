@@ -23,7 +23,7 @@
 
   // Thanos: http://192.168.2.10:6912; 
   // Work Mac at home: http://192.168.2.19:6912;
-  let socket = io('http://192.168.2.10:6912');
+  let socket = io('http://192.168.2.14:6912');
   $: gameState = {
     gobbledegookDeclared: false,
     gobbledegookDisabled: false,
