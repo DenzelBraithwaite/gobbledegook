@@ -352,17 +352,17 @@
     player2.set({...$player2Reset, title: $player2.title});
 
     fullDeck = {
-      // humans: [...$humanDeck],
-      // goblins: [...$goblinDeck],
-      // elves: [...$elfDeck],
-      // dwarves: [...$dwarfDeck],
-      // beasts: [...$beastDeck],
+      humans: [...$humanDeck],
+      goblins: [...$goblinDeck],
+      elves: [...$elfDeck],
+      dwarves: [...$dwarfDeck],
+      beasts: [...$beastDeck],
       bots: [...$botDeck],
       xenos: [...$xenoDeck],
       spirits: [...$spiritDeck],
       boosts: [...$boostDeck],
       traps: [...$trapDeck],
-      // neutrals: [...$neutralDeck]
+      neutrals: [...$neutralDeck]
     };
 
     cardDetails.set({...controlCopyOfCardDetails});

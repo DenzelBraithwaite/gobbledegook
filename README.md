@@ -2,7 +2,8 @@
 
 A private, two-player fantasy card game built with Svelte, TypeScript, Socket.IO, and Express.
 
-![A game of Gobbledegook in progress](./gdg_start.png)
+<!-- README SCREENSHOT LINK: Move or replace this image as needed. -->
+![The Gobbledegook board before a game begins](./readme_assets/readme_game_not_started.png)
 
 ## About the game
 
@@ -55,6 +56,43 @@ While testing, I sometimes comment out particular decks. Check the `fullDeck` ob
 - End-of-round histories showing starting hands, draws, discards, and final hands
 - Per-session win, loss, and draw tracking
 - Connection status for both players
+
+## Screenshots
+
+<!-- README SCREENSHOT LINKS: These images came from Desktop/for_codex_readme_files. -->
+
+### A hand in play
+
+![A full Gobbledegook hand showing several factions and card types](./readme_assets/readme_full_hand.png)
+
+### Cards revealed to the other player
+
+![A Spirit card revealed while the other cards remain hidden](./readme_assets/readme_brite_other_client.png)
+
+### Card library
+
+![The full-deck library displaying a grid of Human cards](./readme_assets/readme_library_grid.png)
+
+### Boost library
+
+![Detailed Boost cards in the card library](./readme_assets/readme_boosts.png)
+
+### Card detail
+
+![A close-up of the Void Runner card](./readme_assets/readme_void_runner_cloesup.png)
+
+### mobile view
+![A demonstration of mobile view.](./readme_assets/gdg_mobile_shot.png)
+
+### Legendary faction buff
+
+![The Emperor doubling a mixed hand's Human faction score](./readme_assets/readme_emperor_human_legendary_buff.png)
+
+### End-of-game results
+
+![The top of the results screen showing the winner, faction scores, boosts, and starting and final hands](./readme_assets/readme_end_game_results_screen_pt_1.png)
+
+![The rest of the results screen showing cards drawn and discarded by both players](./readme_assets/readme_end_game_results_screen_pt_2.png)
 
 ## Running the game
 
