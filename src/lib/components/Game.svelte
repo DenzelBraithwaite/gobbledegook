@@ -1,6 +1,6 @@
 <script lang="ts">
   // Hooks
-  import { onMount } from 'svelte';
+  import { onMount, tick } from 'svelte';
 
   // Transitions
   import { fade } from 'svelte/transition';
@@ -12,8 +12,11 @@
   import { type Player, player1, player1Reset, player2, player2Reset, cardDetails, beastDeck, botDeck, dwarfDeck, elfDeck, goblinDeck, humanDeck, xenoDeck, spiritDeck, boostDeck,  trapDeck, neutralDeck } from '../stores';
 
   // Custom components
-  import { Button, Discards, RemainingCardsModal, Library, Spinner, RacePoints } from './index';
+  import { Button, BotInfo, Discards, RemainingCardsModal, Library, Spinner, RacePoints } from './index';
   import GGCard from './Card.svelte';
+
+  // ai generated: The decision engine stays independent from Svelte and receives only the information a real player could know.
+  import { chooseBotDiscard, createBotMemory, decideBotDeclaration, rememberBotDecision, type BotObservation } from '../game/botStrategy';
 
   // Websocket
   import { io } from 'socket.io-client';
@@ -24,7 +27,16 @@
 
   // Thanos: http://192.168.2.10:6912; 
   // Work Mac at home: http://192.168.2.19:6912;
-  let socket = io('http://192.168.2.14:6912');
+  let socket = io('http://192.168.2.14:6912', { autoConnect: false });
+  let gameMode: 'singleplayer' | 'multiplayer' = 'singleplayer';
+  // ai generated: Toggle this value while testing to show or hide detailed bot path explanations in the browser console.
+  let botStrategyDebugEnabled = true;
+  // ai generated: TODO: Replace or expand these placeholder names with the bot names you prefer.
+  const botNames = ['Mossbyte', 'Copper', 'Nib', 'Gizmo', 'Cardinal'];
+  let botMemory = createBotMemory();
+  let botTurnTimeout: ReturnType<typeof setTimeout> | undefined;
+  let botCurrentPath = 'Waiting for a turn';
+  let botLastExplanation = 'The bot has not made a decision yet.';
   $: gameState = {
     gobbledegookDeclared: false,
     gobbledegookDisabled: false,
@@ -38,8 +50,10 @@
     libraryVisible: false,
     discardsVisible: false,
     remainingCardsVisible: false,
+    botInfoVisible: false,
     showEventMessage: false,
     newPlayerTitle: 'Unknown Player',
+    connectedNameChangeSide: '' as '' | 'p1' | 'p2',
     p1NameChangeVisible: false,
     p2NameChangeVisible: false,
     playingAs: '' as 'p1' | 'p2',
@@ -75,11 +89,6 @@
   let deckTypes: DeckRace[] | string[] = Object.keys(fullDeck);
 
   onMount(() => {
-    // Send periodic pings, reseting timeout each tiem we send a new ping.
-    intervalId = setInterval(() => {
-      socket.emit('check-connected-users');
-    }, heartBeatInterval);
-    
     // Respons to connection 
     socket.on('check-connected-users-response', () => {
       // If we get a reply, cancel the "disconnect" timeout and mark connected
@@ -123,29 +132,7 @@
     socket.on('add-turn-count', () => gameState.turnCount++);
 
     // Handles turn change for all users
-    socket.on('turn-changed', async data => {
-      player1.update($player1 => {
-        $player1.turn = !data.player1.turn;
-        $player1.playingTwice = false;
-        $player1.hasVision = false;
-        return $player1;
-      });
-
-      player2.update($player2 => {
-        $player2.turn = !data.player2.turn;
-        $player2.playingTwice = false;
-        $player2.hasVision = false;
-        return $player2;
-      });
-      
-      const player = gameState.playingAs === 'p1' ? $player1 : $player2;
-      if (player.turn && player.hand.some(c => ['drainite', 'xerandium', 'sporax'].includes(c))) await calculateXenoEggs(player);
-
-      calculateCurrentPlayerPoints(player);
-      const gdgButtonAvailable = (!gameState.gameOver && !gameState.gobbledegookDeclared && gameState.turnCount >= 15);
-      if (gdgButtonAvailable && isPlayerTurn()) gameState.gobbledegookDisabled = false;
-      if (isPlayerTurn()) showEvent('turn-change');
-    });
+    socket.on('turn-changed', data => void applyTurnChange(data));
 
     // Increase turn count
     socket.on('turn-count-increased', () => gameState.turnCount += 3);
@@ -265,7 +252,158 @@
       remainingXenoEggs = remainingXenoEggs.filter(c => c !== card);
       gameState.showSpinner = false;
     });
+
+    // ai generated: Singleplayer initializes locally and never opens the websocket connection.
+    initializeSingleplayer();
+
+    // ai generated: Clearing timers and the optional socket prevents rematches or navigation from leaving ghost bot turns behind.
+    return () => {
+      stopHeartbeat();
+      if (botTurnTimeout) clearTimeout(botTurnTimeout);
+      socket.disconnect();
+    };
   });
+
+  // ai generated: The heartbeat exists only for multiplayer because singleplayer has no server dependency.
+  function startHeartbeat(): void {
+    stopHeartbeat();
+    intervalId = setInterval(() => socket.emit('check-connected-users'), heartBeatInterval);
+  }
+
+  // ai generated: Keeping heartbeat cleanup in one place makes switching modes safe.
+  function stopHeartbeat(): void {
+    if (intervalId) clearInterval(intervalId);
+    if (timeoutId) clearTimeout(timeoutId);
+    intervalId = undefined;
+    timeoutId = undefined;
+  }
+
+  // ai generated: Player one is always the human and player two is always the local bot in the first singleplayer version.
+  function initializeSingleplayer(): void {
+    stopHeartbeat();
+    socket.disconnect();
+    gameState.playingAs = 'p1';
+    p1Connected = true;
+    p2Connected = true;
+    const botName = botNames[Math.floor(Math.random() * botNames.length)];
+    player1.update(player => ({ ...player, id: 'singleplayer-human' }));
+    player2.update(player => ({ ...player, id: 'singleplayer-bot', title: botName }));
+    player1Reset.update(player => ({ ...player, id: 'singleplayer-human' }));
+    player2Reset.update(player => ({ ...player, id: 'singleplayer-bot', title: botName }));
+    botMemory = createBotMemory();
+    botCurrentPath = 'Waiting for a turn';
+    botLastExplanation = 'Press Ready to start a local game.';
+  }
+
+  // ai generated: Mode changes are available between rounds and preserve the original server-backed multiplayer flow.
+  function selectGameMode(mode: 'singleplayer' | 'multiplayer'): void {
+    if (gameMode === mode || !gameState.gameOver) return;
+    if (botTurnTimeout) clearTimeout(botTurnTimeout);
+    gameState.connectedNameChangeSide = '';
+    gameState.p1NameChangeVisible = false;
+    gameState.p2NameChangeVisible = false;
+    gameMode = mode;
+    if (mode === 'singleplayer') {
+      initializeSingleplayer();
+      return;
+    }
+
+    stopHeartbeat();
+    p1Connected = false;
+    p2Connected = false;
+    gameState.playingAs = 'p1';
+    player1.update(player => ({ ...player, id: undefined, isReady: false }));
+    player2.update(player => ({ ...player, id: undefined, title: 'Player 2', isReady: false }));
+    player1Reset.update(player => ({ ...player, id: undefined }));
+    player2Reset.update(player => ({ ...player, id: undefined, title: 'Player 2' }));
+    socket.connect();
+    startHeartbeat();
+  }
+
+  // ai generated: Gameplay emits use the existing server in multiplayer and equivalent local handlers in singleplayer.
+  function emitGameEvent(eventName: string, data?: any): void {
+    if (gameMode === 'multiplayer') {
+      socket.emit(eventName, data);
+      return;
+    }
+
+    switch (eventName) {
+      case 'change-turns':
+        void applyTurnChange(data);
+        break;
+      case 'remove-remaining-legendary':
+        removeRemainingLegendaryLocally(data);
+        break;
+      case 'end-game':
+        endGame();
+        break;
+      case 'eradicate-traps':
+        fullDeck['traps'] = [];
+        removeRaceDeck('traps');
+        gameState.showSpinner = false;
+        break;
+      case 'display-event':
+        void showEvent(data);
+        break;
+      case 'swap-hands':
+        Object.entries(data.copyOfXenoPoints).forEach(([card, points]) => remoteCardDetails[card].points = points);
+        break;
+      case 'reveal-players':
+        gameState.playersRevealed = true;
+        break;
+      case 'conceal-players':
+        gameState.playersRevealed = false;
+        break;
+      case 'start-xeno-sync':
+        gameState.showSpinner = false;
+        break;
+      case 'remove-xeno-egg':
+        remainingXenoEggs = remainingXenoEggs.filter(card => card !== data);
+        gameState.showSpinner = false;
+        break;
+      case 'increase-turn-count':
+        gameState.turnCount += 3;
+        break;
+      case 'decrease-turn-count':
+        gameState.turnCount = gameState.turnCount >= 5 ? gameState.turnCount - 5 : 0;
+        break;
+      case 'neutralize-deck':
+        neutralizeDeck();
+        break;
+      case 'gdg-declared':
+        gameState.gobbledegookDeclared = true;
+        break;
+    }
+  }
+
+  // ai generated: The shared turn handler keeps local and server games on the same turn-reset rules.
+  async function applyTurnChange(data: { player1: Player, player2: Player }): Promise<void> {
+    player1.update(player => ({ ...player, turn: !data.player1.turn, playingTwice: false, hasVision: false }));
+    player2.update(player => ({ ...player, turn: !data.player2.turn, playingTwice: false, hasVision: false }));
+
+    const activePlayer = gameMode === 'singleplayer'
+      ? ($player1.turn ? $player1 : $player2)
+      : (gameState.playingAs === 'p1' ? $player1 : $player2);
+    if (activePlayer.turn && activePlayer.hand.some(card => ['drainite', 'xerandium', 'sporax'].includes(card))) {
+      await calculateXenoEggs(activePlayer);
+    }
+
+    calculateCurrentPlayerPoints(activePlayer);
+    const localPlayer = gameState.playingAs === 'p1' ? $player1 : $player2;
+    const gdgButtonAvailable = !gameState.gameOver && !gameState.gobbledegookDeclared && gameState.turnCount >= 15;
+    if (gdgButtonAvailable && isPlayerTurn(localPlayer)) gameState.gobbledegookDisabled = false;
+    if (isPlayerTurn(localPlayer)) void showEvent('turn-change');
+    if (gameMode === 'singleplayer' && $player2.turn) scheduleBotTurn();
+  }
+
+  // ai generated: Chester's selected legendary is removed from both the choice list and the shared local deck immediately.
+  function removeRemainingLegendaryLocally(card: string): void {
+    remainingLegendaries = remainingLegendaries.filter(legendary => legendary[0] !== card);
+    const deck = getDeckTypeFromRace($cardDetails[card].race);
+    if (!deck || !fullDeck[deck]) return;
+    const removedCardIndex = fullDeck[deck].indexOf(card);
+    if (removedCardIndex !== -1) fullDeck[deck].splice(removedCardIndex, 1);
+  }
 
   // sets users based on [username, id] from server.js
   function setUsers(users: [string, string][]): void {
@@ -275,7 +413,7 @@
           $player1.id = user[1]; // socket id 2nd item in arr
           return $player1;
         });
-        player1Reset.set({...$player1});
+        player1Reset.update(player => ({ ...player, id: user[1], isReady: false }));
       }
       
       if (user[0] === 'p2') {
@@ -283,7 +421,7 @@
           $player2.id = user[1]; // socket id 2nd item in arr
           return $player2;
         });
-        player2Reset.set({...$player2});
+        player2Reset.update(player => ({ ...player, id: user[1], isReady: false }));
       }
     });
 
@@ -314,18 +452,27 @@
     calculateCurrentPlayerPoints(player);
 
     // Send data to websocket server
-    socket.emit('start-game', {player1: $player1, player2: $player2, fullDeck});
+    emitGameEvent('start-game', {player1: $player1, player2: $player2, fullDeck});
+    if (gameMode === 'singleplayer' && $player2.turn) scheduleBotTurn();
   }
 
   // When both players are ready the game starts/restarts
   async function readyUpPlayer(): Promise<void> {
+    if (gameMode === 'singleplayer') {
+      player1.set({...$player1, isReady: true});
+      player2.set({...$player2, isReady: true});
+      await startGame();
+      return;
+    }
+    if (!socket.connected || ![$player1.id, $player2.id].includes(socket.id)) return;
     gameState.playingAs === 'p1' ? player1.set({...$player1, isReady: !$player1.isReady}) : player2.set({...$player2, isReady: !$player2.isReady});
-    socket.emit('ready-up-player', {player1: $player1, player2: $player2});
+    emitGameEvent('ready-up-player', {player1: $player1, player2: $player2});
     if ($player1.isReady && $player2.isReady) await startGame();
   }
 
   // Ends current round
   function endGame() {
+    if (botTurnTimeout) clearTimeout(botTurnTimeout);
     gameState.gameOver = true;
     gameState.startBtnDisabled = false;
     gameState.gobbledegookDisabled = true;
@@ -351,6 +498,7 @@
 
   // Resets values to restart the game.
   function resetGame() {
+    if (botTurnTimeout) clearTimeout(botTurnTimeout);
     // Reset p1
     player1.set({...$player1Reset, title: $player1.title});
     // Reset p2
@@ -390,6 +538,9 @@
 
     remainingLegendaries = getAllLegendaries();
     remainingXenoEggs = ['drainite', 'xerandium', 'sporax'];
+    botMemory = createBotMemory();
+    botCurrentPath = 'Choosing an opening path';
+    botLastExplanation = 'The bot will compare paths after its first draw.';
   }
 
   // Ensures player 1 isn't always first to start
@@ -408,7 +559,7 @@
   
   // Changes active player turn
   function changeTurns() {
-    socket.emit('change-turns', {player1: $player1, player2: $player2});
+    emitGameEvent('change-turns', {player1: $player1, player2: $player2});
   }
 
   function getDeckTypeFromRace(race: Race): DeckRace {
@@ -456,7 +607,7 @@
 
       // Other client getting update? if a legendary is drawn must also remove it from gamestate so no duplicates
       const exemptLegendaries = ['nightTerror', 'chastity', 'corruption', 'neutralize'];
-      if ($cardDetails[cardDrawn].rarity === 'legendary' && !exemptLegendaries.includes(cardDrawn)) socket.emit('remove-remaining-legendary', cardDrawn);
+      if ($cardDetails[cardDrawn].rarity === 'legendary' && !exemptLegendaries.includes(cardDrawn)) emitGameEvent('remove-remaining-legendary', cardDrawn);
 
       // If the card is a trap that triggers even without being drawn, handle it.
       if (['corruption'].includes(cardDrawn)) await addTrapCard(player, cardDrawn);
@@ -526,7 +677,7 @@
       updateClientsForSpecialXenoCards();
       while (gameState.showSpinner) await wait(500);
       
-      socket.emit('end-game');
+      emitGameEvent('end-game');
       return;
     };
 
@@ -575,7 +726,7 @@
 
       // other client getting update? if a legendary is drawn must also remove it from gamestate so no duplicates
       const exemptLegendaries = ['nightTerror', 'chastity', 'corruption', 'neutralize'];
-      if ($cardDetails[cardDrawn].rarity === 'legendary' && !exemptLegendaries.includes(cardDrawn)) socket.emit('remove-remaining-legendary', cardDrawn);
+      if ($cardDetails[cardDrawn].rarity === 'legendary' && !exemptLegendaries.includes(cardDrawn)) emitGameEvent('remove-remaining-legendary', cardDrawn);
 
       // If it's the spirit king, expose both hands.
       if (cardDrawn === 'spiritKing') await revealPlayers();
@@ -648,7 +799,7 @@
     }
 
     // Checks if player is player 1 or 2, then adds card to hand
-    if (gameState.playingAs === 'p1') {
+    if (player.id === $player1.id) {
       player1.update($player1 => {
         $player1.hand = [...$player1.hand, cardDrawn];
         $player1.cardsDrawn = [...player.cardsDrawn, cardDrawn];
@@ -664,15 +815,12 @@
     calculateCurrentPlayerPoints(player, isNewTurn(player));
     
     // Emits to server that a card was drawn
-    socket.emit('draw-card', {player1: $player1, player2: $player2, deckTypes: deckTypes, fullDeck: fullDeck});
+    emitGameEvent('draw-card', {player1: $player1, player2: $player2, deckTypes: deckTypes, fullDeck: fullDeck});
   }
 
   // Removes card from hand if player hand has over 6 cards
-  async function discard(cardTitle: string) {
-    if (!isPlayerTurn()) return;
-
-    // Who's playing?
-    const player = gameState.playingAs === 'p1' ? $player1 : $player2;
+  async function discard(cardTitle: string, player: Player) {
+    if (!isPlayerTurn(player)) return;
 
     // So player doesn't get free hand of beasts as giraffe grows.
     if (player.hand.includes('adultGiraffe')) cardTitle = 'adultGiraffe';
@@ -695,15 +843,17 @@
     }
 
     // Using store update methods instead of player var ^
-    if ($player1.turn) {
+    if (player.id === $player1.id) {
       const index = $player1.hand.indexOf(cardTitle);
+      if (index === -1) return;
       player1.update($player1 => {
         $player1.hand.splice(index, 1);
         $player1.discards = [...$player1.discards, cardTitle];
         return $player1;
       });
-    } else if ($player2.turn) {
+    } else if (player.id === $player2.id) {
       const index = $player2.hand.indexOf(cardTitle);
+      if (index === -1) return;
       player2.update($player2 => {
         $player2.hand.splice(index, 1);
         $player2.discards = [...$player2.discards, cardTitle];
@@ -712,7 +862,7 @@
    }
 
     // Emits to server that a card was discarded
-    socket.emit('discard-card', {player1: $player1, player2: $player2});
+    emitGameEvent('discard-card', {player1: $player1, player2: $player2});
 
     // Remove all traps from deck
     if (cardTitle === 'eradicate') await eradicateTraps();
@@ -739,7 +889,7 @@
       if (legendaryObj[0] === 'spiritKing') await revealPlayers();
       
       // Then remove from gamestate remaining legendaries
-      socket.emit('remove-remaining-legendary', legendaryObj[0]);
+      emitGameEvent('remove-remaining-legendary', legendaryObj[0]);
 
       return;
     }
@@ -752,7 +902,7 @@
       updateClientsForSpecialXenoCards();
       while (gameState.showSpinner) await wait(500);
       
-      socket.emit('end-game');
+      emitGameEvent('end-game');
     } else {
       changeTurns();
     }
@@ -760,9 +910,9 @@
 
   async function eradicateTraps(): Promise<void> {
     gameState.showSpinner = true;
-    socket.emit('eradicate-traps');
+    emitGameEvent('eradicate-traps');
     while (gameState.showSpinner) await wait(500);
-    socket.emit('display-event', 'eradicate');
+    emitGameEvent('display-event', 'eradicate');
   }
 
   // Handles Switcharoo hand swap
@@ -794,8 +944,8 @@
       return $player1;
     });
 
-    socket.emit('swap-hands', {player1: $player1, player2: $player2, copyOfXenoPoints});
-    socket.emit('display-event', 'switcharoo');
+    emitGameEvent('swap-hands', {player1: $player1, player2: $player2, copyOfXenoPoints});
+    emitGameEvent('display-event', 'switcharoo');
   }
 
   // Display game results
@@ -891,10 +1041,9 @@
   }
 
   // Determine if it is the player's turn or not
-  function isPlayerTurn() {
-    if ($player1.id === socket.id && $player1.turn) return true;
-    if ($player2.id === socket.id && $player2.turn) return true;
-    return false;
+  function isPlayerTurn(player: Player = gameState.playingAs === 'p1' ? $player1 : $player2) {
+    if (gameMode === 'singleplayer') return player.turn;
+    return player.id === socket.id && player.turn;
   }
 
   // Remove deck from main deck
@@ -918,15 +1067,18 @@
   }
   
   async function revealPlayers(): Promise<void> {
+    // ai generated: Reveal locally before synchronization so Spirit King exposes both hands on the draw frame.
+    gameState.playersRevealed = true;
+    await tick();
     // Must be before updateClientsForSpecialXenoCards()
-    socket.emit('reveal-players');
+    emitGameEvent('reveal-players');
     updateClientsForSpecialXenoCards();
     while (gameState.showSpinner) await wait(500);
-    socket.emit('display-event', 'revealed');
+    emitGameEvent('display-event', 'revealed');
   }
 
   async function concealPlayers(): Promise<void> {
-    socket.emit('conceal-players');
+    emitGameEvent('conceal-players');
     updateClientsForSpecialXenoCards();
     while (gameState.showSpinner) await wait(500);
   }
@@ -940,7 +1092,7 @@
     if (player.playingTwice || player.hand.length >= 6) return;
     if (($player1.playedFirst && $player1.turn) || ($player2.playedFirst && $player2.turn)) {
       gameState.turnCount++;
-      socket.emit('new-turn');
+      emitGameEvent('new-turn');
     };
   }
 
@@ -961,16 +1113,7 @@
     };
 
 
-    setPlayerPointsToZero(player);
-    calculateHumanPoints(player);
-    calculateGoblinPoints(player, otherPlayer);
-    calculateElfPoints(player, otherPlayer);
-    calculateDwarfPoints(player);
-    calculateBeastPoints(player); // TODO: either leave as is or show highest? Since this is after human calc, lupin will get +14 if dreamdestroyer & human elite/leader in hand.
-    calculateBotPoints(player, otherPlayer); // TODO: either leave as is or show highest? Since this is after human calc, cyborg will get +2 if ai & human elite/leader in hand.
-    calculateXenoPoints(player, otherPlayer);
-    calculateSpiritPoints(player, otherPlayer);
-    calculatePlayerHighestPoints(player);
+    calculatePlayerPointsAgainst(player, otherPlayer);
   }
 
   // If chastity/corruption, wipe the bonus points, otherwise temporarily stop accumulating.
@@ -993,17 +1136,126 @@
   // Calculates all player race points, used to determine the winner.
   function calculateEndGamePlayerPoints(player: Player) {
     const otherPlayer = player.id === $player1.id ? $player2 : $player1;
-    
+
+    calculatePlayerPointsAgainst(player, otherPlayer, true);
+  }
+
+  // ai generated: The bot calls this same authoritative scoring pipeline on cloned players, so its predictions cannot alter the live match.
+  function calculatePlayerPointsAgainst(player: Player, otherPlayer: Player, forEndGameCalculation = false): void {
     setPlayerPointsToZero(player);
     calculateHumanPoints(player);
-    calculateGoblinPoints(player, otherPlayer, true);
-    calculateElfPoints(player, otherPlayer, true);
-    calculateDwarfPoints(player, true);
+    calculateGoblinPoints(player, otherPlayer, forEndGameCalculation);
+    calculateElfPoints(player, otherPlayer, forEndGameCalculation);
+    calculateDwarfPoints(player, forEndGameCalculation);
     calculateBeastPoints(player);
-    calculateBotPoints(player, otherPlayer, true);
+    calculateBotPoints(player, otherPlayer, forEndGameCalculation);
     calculateXenoPoints(player, otherPlayer);
     calculateSpiritPoints(player, otherPlayer);
     calculatePlayerHighestPoints(player);
+  }
+
+  // ai generated: This observation contains the bot's hand, public information, and an unseen pool derived by card counting rather than opponent-hand cheating.
+  function buildBotObservation(): BotObservation {
+    const canSeeHumanHand = gameState.playersRevealed || $player2.hasVision || $player1.isExposed;
+    const knownOpponentCards = canSeeHumanHand ? [...$player1.hand] : [];
+    const cardsStillInDeck = Object.values(fullDeck).flat() as string[];
+    const unseenCards = canSeeHumanHand ? cardsStillInDeck : [...cardsStillInDeck, ...$player1.hand];
+    return {
+      hand: [...$player2.hand],
+      turnCount: gameState.turnCount,
+      activeDecks: [...deckTypes],
+      unseenCards,
+      knownOpponentCards,
+      boosts: [...$player2.boosts],
+      traps: [...$player2.traps],
+      boostsBlocked: areBoostsBlocked($player2),
+      trapsBlocked: areTrapsBlocked($player2),
+      neutralizePossiblyAvailable: unseenCards.includes('neutralize'),
+      cardDetails: $cardDetails
+    };
+  }
+
+  // ai generated: Cloning protects live hands, point totals, counters, and status effects while the bot asks many what-if questions.
+  function scoreBotHand(hand: string[]) {
+    const botCopy = structuredClone($player2);
+    const humanCopy = structuredClone($player1);
+    botCopy.hand = [...hand];
+    humanCopy.hand = gameState.playersRevealed || $player2.hasVision || $player1.isExposed ? [...$player1.hand] : [];
+    calculatePlayerPointsAgainst(botCopy, humanCopy, true);
+    return { highestPoints: botCopy.highestPoints, points: { ...botCopy.points } };
+  }
+
+  // ai generated: Opponent simulations use the same rules, including A.I. stealing the bot's bot-race points at end game.
+  function scoreHumanHand(hand: string[]) {
+    const humanCopy = structuredClone($player1);
+    const botCopy = structuredClone($player2);
+    humanCopy.hand = [...hand];
+    calculatePlayerPointsAgainst(humanCopy, botCopy, true);
+    return { highestPoints: humanCopy.highestPoints, points: { ...humanCopy.points } };
+  }
+
+  // ai generated: Declaration samples score both sides together so a hidden human A.I. can really steal the bot path in that sample.
+  function scoreMatchAgainstHumanHand(hand: string[]) {
+    const humanCopy = structuredClone($player1);
+    const botCopy = structuredClone($player2);
+    humanCopy.hand = [...hand];
+    calculatePlayerPointsAgainst(botCopy, humanCopy, true);
+    calculatePlayerPointsAgainst(humanCopy, botCopy, true);
+    calculatePlayerHighestPoints(botCopy);
+    return { botScore: botCopy.highestPoints, opponentScore: humanCopy.highestPoints };
+  }
+
+  // ai generated: A short randomized pause makes the local opponent feel responsive without ever deliberately waiting five seconds.
+  function scheduleBotTurn(): void {
+    if (gameMode !== 'singleplayer' || gameState.gameOver || !$player2.turn) return;
+    if (botTurnTimeout) clearTimeout(botTurnTimeout);
+    const thinkingDelay = 650 + Math.floor(Math.random() * 1550);
+    botTurnTimeout = setTimeout(() => void runBotTurn(), thinkingDelay);
+  }
+
+  // ai generated: The controller declares conservatively, otherwise draws once and resolves every special extra discard before ending its turn.
+  async function runBotTurn(): Promise<void> {
+    if (gameMode !== 'singleplayer' || gameState.gameOver || !$player2.turn) return;
+
+    let observation = buildBotObservation();
+    if (!gameState.gobbledegookDeclared && gameState.turnCount >= 15) {
+      const declaration = decideBotDeclaration(observation, scoreBotHand, scoreHumanHand, Math.random, 240, scoreMatchAgainstHumanHand);
+      botLastExplanation = declaration.explanation;
+      if (botStrategyDebugEnabled) console.info(`[Gobbledegook A.I.] Declaration check: ${declaration.explanation}`);
+      if (declaration.declare) {
+        botCurrentPath = 'Declare Gobbledegook';
+        await clickOnGobbledegook($player2);
+        return;
+      }
+    }
+
+    await drawCard($player2);
+    if (gameState.gameOver || !$player2.turn) return;
+    await wait(1100 + Math.floor(Math.random() * 1300));
+
+    let discardSafety = 0;
+    while ($player2.turn && $player2.hand.length > 5 && discardSafety < 4) {
+      observation = buildBotObservation();
+      const decision = chooseBotDiscard(observation, scoreBotHand);
+      botMemory = rememberBotDecision(botMemory, decision);
+      botCurrentPath = decision.path.race;
+      botLastExplanation = decision.explanation;
+      if (botStrategyDebugEnabled) {
+        console.groupCollapsed(`[Gobbledegook A.I.] ${$player2.title} follows the ${decision.path.race} path`);
+        console.info(decision.explanation);
+        console.info('Visible status:', {
+          currentHand: [...$player2.hand],
+          discards: [...$player2.discards],
+          boostsBlocked: observation.boostsBlocked,
+          trapsBlocked: observation.trapsBlocked,
+          neutralizePossiblyAvailable: observation.neutralizePossiblyAvailable,
+          opposingAiRisk: decision.path.race === 'bots' ? decision.path.risk : 'not the active path'
+        });
+        console.groupEnd();
+      }
+      await discard(decision.cardTitle, $player2);
+      discardSafety++;
+    }
   }
 
   // Calculates and updates player's highest points among races.
@@ -1855,11 +2107,12 @@
 
   // Calculates special xeno card points
   function calculateSpecialXenoCard(player: Player, cardTitle: string): void {
+    const runtimeCardDetails = getRuntimeCardDetails(player);
     // If card drawn is warpstalker, generate point value for card between 10-20 inclusive.
-    if (cardTitle === 'warpstalker') $cardDetails[cardTitle].points = Math.ceil(Math.random() * 11) + 9;
+    if (cardTitle === 'warpstalker') runtimeCardDetails[cardTitle].points = Math.ceil(Math.random() * 11) + 9;
 
     // If card drawn is voidRunner, set points equal to amount of turns passed
-    if (cardTitle === 'voidRunner') $cardDetails[cardTitle].points = gameState.turnCount;
+    if (cardTitle === 'voidRunner') runtimeCardDetails[cardTitle].points = gameState.turnCount;
 
     // Nebulites buff xenos by 4 points
     if (cardTitle === 'nebulite') {
@@ -1869,18 +2122,26 @@
   }
 
   async function calculateXenoEggs(player: Player) {
+    const runtimeCardDetails = getRuntimeCardDetails(player);
     // If sporax gain +2
-    if (player.hand.includes('sporax')) $cardDetails['sporax'].points += 2;
+    if (player.hand.includes('sporax')) runtimeCardDetails['sporax'].points += 2;
 
     // If xerandium randomize points between 0 - 30
-    if (!gameState.gobbledegookDeclared && player.hand.includes('xerandium')) $cardDetails['xerandium'].points = Math.floor(Math.random() * 31);
+    if (!gameState.gobbledegookDeclared && player.hand.includes('xerandium')) runtimeCardDetails['xerandium'].points = Math.floor(Math.random() * 31);
 
     // If sporax gain +2
-    if (player.hand.includes('drainite') && $cardDetails['drainite'].points >= 2) $cardDetails['drainite'].points -= 2;
+    if (player.hand.includes('drainite') && runtimeCardDetails['drainite'].points >= 2) runtimeCardDetails['drainite'].points -= 2;
 
     // So both clients show the same points for these cards
     updateClientsForSpecialXenoCards();
     while (gameState.showSpinner) await wait(500);
+  }
+
+  // ai generated: Singleplayer stores the human's changing xeno values locally and the bot's in the existing remote-value copy.
+  function getRuntimeCardDetails(player: Player) {
+    const playerIsLocal = (gameState.playingAs === 'p1' && player.id === $player1.id)
+      || (gameState.playingAs === 'p2' && player.id === $player2.id);
+    return playerIsLocal ? $cardDetails : remoteCardDetails;
   }
 
   // Return regular points if it's not special xeno card
@@ -1905,7 +2166,7 @@
   // Trades warpstalker and voidrunner client values before calculation
   function updateClientsForSpecialXenoCards() {
     gameState.showSpinner = true;
-    socket.emit('start-xeno-sync', {player1: $player1, player2: $player2, cardDetails: $cardDetails});
+    emitGameEvent('start-xeno-sync', {player1: $player1, player2: $player2, cardDetails: $cardDetails});
   }
 
   // Draws the xeno egg deck cards.
@@ -1921,7 +2182,7 @@
       const cardDrawn = remainingXenoEggs[randomNum] as 'drainite' | 'xerandium' | 'sporax';
 
       // Make sure client is updated
-      socket.emit('remove-xeno-egg', cardDrawn); 
+      emitGameEvent('remove-xeno-egg', cardDrawn);
       while (gameState.showSpinner) await wait(500);
 
       return cardDrawn;
@@ -2016,7 +2277,7 @@
       player.id === $player1.id ? player1.set({...$player1, isExposed: true}) : player2.set({...$player2, isExposed: true});
       updateClientsForSpecialXenoCards();
       while (gameState.showSpinner) await wait(500);
-      socket.emit('display-event', 'exposed');
+      emitGameEvent('display-event', 'exposed');
     }
   }
 
@@ -2027,7 +2288,7 @@
     // If Echo card, player draws and plays twice
     if (card === 'echo') {
       player.playingTwice = true;
-      socket.emit('display-event', 'echo');
+      emitGameEvent('display-event', 'echo');
     }
 
     // If vision card, player sees otherPlayer's hand for one turn
@@ -2041,24 +2302,24 @@
 
     // Add turn to turnCount if card is Ticktock
     if (card === 'ticktock') {
-      socket.emit('increase-turn-count');
-      socket.emit('display-event', 'ticktock');
+      emitGameEvent('increase-turn-count');
+      emitGameEvent('display-event', 'ticktock');
     }
 
     // Subtract turn from turnCount if card is Tocktick
     if (card === 'tocktick') {
-      socket.emit('decrease-turn-count');
-      socket.emit('display-event', 'tocktick');
+      emitGameEvent('decrease-turn-count');
+      emitGameEvent('display-event', 'tocktick');
     }
 
     // If card is neutralize, reset boosts and traps
-    if (card === 'neutralize') socket.emit('neutralize-deck');
+    if (card === 'neutralize') emitGameEvent('neutralize-deck');
 
     // If card is xenoBloom, let both players know they received 15 xeno points
-    if (card === 'xenoBloom') socket.emit('display-event', 'xenoBloom');
+    if (card === 'xenoBloom') emitGameEvent('display-event', 'xenoBloom');
 
     // If card is xenoBlossom, let both players know they received 5 xeno points
-    if (card === 'xenoBlossom') socket.emit('display-event', 'xenoBlossom');
+    if (card === 'xenoBlossom') emitGameEvent('display-event', 'xenoBlossom');
 
     calculateCurrentPlayerPoints(player);
   }
@@ -2120,13 +2381,30 @@
   // ---------------------------------------------------------------- \\
 
   function toggleP1NameChangeVisibility(): void {
-    if (gameState.playingAs === 'p2') return;
+    if (!canEditPlayerName('p1')) return;
+    gameState.p2NameChangeVisible = false;
+    if (!gameState.p1NameChangeVisible) gameState.newPlayerTitle = $player1.title;
     gameState.p1NameChangeVisible = !gameState.p1NameChangeVisible;
   }
   
   function toggleP2NameChangeVisibility(): void {
-    if (gameState.playingAs === 'p1') return;
+    if (!canEditPlayerName('p2')) return;
+    gameState.p1NameChangeVisible = false;
+    if (!gameState.p2NameChangeVisible) gameState.newPlayerTitle = $player2.title;
     gameState.p2NameChangeVisible = !gameState.p2NameChangeVisible;
+  }
+
+  function canEditPlayerName(playerSide: 'p1' | 'p2'): boolean {
+    if (gameMode === 'singleplayer') return true;
+    const player = playerSide === 'p1' ? $player1 : $player2;
+    return gameState.playingAs === playerSide && player.id === socket.id;
+  }
+
+  function toggleConnectedNameChange(playerSide: 'p1' | 'p2'): void {
+    if (!canEditPlayerName(playerSide)) return;
+    const player = playerSide === 'p1' ? $player1 : $player2;
+    gameState.newPlayerTitle = player.title;
+    gameState.connectedNameChangeSide = gameState.connectedNameChangeSide === playerSide ? '' : playerSide;
   }
 
   function displayBonusCardIcons(cardTitle: string): string {
@@ -2155,11 +2433,17 @@
     return (pointValue > $cardDetails[cardTitle].points);
   }
 
-  function updateUsernameForOtherClient(): void {
-    gameState.playingAs === 'p1' ? gameState.p1NameChangeVisible = false : gameState.p2NameChangeVisible = false;
-    const player = gameState.playingAs === 'p1' ? $player1 : $player2;
-    player.title = gameState.newPlayerTitle;
-    socket.emit('username-changed', player.title);
+  function updateUsernameForOtherClient(playerSide: 'p1' | 'p2' = gameState.playingAs): void {
+    const newTitle = gameState.newPlayerTitle.trim();
+    gameState.connectedNameChangeSide = '';
+    gameState.p1NameChangeVisible = false;
+    gameState.p2NameChangeVisible = false;
+    if (!canEditPlayerName(playerSide)) return;
+    if (!newTitle) return;
+
+    if (playerSide === 'p1') player1.update(player => ({ ...player, title: newTitle }));
+    if (playerSide === 'p2') player2.update(player => ({ ...player, title: newTitle }));
+    if (gameMode === 'multiplayer') emitGameEvent('username-changed', newTitle);
   }
 
   function updateUsernameForThisClient(newUsername: string): void {
@@ -2169,6 +2453,7 @@
   function toggleLibraryVisibility() {
     gameState.discardsVisible = false;
     gameState.remainingCardsVisible = false;
+    gameState.botInfoVisible = false;
     gameState.libraryVisible = !gameState.libraryVisible;
   }
 
@@ -2176,7 +2461,16 @@
   function toggleDiscardVisibility() {
     gameState.libraryVisible = false;
     gameState.remainingCardsVisible = false;
+    gameState.botInfoVisible = false;
     gameState.discardsVisible = !gameState.discardsVisible;
+  }
+
+  // ai generated: The side-panel button exposes the current decision path without changing how the bot plays.
+  function toggleBotInfoVisibility(): void {
+    gameState.libraryVisible = false;
+    gameState.discardsVisible = false;
+    gameState.remainingCardsVisible = false;
+    gameState.botInfoVisible = !gameState.botInfoVisible;
   }
 
   // Show visual feedback for certain events
@@ -2251,6 +2545,7 @@
   function openLibraryToCard(race: Race): void {
     gameState.discardsVisible = false;
     gameState.remainingCardsVisible = false;
+    gameState.botInfoVisible = false;
     gameState.libraryVisible = true;
     // So library has time to open and DOM can create elements
     setTimeout(() => {
@@ -2263,6 +2558,7 @@
   function toggleRemainingCardsModal(): void {
     gameState.discardsVisible = false;
     gameState.libraryVisible = false;
+    gameState.botInfoVisible = false;
     gameState.remainingCardsVisible = !gameState.remainingCardsVisible;
   }
 
@@ -2306,22 +2602,22 @@
   // Determines who can click on deck
   async function clickOnDeck() {
     if (gameState.gameOver) return;
-    if (isPlayerTurn() && $player1.turn) await drawCard($player1);
-    if (isPlayerTurn() && $player2.turn) await drawCard($player2);
+    if (isPlayerTurn($player1) && $player1.turn) await drawCard($player1);
+    if (gameMode === 'multiplayer' && isPlayerTurn($player2) && $player2.turn) await drawCard($player2);
   }
   
   // Handles player click on card (player is the player whos side ur clicking not playingAs)
   async function clickOnCard(player: Player, cardTitle: string) {
     const currentPlayer = gameState.playingAs === 'p1' ? $player1 : $player2;
-    if (player.hand.length > 5) await discard(cardTitle);
+    if (player.hand.length > 5) await discard(cardTitle, player);
     // Want to make sure other player can't click on it when they have vision
     if (player.hand.length === 5 && cardTitle === 'gaze' && currentPlayer.hand.includes('gaze') && !areBoostsBlocked(player)) toggleRemainingCardsModal();
   }
  
   // Handles player click on gobbledegook button
-  async function clickOnGobbledegook() {
+  async function clickOnGobbledegook(player: Player = gameState.playingAs === 'p1' ? $player1 : $player2) {
     // Check if it's player's turn
-    if (!isPlayerTurn()) return;
+    if (!isPlayerTurn(player)) return;
     if (gameState.gameOver) return;
 
     if (gameState.gobbledegookDeclared) {
@@ -2329,15 +2625,14 @@
       updateClientsForSpecialXenoCards();
       while (gameState.showSpinner) await wait(500);
       
-      socket.emit('end-game');
+      emitGameEvent('end-game');
     } else {
       // Need to add turn count here otherwise it won't go up cuz it's usually triggered on card draw.
-      const player = gameState.playingAs === 'p1' ? $player1 : $player2;
       calculateNewTurn(player);
       changeTurns();
 
       // Have this last so if player gdg other player can still click the button.
-      socket.emit('gdg-declared');
+      emitGameEvent('gdg-declared');
     }
   }
 
@@ -2391,8 +2686,22 @@
   
   {#if gameState.gameOver}
     <div class="connected-users">
-      <p>{p1Connected ? '🟢 ' + $player1.title : '🔴 Player 1'}</p>
-      <p>{p2Connected ? '🟢 ' + $player2.title : '🔴 Player 2'}</p>
+      <!-- ai generated: Mode can be changed between rounds; singleplayer still begins only when the human presses Ready. -->
+      <div class="mode-select" aria-label="Game mode">
+        <button class:active={gameMode === 'singleplayer'} on:click={() => selectGameMode('singleplayer')}>Singleplayer</button>
+        <span>|</span>
+        <button class:active={gameMode === 'multiplayer'} on:click={() => selectGameMode('multiplayer')}>Multiplayer</button>
+      </div>
+      {#if gameState.connectedNameChangeSide === 'p1'}
+        <input class="connected-name-input" bind:value={gameState.newPlayerTitle} on:blur={() => updateUsernameForOtherClient('p1')} type="text" maxlength="20"/>
+      {:else}
+        <p class:name-editable={canEditPlayerName('p1')} on:click={() => toggleConnectedNameChange('p1')}>{p1Connected ? '🟢 ' + $player1.title : '🔴 Player 1'}</p>
+      {/if}
+      {#if gameState.connectedNameChangeSide === 'p2'}
+        <input class="connected-name-input" bind:value={gameState.newPlayerTitle} on:blur={() => updateUsernameForOtherClient('p2')} type="text" maxlength="20"/>
+      {:else}
+        <p class:name-editable={canEditPlayerName('p2')} on:click={() => toggleConnectedNameChange('p2')}>{p2Connected ? '🟢 ' + $player2.title : gameMode === 'singleplayer' ? '🟢 Local bot' : '🔴 Player 2'}</p>
+      {/if}
     </div>
   {/if}
 
@@ -2405,6 +2714,14 @@
     </svg>
     {#if gameState.discardsVisible}
       <Discards draws={gameState.playingAs === 'p1' ? $player1.cardsDrawn : $player2.cardsDrawn} discards={gameState.playingAs === 'p1' ? $player1.discards : $player2.discards}/>
+    {/if}
+
+    <!-- ai generated: This button opens a concise, live summary of the balanced bot's priorities. -->
+    {#if gameMode === 'singleplayer'}
+      <button class="bot-info-btn" on:click={toggleBotInfoVisibility} aria-label="A.I. strategy information">AI</button>
+      {#if gameState.botInfoVisible}
+        <BotInfo currentPath={botCurrentPath} explanation={botLastExplanation} debugEnabled={botStrategyDebugEnabled} on:close={toggleBotInfoVisibility}/>
+      {/if}
     {/if}
 
     <!-- Gaze, remaining cards library -->
@@ -2427,10 +2744,10 @@
         {#if !gameState.startBtnDisabled}
           <span class="play-again-btn">
             <Button on:click={async () => await readyUpPlayer()} round={true} customClasses="btn__green">
-              {#if ($player1.isReady && !$player2.isReady) || ($player2.isReady && !$player1.isReady)}
+              {#if gameMode === 'multiplayer' && (($player1.isReady && !$player2.isReady) || ($player2.isReady && !$player1.isReady))}
                 1/2
                 <br>
-              {:else if !$player1.isReady && !$player2.isReady}
+              {:else if gameMode === 'multiplayer' && !$player1.isReady && !$player2.isReady}
                 0/2
                 <br>
               {/if}
@@ -2770,7 +3087,7 @@
             {/if}
 
             {#if gameState.p1NameChangeVisible}
-              <input bind:value={gameState.newPlayerTitle} on:blur={updateUsernameForOtherClient} type="text" maxlength="20"/>
+              <input bind:value={gameState.newPlayerTitle} on:blur={() => updateUsernameForOtherClient('p1')} type="text" maxlength="20"/>
             {:else}
               <p on:click={toggleP1NameChangeVisibility} class="p1-name {$player1.turn ? "turn-active" : ""}">{$player1.title}</p>
             {/if}
@@ -2833,7 +3150,7 @@
             {/if}
 
             {#if gameState.p2NameChangeVisible}
-              <input bind:value={gameState.newPlayerTitle} on:blur={updateUsernameForOtherClient} type="text" maxlength="20"/>
+              <input bind:value={gameState.newPlayerTitle} on:blur={() => updateUsernameForOtherClient('p2')} type="text" maxlength="20"/>
             {:else}
               <p on:click={toggleP2NameChangeVisibility} class="p2-name {$player2.turn ? "turn-active" : ""}">{$player2.title}</p>
             {/if}
@@ -2864,10 +3181,10 @@
           {#if !gameState.startBtnDisabled}
             <Button on:click={async () => await readyUpPlayer()} round={true} customClasses="btn__green">
               Ready
-              {#if ($player1.isReady && !$player2.isReady) || ($player2.isReady && !$player1.isReady)}
+              {#if gameMode === 'multiplayer' && (($player1.isReady && !$player2.isReady) || ($player2.isReady && !$player1.isReady))}
                 <br>
                 1/2
-              {:else if !$player1.isReady && !$player2.isReady}
+              {:else if gameMode === 'multiplayer' && !$player1.isReady && !$player2.isReady}
                 <br>
                 0/2
               {/if}
@@ -2909,14 +3226,57 @@
     top: 2px;
     left: 8px;
 
-    p:first-child {
+    // ai generated
+    > p:first-of-type {
       padding-bottom: 4px;
       margin-bottom: 4px;
       border-bottom: 1px solid #d4421527;
     }
+
+    > p.name-editable {
+      cursor: pointer;
+
+      &:hover {
+        color: #9abd9d;
+      }
+    }
+
+    .connected-name-input {
+      width: 100%;
+      min-width: 9rem;
+      padding: 0.2rem 0.35rem;
+      color: #fff0d2;
+      border: 1px solid #d44215;
+      border-radius: 0.25rem;
+      background: #080808;
+    }
+
+    // ai generated
+    .mode-select {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding-bottom: 0.35rem;
+      margin-bottom: 0.25rem;
+      border-bottom: 1px solid #d4421527;
+
+      button {
+        padding: 0;
+        color: #a9a09d;
+        border: 0;
+        background: transparent;
+        cursor: pointer;
+      }
+
+      button.active {
+        color: #9abd9d;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+    }
   }
 
-  .card-library-btn, .card-discards-btn {
+  .card-library-btn, .card-discards-btn, .bot-info-btn {
     border-radius: 0.5rem;
     z-index: 7; // 1 higher than library to make sure it's never hidden behind.
     stroke: #d44215;
@@ -2951,6 +3311,26 @@
       stroke: #9abd9d;
       fill: #9abd9d74;
       border: 1px solid #9abd9d;
+    }
+  }
+
+  // ai generated
+  .bot-info-btn {
+    top: 120px;
+    display: grid;
+    place-items: center;
+    min-height: 46px;
+    color: #fff0d2;
+    border-color: #7e69a8;
+    background: #342955e6;
+    font-weight: 800;
+    font-size: 0.95rem;
+    cursor: pointer;
+
+    &:hover {
+      color: #fff;
+      border-color: #b9a0ee;
+      background: #574783;
     }
   }
 

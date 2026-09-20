@@ -1,6 +1,6 @@
 # Gobbledegook
 
-A private, two-player fantasy card game built with Svelte, TypeScript, Socket.IO, and Express.
+A private fantasy card game with local singleplayer and two-player LAN modes, built with Svelte, TypeScript, Socket.IO, and Express.
 
 ![The Gobbledegook board before a game begins](./readme_assets/readme_game_not_started.png)
 
@@ -14,7 +14,7 @@ This is a personal project intended for private play over a local network. It is
 
 ## How a round works
 
-1. Both players connect and select **Ready**.
+1. Choose singleplayer or multiplayer, then select **Ready**. Multiplayer waits for both players.
 2. Each player receives a five-card starting hand.
 3. On a turn, the active player draws a card and discards back down to five.
 4. Card effects can alter scores, reveal or exchange hands, affect future draws, or remain active after a card is discarded.
@@ -44,9 +44,12 @@ While testing, I sometimes comment out particular decks. Check the `fullDeck` ob
 
 For a detailed breakdown of every race and its cards, see the [Race & Card Guide](./RACES.md).
 
+For the singleplayer opponent's knowledge rules, strategy, debug controls, and tests, see the [Bot Guide](./BOT_README.md).
+
 ## Features
 
 - Real-time, two-player LAN matches
+- Local singleplayer against a balanced card-counting bot
 - Randomized starting hands and draw order
 - Eight independently calculated faction scores
 - Card leaders and faction synergies
@@ -112,10 +115,10 @@ pnpm install
 The client currently connects to a hard-coded LAN address in `src/lib/components/Game.svelte`:
 
 ```ts
-let socket = io('http://192.168.2.14:6912');
+let socket = io('http://192.168.2.14:6912', { autoConnect: false });
 ```
 
-Change this value to the address of the computer that will run the server.
+Change this value to the address of the computer that will run the server. Singleplayer does not connect to this address or require `server.js`.
 
 ### Build and start
 
@@ -141,6 +144,7 @@ Only the first two connections receive active player slots.
 | `pnpm dev` | Starts the Vite development server |
 | `pnpm host` | Starts Vite and exposes it to the local network |
 | `pnpm check` | Runs Svelte and TypeScript checks |
+| `pnpm test:bot` | Runs the standalone bot strategy tests |
 | `pnpm build` | Builds the client into `public/` and copies the server assets |
 | `pnpm preview` | Previews the production build |
 

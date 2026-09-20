@@ -5,6 +5,7 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 
 const users = {};
+const readyPlayers = { p1: false, p2: false };
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const port = 6912;
@@ -59,12 +60,27 @@ io.on('connection', socket => {
   users[username] = socket.id;
   console.log(`\n${username} connected with ID:${users[username]}.`);
   const players = Object.entries(users).filter(([key, val]) => ['p1', 'p2'].includes(key));
-  if (['p1', 'p2'].includes(username)) io.emit('set-users', players);
+  if (['p1', 'p2'].includes(username)) {
+    io.emit('set-users', players);
+    // ai generated: A client returning from singleplayer receives readiness that was set before it connected.
+    socket.emit('player-readied-up', {
+      player1: { isReady: readyPlayers.p1 },
+      player2: { isReady: readyPlayers.p2 }
+    });
+  }
 
   // Remove users from list of users.
   socket.on('disconnect', () => {
     console.log(`\n${username} with ID:${users[username]} disconnected.`);
     delete users[username];
+    if (username === 'p1' || username === 'p2') {
+      readyPlayers[username] = false;
+      // ai generated: Remaining clients immediately stop displaying a disconnected player as ready.
+      io.emit('player-readied-up', {
+        player1: { isReady: readyPlayers.p1 },
+        player2: { isReady: readyPlayers.p2 }
+      });
+    }
     logUsers();
   });
 
@@ -72,10 +88,22 @@ io.on('connection', socket => {
   socket.on('check-connected-users', () => socket.broadcast.emit('check-connected-users-response'));
 
   // Start game
-  socket.on('start-game', data => socket.broadcast.emit('game-started', data));
+  socket.on('start-game', data => {
+    readyPlayers.p1 = false;
+    readyPlayers.p2 = false;
+    socket.broadcast.emit('game-started', data);
+  });
 
   // Ready up the player
-  socket.on('ready-up-player', data => socket.broadcast.emit('player-readied-up', data));
+  socket.on('ready-up-player', data => {
+    if (username === 'p1') readyPlayers.p1 = data.player1.isReady;
+    if (username === 'p2') readyPlayers.p2 = data.player2.isReady;
+    // ai generated: Readiness is server-owned so late connections and mode switches see the same count.
+    socket.broadcast.emit('player-readied-up', {
+      player1: { isReady: readyPlayers.p1 },
+      player2: { isReady: readyPlayers.p2 }
+    });
+  });
 
   // Change username / player title
   socket.on('username-changed', data => socket.broadcast.emit('update-username', data));
