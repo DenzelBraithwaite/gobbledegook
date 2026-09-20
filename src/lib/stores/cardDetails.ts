@@ -1183,7 +1183,7 @@ const cardDetails = writable({
     amount: 2,
     rarity: 'amazing',
     traitTitle: 'No Cookie For You',
-    trait: 'Gain +100 points if hand contains 1 cookie jar and 4 cookies, +40 points per cookie jar if hand includes no race cards (only boosts). Bots double this effect and spirits are not compatible with cookies. Can be blocked!',
+    trait: 'Gain +100 points if hand contains 1 cookie jar and 4 cookies, +40 points per cookie jar if hand includes no race cards (only boosts, traps, or neutrals). Bots double this effect and spirits are not compatible with cookies. Can be blocked!',
     description: 'This notorius cookie jar gained sentience after being desecrated repeatedly. It vows to figure out once and for all who stole the cookie from the cookie jar.',
     race: 'boost',
     otherRaces: [],

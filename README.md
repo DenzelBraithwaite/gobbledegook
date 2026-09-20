@@ -2,7 +2,6 @@
 
 A private, two-player fantasy card game built with Svelte, TypeScript, Socket.IO, and Express.
 
-<!-- README SCREENSHOT LINK: Move or replace this image as needed. -->
 ![The Gobbledegook board before a game begins](./readme_assets/readme_game_not_started.png)
 
 ## About the game
@@ -43,6 +42,8 @@ The card catalogue currently includes:
 
 While testing, I sometimes comment out particular decks. Check the `fullDeck` object in the `resetGame()` function in `src/lib/components/Game.svelte` to make sure every deck you want to use is active.
 
+For a detailed breakdown of every race and its cards, see the [Race & Card Guide](./RACES.md).
+
 ## Features
 
 - Real-time, two-player LAN matches
@@ -59,7 +60,6 @@ While testing, I sometimes comment out particular decks. Check the `fullDeck` ob
 
 ## Screenshots
 
-<!-- README SCREENSHOT LINKS: These images came from Desktop/for_codex_readme_files. -->
 
 ### A hand in play
 

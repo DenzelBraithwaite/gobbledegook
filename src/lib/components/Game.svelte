@@ -20,6 +20,7 @@
 
   type DeckRace = 'humans' | 'goblins' | 'elves' | 'dwarves' | 'beasts' | 'bots' | 'xenos' | 'spirits' | 'boosts' | 'traps' | 'neutrals' | 'giraffe' | 'xenoEgg' | '';
   type Race = 'human' | 'goblin' | 'elf' | 'dwarf' | 'beast' | 'bot' | 'xeno' | 'spirit' | 'boost' | 'trap' | 'neutral' | '';
+  const bardCards = ['bardLute', 'bardFlute', 'bardHorn', 'bardDrum', 'bardSinger'];
 
   // Thanos: http://192.168.2.10:6912; 
   // Work Mac at home: http://192.168.2.19:6912;
@@ -46,8 +47,9 @@
   };
   let remainingLegendaries = []; // TODO: should i move this back under gameState? It works here but random
   let remainingXenoEggs = ['drainite', 'xerandium', 'sporax']; // TODO: should i move this back under gameState? It works here but random
-  let controlCopyOfCardDetails = {...$cardDetails};
-  let remoteCardDetails = {...$cardDetails};
+  // Deep clone nested card objects so runtime point changes cannot alter the defaults used for rematches.
+  let controlCopyOfCardDetails = structuredClone($cardDetails);
+  let remoteCardDetails = structuredClone($cardDetails);
   // For checking if user is connected
   let p1Connected = false;
   let p2Connected = false;
@@ -169,6 +171,9 @@
     socket.on('hands-swapped', data => {
       $cardDetails['voidRunner'].points = data.copyOfXenoPoints.voidRunner;
       $cardDetails['warpstalker'].points = data.copyOfXenoPoints.warpstalker;
+      $cardDetails['drainite'].points = data.copyOfXenoPoints.drainite;
+      $cardDetails['xerandium'].points = data.copyOfXenoPoints.xerandium;
+      $cardDetails['sporax'].points = data.copyOfXenoPoints.sporax;
       player1.set(data.player1);
       player2.set(data.player2);
     });
@@ -222,9 +227,9 @@
     // Conceal both players (this is an io emit)
     socket.on('players-concealed', () => gameState.playersRevealed = false);
 
-    // TODO:FIXME: gaze still shows number e.g. 12 after eradicate (but no traps visible)
     // Eradicate traps (this is an io emit)
     socket.on('traps-eradicated', () => {
+      fullDeck['traps'] = [];
       removeRaceDeck('traps');
       gameState.showSpinner = false;
     });
@@ -365,9 +370,9 @@
       neutrals: [...$neutralDeck]
     };
 
-    cardDetails.set({...controlCopyOfCardDetails});
+    cardDetails.set(structuredClone(controlCopyOfCardDetails));
     deckTypes = Object.keys(fullDeck);
-    remoteCardDetails = {...$cardDetails};
+    remoteCardDetails = structuredClone($cardDetails);
 
     // General resets
     gameState = {...gameState,
@@ -435,7 +440,7 @@
       let cardDrawn = fullDeck[currentDeck][randomNum];
 
       // Make sure player never starts with bonus cards or specific cards.
-      const cardsThatMustBeDrawn = ['goblinLordsMark', 'eggGiraffe', 'xenoEgg', 'spiritKing', 'warpStalker'];
+      const cardsThatMustBeDrawn = ['goblinLordsMark', 'eggGiraffe', 'xenoEgg', 'spiritKing', 'warpstalker'];
       const safeBonusCards = ['chastity', 'corruption'];
       while (!safeBonusCards.includes(cardDrawn) && (cardsThatMustBeDrawn.includes(cardDrawn) || ['boost', 'trap', 'neutral'].some(race => getRaces(cardDrawn).includes(race)))) {
         // Grab new card
@@ -548,10 +553,14 @@
         cardDrawn = await drawXenoEggCards(player);
 
       } else if (player.redSpiritNextTurn) {
-        cardDrawn = getJinn(player, 'red');
+        const jinnDraw = getJinn(player, 'red');
+        cardDrawn = jinnDraw.cardDrawn;
+        currentDeck = jinnDraw.currentDeck;
 
       } else if (player.blueSpiritNextTurn) {
-        cardDrawn = getJinn(player, 'blue');
+        const jinnDraw = getJinn(player, 'blue');
+        cardDrawn = jinnDraw.cardDrawn;
+        currentDeck = jinnDraw.currentDeck;
 
       } else if (player.drewWarchief && canDrawGoblinLordMark(player)) {
         // Change card drawn to goblin lord's mark if player last drew warchief and goblin lord's mark is in deck
@@ -591,15 +600,12 @@
         return;
       };
 
-      // TODO: technically causes a bug if no other cards remain but should almost never happen.
-      // If player boosts blocked but draws chester, draw again.
-      if (cardDrawn === 'chester' && areBoostsBlocked(player)) {
-        await drawCard(player, false);
-        return;
-      };
+      // Blocked Chester and Chjester cannot be found, so consume the card and draw again.
+      if ((cardDrawn === 'chester' && areBoostsBlocked(player)) || (cardDrawn === 'chjester' && areTrapsBlocked(player))) {
+        const removedCardIndex = fullDeck[currentDeck].indexOf(cardDrawn);
+        if (removedCardIndex !== -1) fullDeck[currentDeck].splice(removedCardIndex, 1);
+        if (fullDeck[currentDeck].length === 0) removeRaceDeck(currentDeck);
 
-      // If player boosts blocked but draws chester, draw again.
-      if (cardDrawn === 'chjester' && areTrapsBlocked(player)) {
         await drawCard(player, false);
         return;
       };
@@ -682,7 +688,10 @@
       const legendariesInHand = player.hand.filter(l => !exemptLegendaries.includes(l) && $cardDetails[l].rarity === 'legendary');
 
       // Remove legendaries if they are found
-      if (legendariesInHand.length > 0) cardTitle = legendariesInHand[0]; // grab first one doesnt matter which
+      if (legendariesInHand.length > 0) {
+        const randomLegendaryIndex = Math.floor(Math.random() * legendariesInHand.length);
+        cardTitle = legendariesInHand[randomLegendaryIndex];
+      }
     }
 
     // Using store update methods instead of player var ^
@@ -765,9 +774,15 @@
     const copyOfXenoPoints = {
       voidRunner: $cardDetails['voidRunner'].points,
       warpstalker: $cardDetails['warpstalker'].points,
+      drainite: $cardDetails['drainite'].points,
+      xerandium: $cardDetails['xerandium'].points,
+      sporax: $cardDetails['sporax'].points,
     }
     $cardDetails['voidRunner'].points = remoteCardDetails['voidRunner'].points;
     $cardDetails['warpstalker'].points = remoteCardDetails['warpstalker'].points;
+    $cardDetails['drainite'].points = remoteCardDetails['drainite'].points;
+    $cardDetails['xerandium'].points = remoteCardDetails['xerandium'].points;
+    $cardDetails['sporax'].points = remoteCardDetails['sporax'].points;
 
     let tempHand = [...$player2.hand];
     player2.update($player2 => {
@@ -1011,7 +1026,7 @@
     const triggerTwinEffect = player.hand.some(c => ['nelladan', 'leon'].includes(c)) && player.hand.includes('nadallen');
     if ((player.hand.some(card => ['dreamDestroyer', 'nightTerror'].includes(card)) || ['dog', 'wolf', 'lion', 'bear'].includes(cardTitle)) && getRaces(cardTitle).includes('beast')) highestPoints = Math.max(highestPoints, displayBeastPoints(player, cardTitle));
     if ((player.hand.includes('ai') || player.hand.includes('protectron')) && getRaces(cardTitle).includes('bot')) highestPoints = Math.max(highestPoints, displayBotPoints(player, cardTitle));
-    if (triggerTwinEffect || player.hand.includes('bard') || (player.hand.includes('elfKing') && getRaces(cardTitle).includes('elf'))) highestPoints = Math.max(highestPoints, displayElfPoints(player, cardTitle));
+    if (triggerTwinEffect || player.hand.some(card => bardCards.includes(card)) || (player.hand.includes('elfKing') && getRaces(cardTitle).includes('elf'))) highestPoints = Math.max(highestPoints, displayElfPoints(player, cardTitle));
     if ((player.hand.includes('emperor') || player.hand.includes('commander')) && getRaces(cardTitle).includes('human')) highestPoints = Math.max(highestPoints, displayHumanPoints(player, cardTitle));
     if (player.hand.every(card => ['redSpirit', 'leon'].includes(card) || ['blueSpirit', 'leon'].includes(card))) highestPoints = Math.max(highestPoints, displaySpiritPoints(player, cardTitle));
     if (cardTitle === 'longbeardLeader') highestPoints = Math.max(highestPoints, displayDwarfPoints(player));
@@ -1200,7 +1215,7 @@
     if (player.hand.some(c => ['nelladan', 'leon'].includes(c)) && player.hand.includes('nadallen')) calculateElfTwins(player);
 
     // Handles bards Must calculate before elf king since elf king multiples elf points *2/*3
-    if (player.hand.some(c => ['bard', 'leon'].includes(c))) calculateBards(player);
+    if (player.hand.some(card => bardCards.includes(card) || card === 'leon')) calculateBards(player);
 
     // Determines if otherPlayer has full goblin hand and if player has full elf hand, assigns points accordingly.
     if (player.hand.includes('elfKing')) calculateElfKing(player, otherPlayer, forEndGameCalculation);
@@ -1264,8 +1279,8 @@
   // Adds bonus points for matching bards
   function calculateBards(player: Player) {
     // Each bard gets +1 point for every OTHER bard. If full bard hand, elves gain +20 points.
-    const fullBand = player.hand.every(c => ['bard', 'leon'].includes(c));
-    const numOfBards = player.hand.filter(card => ['bard', 'leon'].includes(card)).length;
+    const fullBand = player.hand.every(card => bardCards.includes(card) || card === 'leon');
+    const numOfBards = player.hand.filter(card => bardCards.includes(card) || card === 'leon').length;
 
     if (fullBand) player.points.elves += 20;
     player.points.elves += numOfBards * (numOfBards - 1);
@@ -1300,7 +1315,7 @@
     const numOfNelladans = player.hand.filter(card => card === 'nelladan' || card === 'leon').length;
     const numOfNadallens = player.hand.filter(card => card === 'nadallen').length;
     const triggerTwinEffect = numOfNelladans > 0 && numOfNadallens > 0;
-    const numOfBards = player.hand.filter(card => ['bard', 'leon'].includes(card)).length;
+    const numOfBards = player.hand.filter(card => bardCards.includes(card) || card === 'leon').length;
     const fullElfHand = player.hand.every(c => getRaces(c).includes('elf'));
 
     // Elf king, full hand and twins (can't have full band + elf king)
@@ -1308,11 +1323,11 @@
       if (cardTitle === 'nadallen') return ($cardDetails[cardTitle].points + (numOfNelladans * 5) * 3);
       // Leon can't be a bard here since being nelladan is always better. Also, bard doesn't buff self.
       if (cardTitle === 'nelladan' || cardTitle === 'leon') return (($cardDetails[cardTitle].points + 5) * 3);
-      if (cardTitle === 'bard' && numOfBards > 1) return (($cardDetails[cardTitle].points + (numOfBards - 1)) * 3);
+      if (bardCards.includes(cardTitle) && numOfBards > 1) return (($cardDetails[cardTitle].points + (numOfBards - 1)) * 3);
       
       // Elf king and full hand (can't have full band + elf king)
     } else if (hasElfKing && fullElfHand) {
-      if (cardTitle === 'bard' || cardTitle === 'leon') return (($cardDetails[cardTitle].points + (numOfBards - 1)) * 3);
+      if (bardCards.includes(cardTitle) || cardTitle === 'leon') return (($cardDetails[cardTitle].points + (numOfBards - 1)) * 3);
       return $cardDetails[cardTitle].points * 3;
       
 
@@ -1329,7 +1344,7 @@
 
     // Bards and elf king
     else if (hasElfKing && numOfBards > 1) {
-      if (cardTitle === 'bard' || cardTitle === 'leon') return (($cardDetails[cardTitle].points + (numOfBards - 1)) * 2);
+      if (bardCards.includes(cardTitle) || cardTitle === 'leon') return (($cardDetails[cardTitle].points + (numOfBards - 1)) * 2);
     }
     
     // King
@@ -1339,7 +1354,7 @@
 
     // Bards
     else if (numOfBards > 1) {
-      if (cardTitle === 'bard' || cardTitle === 'leon') return ($cardDetails[cardTitle].points + (numOfBards - 1));
+      if (bardCards.includes(cardTitle) || cardTitle === 'leon') return ($cardDetails[cardTitle].points + (numOfBards - 1));
     }
 
     // Default
@@ -1447,7 +1462,7 @@
       if (getRaces(card).includes('dwarf')) numOfDiscardedDwarves += 1;
     });
 
-    return $cardDetails['longbeardLeader'].points + (numOfDiscardedDwarves * 7);
+    return $cardDetails['longbeardLeader'].points + (numOfDiscardedDwarves * 5);
   }
 
   // --------------------- BEAST CALCULATIONS ----------------------- \\
@@ -1599,7 +1614,7 @@
     }
     
     // So Leon takes highest point value. I deduct points since he shouldn't really buff himself as wolf or lion.
-    if (player.hand.some(c => ['wolf', 'lion'.includes(c)]) && cardTitle === 'leon') return Math.max((wolfPackPoints - 2), (lionPridePoints - 3));
+    if (player.hand.some(c => ['wolf', 'lion'].includes(c)) && cardTitle === 'leon') return Math.max((wolfPackPoints - 2), (lionPridePoints - 3));
 
     // Check for extra bears, wipe points if multiple.
     if (cardTitle === 'bear' && numOfBears > 1) return 0;
@@ -1713,7 +1728,7 @@
       let otherPlayerNumOfViruses = otherPlayer.hand.filter(card => card === 'virus').length;
       
       otherPlayer.hand.forEach(card => {
-        if (card === 'virus') player.points.bots += (numOfProtectrons * 8);
+        if (card === 'virus') player.points.bots += (otherPlayerNumOfProtectrons * 8);
         
         // Buffed for each virus, base points already calculated.
         if (card === 'protectron') player.points.bots += (otherPlayerNumOfProtectrons * otherPlayerNumOfViruses);
@@ -1960,19 +1975,19 @@
   }
 
   // Attempts to draw a red jinn next if there are any remaining.
-  function getJinn(player: Player, color: 'red' | 'blue'): 'redSpirit' | 'blueSpirit' | string {
+  function getJinn(player: Player, color: 'red' | 'blue'): {cardDrawn: string, currentDeck: DeckRace} {
     color === 'red' ? player.redSpiritNextTurn = false : player.blueSpiritNextTurn = false;
-    if (color === 'red' && fullDeck['spirits'] && fullDeck['spirits'].includes('redSpirit')) return 'redSpirit';
-    if (color === 'blue' && fullDeck['spirits'] && fullDeck['spirits'].includes('blueSpirit')) return 'blueSpirit';
+    if (color === 'red' && fullDeck['spirits'] && fullDeck['spirits'].includes('redSpirit')) return {cardDrawn: 'redSpirit', currentDeck: 'spirits'};
+    if (color === 'blue' && fullDeck['spirits'] && fullDeck['spirits'].includes('blueSpirit')) return {cardDrawn: 'blueSpirit', currentDeck: 'spirits'};
 
     // But if no red jinns remain
     const randomNum = Math.floor(Math.random() * deckTypes.length);
     const randomDeck = deckTypes[randomNum] as DeckRace;
-    const deck = fullDeck['spirits'] ? 'spirits' : randomDeck; 
+    const deck = fullDeck['spirits']?.length > 0 ? 'spirits' : randomDeck;
     const randomNum2 = Math.floor(Math.random() * fullDeck[deck].length);
     const cardDrawn = fullDeck[deck][randomNum2];
     
-    return cardDrawn;
+    return {cardDrawn, currentDeck: deck};
   }
 
   // -------------- BOOST/TRAP/NEUTRAL CALCULATIONS ---------------- \\
@@ -2854,7 +2869,7 @@
                 0/2
               {/if}
             </Button>
-          {:else if gameState.gobbledegookDisabled || gameState.turnCount < 10}
+          {:else if gameState.gobbledegookDisabled || gameState.turnCount < 15}
             <Button round={true} customClasses="btn__orange_disabled">GDG</Button>
           {:else}
             <Button on:click={async () => clickOnGobbledegook()} round={true} customClasses="btn__orange">GDG</Button>
