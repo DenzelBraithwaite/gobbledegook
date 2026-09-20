@@ -180,7 +180,7 @@ Traps remain in a player's effect log after being discarded unless they are bloc
 - **Chjester.** Attempting to discard it discards a randomly selected racial legendary instead if one is held.
 - **Exposed.** Reveals the player's hand until their next normal turn.
 - **Sap.** Permanently subtracts 10 points from every race.
-- **Infect.** Accumulates a −1 penalty per complete turn for each copy, affecting Humans, Goblins, Elves, Dwarves, Beasts, and Xenos.
+- **Infect.** Accumulates a −1 penalty per complete turn for each copy, affecting every race except Spirits.
 - **Rotten Cookie Crumbs.** Each copy permanently subtracts 3 points from Humans, Goblins, Elves, Dwarves, Beasts, and Xenos. Bots and Spirits are immune.
 - **Xenophobia.** Permanently subtracts 10 Xeno points.
 - **Lost.** Consumes the draw and turn; players protected from traps draw again instead.

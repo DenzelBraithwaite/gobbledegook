@@ -1354,7 +1354,7 @@ const cardDetails = writable({
     amount: 2,
     rarity: 'amazing',
     traitTitle: 'Infection',
-    trait: 'When drawn player receives -1 point penalty per turn towards all races except bots and spirits (stacks) even after this card is discarded.',
+    trait: 'When drawn player receives -1 point penalty per turn towards all races except spirits (stacks) even after this card is discarded.',
     description: 'A contagious metastasizing virus that targets living hosts.',
     race: 'trap',
     otherRaces: [],

@@ -1705,6 +1705,9 @@
   function calculateBotTraps(player: Player): void {
     if (areTrapsBlocked(player)) return;
 
+    // Infects
+    player.points.bots -= player.infectPoints;
+
     // Saps
     const numOfSaps = player.traps.filter(trap => trap === 'sap').length;
     player.points.bots -= (numOfSaps * 10);
