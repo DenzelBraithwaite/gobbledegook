@@ -12,11 +12,11 @@
   import { type Player, player1, player1Reset, player2, player2Reset, cardDetails, beastDeck, botDeck, dwarfDeck, elfDeck, goblinDeck, humanDeck, xenoDeck, spiritDeck, boostDeck,  trapDeck, neutralDeck } from '../stores';
 
   // Custom components
-  import { Button, BotInfo, Discards, RemainingCardsModal, Library, Spinner, RacePoints } from './index';
+  import { Button, Discards, RemainingCardsModal, Library, Spinner, RacePoints } from './index';
   import GGCard from './Card.svelte';
 
   // ai generated: The decision engine stays independent from Svelte and receives only the information a real player could know.
-  import { chooseBotDiscard, createBotMemory, decideBotDeclaration, rememberBotDecision, type BotObservation } from '../game/botStrategy';
+  import { ageOpponentHandMemory, chooseBotDiscard, createBotMemory, decideBotDeclaration, getBotEchoAction, rememberBotDecision, rememberOpponentHand, type BotObservation, type BotOpponentInsightSource } from '../game/botStrategy';
 
   // Websocket
   import { io } from 'socket.io-client';
@@ -31,12 +31,9 @@
   let gameMode: 'singleplayer' | 'multiplayer' = 'singleplayer';
   // ai generated: Toggle this value while testing to show or hide detailed bot path explanations in the browser console.
   let botStrategyDebugEnabled = true;
-  // ai generated: TODO: Replace or expand these placeholder names with the bot names you prefer.
-  const botNames = ['Mossbyte', 'Copper', 'Nib', 'Gizmo', 'Cardinal'];
+  const botNames = ['Gruntilda', 'KazBot', 'TinkBot', 'CPU', 'AI', 'Guest#445', 'LawjokerBot', 'DefinitelyNotABot', 'Player 2', 'Challenger', 'Mr Quack', 'Mrs Quack', 'A Duck'];
   let botMemory = createBotMemory();
   let botTurnTimeout: ReturnType<typeof setTimeout> | undefined;
-  let botCurrentPath = 'Waiting for a turn';
-  let botLastExplanation = 'The bot has not made a decision yet.';
   $: gameState = {
     gobbledegookDeclared: false,
     gobbledegookDisabled: false,
@@ -50,7 +47,6 @@
     libraryVisible: false,
     discardsVisible: false,
     remainingCardsVisible: false,
-    botInfoVisible: false,
     showEventMessage: false,
     newPlayerTitle: 'Unknown Player',
     connectedNameChangeSide: '' as '' | 'p1' | 'p2',
@@ -59,8 +55,8 @@
     playingAs: '' as 'p1' | 'p2',
     playersRevealed: false,
   };
-  let remainingLegendaries = []; // TODO: should i move this back under gameState? It works here but random
-  let remainingXenoEggs = ['drainite', 'xerandium', 'sporax']; // TODO: should i move this back under gameState? It works here but random
+  let remainingLegendaries = [];
+  let remainingXenoEggs = ['drainite', 'xerandium', 'sporax'];
   // Deep clone nested card objects so runtime point changes cannot alter the defaults used for rematches.
   let controlCopyOfCardDetails = structuredClone($cardDetails);
   let remoteCardDetails = structuredClone($cardDetails);
@@ -291,8 +287,6 @@
     player1Reset.update(player => ({ ...player, id: 'singleplayer-human' }));
     player2Reset.update(player => ({ ...player, id: 'singleplayer-bot', title: botName }));
     botMemory = createBotMemory();
-    botCurrentPath = 'Waiting for a turn';
-    botLastExplanation = 'Press Ready to start a local game.';
   }
 
   // ai generated: Mode changes are available between rounds and preserve the original server-backed multiplayer flow.
@@ -380,6 +374,8 @@
   async function applyTurnChange(data: { player1: Player, player2: Player }): Promise<void> {
     player1.update(player => ({ ...player, turn: !data.player1.turn, playingTwice: false, hasVision: false }));
     player2.update(player => ({ ...player, turn: !data.player2.turn, playingTwice: false, hasVision: false }));
+    // ai generated: Starting a new human turn ages previously learned cards by one opportunity to draw and replace something.
+    if (gameMode === 'singleplayer' && $player1.turn) botMemory = ageOpponentHandMemory(botMemory);
 
     const activePlayer = gameMode === 'singleplayer'
       ? ($player1.turn ? $player1 : $player2)
@@ -539,8 +535,6 @@
     remainingLegendaries = getAllLegendaries();
     remainingXenoEggs = ['drainite', 'xerandium', 'sporax'];
     botMemory = createBotMemory();
-    botCurrentPath = 'Choosing an opening path';
-    botLastExplanation = 'The bot will compare paths after its first draw.';
   }
 
   // Ensures player 1 isn't always first to start
@@ -674,7 +668,7 @@
     if (deckTypes.length === 0 && currentDeck === undefined) {
       console.log("No more cards!");
       // Puts spinner while game while updating xenos, every .5s checks if done before continuing.
-      updateClientsForSpecialXenoCards();
+      updateClientsToShareState();
       while (gameState.showSpinner) await wait(500);
       
       emitGameEvent('end-game');
@@ -727,9 +721,6 @@
       // other client getting update? if a legendary is drawn must also remove it from gamestate so no duplicates
       const exemptLegendaries = ['nightTerror', 'chastity', 'corruption', 'neutralize'];
       if ($cardDetails[cardDrawn].rarity === 'legendary' && !exemptLegendaries.includes(cardDrawn)) emitGameEvent('remove-remaining-legendary', cardDrawn);
-
-      // If it's the spirit king, expose both hands.
-      if (cardDrawn === 'spiritKing') await revealPlayers();
 
       // If it's the giraffe egg, get the next giraffe.
       if (cardDrawn === 'eggGiraffe') player.id === $player1.id ? player1.set({...$player1, giraffeCounter: 1}) : player2.set({...$player2, giraffeCounter: 1});
@@ -812,6 +803,11 @@
         return $player2;
       });
     }
+
+    // ai generated: Reveal only after Spirit King is in the hand so both the card draw and face-up opponent hand render together.
+    if (cardDrawn === 'spiritKing') await revealPlayers();
+    refreshBotOpponentMemory();
+
     calculateCurrentPlayerPoints(player, isNewTurn(player));
     
     // Emits to server that a card was drawn
@@ -863,6 +859,8 @@
 
     // Emits to server that a card was discarded
     emitGameEvent('discard-card', {player1: $player1, player2: $player2});
+    // ai generated: If the hand is currently visible, remember its post-discard five-card state before Spirit King or another reveal ends.
+    refreshBotOpponentMemory();
 
     // Remove all traps from deck
     if (cardTitle === 'eradicate') await eradicateTraps();
@@ -899,7 +897,7 @@
 
     if (gameState.gobbledegookDeclared) {
       // Puts spinner while game while updating xenos, every .5s checks if done before continuing.
-      updateClientsForSpecialXenoCards();
+      updateClientsToShareState();
       while (gameState.showSpinner) await wait(500);
       
       emitGameEvent('end-game');
@@ -918,7 +916,7 @@
   // Handles Switcharoo hand swap
   async function swapHands() {
     // Puts spinner while game while updating xenos, every .5s checks if done before continuing.
-    updateClientsForSpecialXenoCards();
+    updateClientsToShareState();
     while (gameState.showSpinner) await wait(500);
 
     const copyOfXenoPoints = {
@@ -1067,19 +1065,20 @@
   }
   
   async function revealPlayers(): Promise<void> {
-    // ai generated: Reveal locally before synchronization so Spirit King exposes both hands on the draw frame.
-    gameState.playersRevealed = true;
+    // ai generated: Reassigning gameState gives Svelte an explicit reveal update before any multiplayer synchronization begins.
+    gameState = {...gameState, playersRevealed: true};
+    refreshBotOpponentMemory('spiritKing');
     await tick();
-    // Must be before updateClientsForSpecialXenoCards()
+    // Must be before updateClientsToShareState()
     emitGameEvent('reveal-players');
-    updateClientsForSpecialXenoCards();
+    updateClientsToShareState();
     while (gameState.showSpinner) await wait(500);
     emitGameEvent('display-event', 'revealed');
   }
 
   async function concealPlayers(): Promise<void> {
     emitGameEvent('conceal-players');
-    updateClientsForSpecialXenoCards();
+    updateClientsToShareState();
     while (gameState.showSpinner) await wait(500);
   }
   // ---------------------------------------------------------------- \\
@@ -1154,9 +1153,29 @@
     calculatePlayerHighestPoints(player);
   }
 
+  // ai generated: These are the four legitimate ways the bot can learn the human hand; Darqnos blocks direct reveals but not Gaze's deck deduction.
+  function getBotOpponentInsightSource(): BotOpponentInsightSource | '' {
+    if (gameMode !== 'singleplayer') return '';
+    const directRevealBlocked = $player1.hand.includes('darkSpirit');
+    if (!directRevealBlocked && gameState.playersRevealed) return 'spiritKing';
+    if (!directRevealBlocked && $player1.isExposed) return 'exposed';
+    if (!directRevealBlocked && $player2.hasVision) return 'vision';
+    if ($player2.hand.includes('gaze') && !areBoostsBlocked($player2)) return 'gaze';
+    return '';
+  }
+
+  // ai generated: A snapshot is taken only while information is legitimately available; later decisions use this aging memory rather than rereading the hidden hand.
+  function refreshBotOpponentMemory(source = getBotOpponentInsightSource()): void {
+    if (gameMode !== 'singleplayer' || !source) return;
+    if (source !== 'gaze' && $player1.hand.includes('darkSpirit')) return;
+    botMemory = rememberOpponentHand(botMemory, $player1.hand, gameState.turnCount, source);
+  }
+
   // ai generated: This observation contains the bot's hand, public information, and an unseen pool derived by card counting rather than opponent-hand cheating.
   function buildBotObservation(): BotObservation {
-    const canSeeHumanHand = gameState.playersRevealed || $player2.hasVision || $player1.isExposed;
+    const insightSource = getBotOpponentInsightSource();
+    refreshBotOpponentMemory(insightSource);
+    const canSeeHumanHand = insightSource !== '';
     const knownOpponentCards = canSeeHumanHand ? [...$player1.hand] : [];
     const cardsStillInDeck = Object.values(fullDeck).flat() as string[];
     const unseenCards = canSeeHumanHand ? cardsStillInDeck : [...cardsStillInDeck, ...$player1.hand];
@@ -1166,6 +1185,9 @@
       activeDecks: [...deckTypes],
       unseenCards,
       knownOpponentCards,
+      rememberedOpponentCards: [...botMemory.opponentHandSnapshot],
+      opponentMemoryAge: botMemory.opponentHandObservedAtTurn === null ? null : botMemory.opponentHandAge,
+      opponentMemorySource: botMemory.opponentHandSource,
       boosts: [...$player2.boosts],
       traps: [...$player2.traps],
       boostsBlocked: areBoostsBlocked($player2),
@@ -1180,9 +1202,14 @@
     const botCopy = structuredClone($player2);
     const humanCopy = structuredClone($player1);
     botCopy.hand = [...hand];
-    humanCopy.hand = gameState.playersRevealed || $player2.hasVision || $player1.isExposed ? [...$player1.hand] : [];
+    humanCopy.hand = getBotOpponentInsightSource() ? [...$player1.hand] : [];
     calculatePlayerPointsAgainst(botCopy, humanCopy, true);
     return { highestPoints: botCopy.highestPoints, points: { ...botCopy.points } };
+  }
+
+  // ai generated: Console snapshots use the bot's fair strategy scorer so the logged race totals match what informed its decision.
+  function getBotRacePointsForLog(): { race: string; points: number }[] {
+    return Object.entries(scoreBotHand($player2.hand).points).map(([race, points]) => ({ race, points }));
   }
 
   // ai generated: Opponent simulations use the same rules, including A.I. stealing the bot's bot-race points at end game.
@@ -1213,39 +1240,87 @@
     botTurnTimeout = setTimeout(() => void runBotTurn(), thinkingDelay);
   }
 
-  // ai generated: The controller declares conservatively, otherwise draws once and resolves every special extra discard before ending its turn.
+  // ai generated: The controller preserves Echo's full draw-seven, discard-Echo, draw-seven sequence before its final two discards.
   async function runBotTurn(): Promise<void> {
     if (gameMode !== 'singleplayer' || gameState.gameOver || !$player2.turn) return;
 
     let observation = buildBotObservation();
     if (!gameState.gobbledegookDeclared && gameState.turnCount >= 15) {
       const declaration = decideBotDeclaration(observation, scoreBotHand, scoreHumanHand, Math.random, 240, scoreMatchAgainstHumanHand);
-      botLastExplanation = declaration.explanation;
-      if (botStrategyDebugEnabled) console.info(`[Gobbledegook A.I.] Declaration check: ${declaration.explanation}`);
+      if (botStrategyDebugEnabled) {
+        console.groupCollapsed(`[Gobbledegook A.I.] Declaration check for ${$player2.title}`);
+        console.info(declaration.explanation);
+        console.info('Opponent knowledge:', {
+          currentlyKnownHand: [...observation.knownOpponentCards],
+          rememberedHand: [...observation.rememberedOpponentCards],
+          memorySource: observation.opponentMemorySource || 'none',
+          memoryAge: observation.opponentMemoryAge
+        });
+        console.groupEnd();
+      }
       if (declaration.declare) {
-        botCurrentPath = 'Declare Gobbledegook';
         await clickOnGobbledegook($player2);
         return;
       }
     }
 
+    // ai generated: This is the bot's ordinary once-per-turn draw; Echo follow-up draws are handled below.
     await drawCard($player2);
     if (gameState.gameOver || !$player2.turn) return;
     await wait(1100 + Math.floor(Math.random() * 1300));
 
-    let discardSafety = 0;
-    while ($player2.turn && $player2.hand.length > 5 && discardSafety < 4) {
+    // ai generated: Three Echo cards can legitimately repeat this loop; 12 actions is only a fail-safe against a broken card state trapping the browser forever.
+    const maxBotTurnActions = 12;
+    let botTurnActionCount = 0;
+    while ($player2.turn && !gameState.gameOver && botTurnActionCount < maxBotTurnActions) {
+      botTurnActionCount++;
+      const echoAction = getBotEchoAction($player2.hand, $player2.playingTwice);
+
+      if (echoAction === 'draw') {
+        if (botStrategyDebugEnabled) {
+          console.groupCollapsed(`[Gobbledegook A.I.] ${$player2.title} takes Echo's immediate extra draw`);
+          console.info('Echo does not replace the normal turn draw, so the bot draws up to seven before discarding.');
+          console.info('Visible status:', {
+            currentHand: [...$player2.hand],
+            discards: [...$player2.discards],
+            racePoints: getBotRacePointsForLog()
+          });
+          console.groupEnd();
+        }
+        await wait(500 + Math.floor(Math.random() * 800));
+        // ai generated: false prevents an Echo follow-up from being counted as the start of a new turn.
+        await drawCard($player2, false);
+        if (gameState.gameOver || !$player2.turn) return;
+        await wait(1100 + Math.floor(Math.random() * 1300));
+        continue;
+      }
+
+      if ($player2.hand.length <= 5) return;
       observation = buildBotObservation();
+      if (echoAction === 'discard-echo') {
+        if (botStrategyDebugEnabled) {
+          console.groupCollapsed(`[Gobbledegook A.I.] ${$player2.title} discards Echo and draws back to seven`);
+          console.info('Discarding Echo first preserves its replacement draw before the bot makes its final two discards.');
+          console.info('Visible status:', {
+            currentHand: [...$player2.hand],
+            discards: [...$player2.discards],
+            racePoints: getBotRacePointsForLog()
+          });
+          console.groupEnd();
+        }
+        await discard('echo', $player2);
+        continue;
+      }
+
       const decision = chooseBotDiscard(observation, scoreBotHand);
       botMemory = rememberBotDecision(botMemory, decision);
-      botCurrentPath = decision.path.race;
-      botLastExplanation = decision.explanation;
       if (botStrategyDebugEnabled) {
         console.groupCollapsed(`[Gobbledegook A.I.] ${$player2.title} follows the ${decision.path.race} path`);
         console.info(decision.explanation);
         console.info('Visible status:', {
           currentHand: [...$player2.hand],
           discards: [...$player2.discards],
+          racePoints: getBotRacePointsForLog(),
           boostsBlocked: observation.boostsBlocked,
           trapsBlocked: observation.trapsBlocked,
           neutralizePossiblyAvailable: observation.neutralizePossiblyAvailable,
@@ -1254,7 +1329,7 @@
         console.groupEnd();
       }
       await discard(decision.cardTitle, $player2);
-      discardSafety++;
+      if ($player2.turn && $player2.hand.length > 5) await wait(700 + Math.floor(Math.random() * 900));
     }
   }
 
@@ -2133,7 +2208,7 @@
     if (player.hand.includes('drainite') && runtimeCardDetails['drainite'].points >= 2) runtimeCardDetails['drainite'].points -= 2;
 
     // So both clients show the same points for these cards
-    updateClientsForSpecialXenoCards();
+    updateClientsToShareState();
     while (gameState.showSpinner) await wait(500);
   }
 
@@ -2162,9 +2237,8 @@
     }
   }
 
-  // TODO: update name to make sense
   // Trades warpstalker and voidrunner client values before calculation
-  function updateClientsForSpecialXenoCards() {
+  function updateClientsToShareState() {
     gameState.showSpinner = true;
     emitGameEvent('start-xeno-sync', {player1: $player1, player2: $player2, cardDetails: $cardDetails});
   }
@@ -2275,7 +2349,7 @@
     if (cardTitle === 'exposed' && !player.hasChastity && !player.hand.includes('chastity')) {
       // Puts spinner while game while updating xenos, every .5s checks if done before continuing.
       player.id === $player1.id ? player1.set({...$player1, isExposed: true}) : player2.set({...$player2, isExposed: true});
-      updateClientsForSpecialXenoCards();
+      updateClientsToShareState();
       while (gameState.showSpinner) await wait(500);
       emitGameEvent('display-event', 'exposed');
     }
@@ -2295,7 +2369,7 @@
     if (card === 'vision' && drawn) {
       // Puts spinner while game while updating xenos, every .5s checks if done before continuing.
       player.id === $player1.id ? player1.set({...$player1, hasVision: true}) : player2.set({...$player2, hasVision: true});
-      updateClientsForSpecialXenoCards();
+      updateClientsToShareState();
       while (gameState.showSpinner) await wait(500);
       showEvent('vision');
     }
@@ -2453,7 +2527,6 @@
   function toggleLibraryVisibility() {
     gameState.discardsVisible = false;
     gameState.remainingCardsVisible = false;
-    gameState.botInfoVisible = false;
     gameState.libraryVisible = !gameState.libraryVisible;
   }
 
@@ -2461,16 +2534,7 @@
   function toggleDiscardVisibility() {
     gameState.libraryVisible = false;
     gameState.remainingCardsVisible = false;
-    gameState.botInfoVisible = false;
     gameState.discardsVisible = !gameState.discardsVisible;
-  }
-
-  // ai generated: The side-panel button exposes the current decision path without changing how the bot plays.
-  function toggleBotInfoVisibility(): void {
-    gameState.libraryVisible = false;
-    gameState.discardsVisible = false;
-    gameState.remainingCardsVisible = false;
-    gameState.botInfoVisible = !gameState.botInfoVisible;
   }
 
   // Show visual feedback for certain events
@@ -2545,7 +2609,6 @@
   function openLibraryToCard(race: Race): void {
     gameState.discardsVisible = false;
     gameState.remainingCardsVisible = false;
-    gameState.botInfoVisible = false;
     gameState.libraryVisible = true;
     // So library has time to open and DOM can create elements
     setTimeout(() => {
@@ -2558,7 +2621,6 @@
   function toggleRemainingCardsModal(): void {
     gameState.discardsVisible = false;
     gameState.libraryVisible = false;
-    gameState.botInfoVisible = false;
     gameState.remainingCardsVisible = !gameState.remainingCardsVisible;
   }
 
@@ -2622,7 +2684,7 @@
 
     if (gameState.gobbledegookDeclared) {
       // Puts spinner while game while updating xenos, every .5s checks if done before continuing.
-      updateClientsForSpecialXenoCards();
+      updateClientsToShareState();
       while (gameState.showSpinner) await wait(500);
       
       emitGameEvent('end-game');
@@ -2714,14 +2776,6 @@
     </svg>
     {#if gameState.discardsVisible}
       <Discards draws={gameState.playingAs === 'p1' ? $player1.cardsDrawn : $player2.cardsDrawn} discards={gameState.playingAs === 'p1' ? $player1.discards : $player2.discards}/>
-    {/if}
-
-    <!-- ai generated: This button opens a concise, live summary of the balanced bot's priorities. -->
-    {#if gameMode === 'singleplayer'}
-      <button class="bot-info-btn" on:click={toggleBotInfoVisibility} aria-label="A.I. strategy information">AI</button>
-      {#if gameState.botInfoVisible}
-        <BotInfo currentPath={botCurrentPath} explanation={botLastExplanation} debugEnabled={botStrategyDebugEnabled} on:close={toggleBotInfoVisibility}/>
-      {/if}
     {/if}
 
     <!-- Gaze, remaining cards library -->
@@ -3276,7 +3330,7 @@
     }
   }
 
-  .card-library-btn, .card-discards-btn, .bot-info-btn {
+  .card-library-btn, .card-discards-btn {
     border-radius: 0.5rem;
     z-index: 7; // 1 higher than library to make sure it's never hidden behind.
     stroke: #d44215;
@@ -3311,26 +3365,6 @@
       stroke: #9abd9d;
       fill: #9abd9d74;
       border: 1px solid #9abd9d;
-    }
-  }
-
-  // ai generated
-  .bot-info-btn {
-    top: 120px;
-    display: grid;
-    place-items: center;
-    min-height: 46px;
-    color: #fff0d2;
-    border-color: #7e69a8;
-    background: #342955e6;
-    font-weight: 800;
-    font-size: 0.95rem;
-    cursor: pointer;
-
-    &:hover {
-      color: #fff;
-      border-color: #b9a0ee;
-      background: #574783;
     }
   }
 

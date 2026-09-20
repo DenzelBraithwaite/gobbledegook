@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { chooseBotDiscard, decideBotDeclaration, evaluateBotPaths } from './botStrategy.ts';
+import { ageOpponentHandMemory, chooseBotDiscard, createBotMemory, decideBotDeclaration, evaluateBotPaths, getBotEchoAction, rememberBotDecision, rememberOpponentHand } from './botStrategy.ts';
 
 const details = {
   goblinLord: { race: 'goblin', otherRaces: [] },
@@ -33,6 +33,9 @@ function observation(overrides = {}) {
     activeDecks: ['humans', 'goblins', 'bots', 'neutrals'],
     unseenCards: ['goblinLord', 'troll', 'protectron', 'android', 'neutralize', 'knight'],
     knownOpponentCards: [],
+    rememberedOpponentCards: [],
+    opponentMemoryAge: null,
+    opponentMemorySource: '',
     boosts: [],
     traps: [],
     boostsBlocked: false,
@@ -101,4 +104,58 @@ test('declaration samples apply opposing A.I. theft to the bot score', () => {
   const decision = decideBotDeclaration(riskyObservation, winningBot, weakerOpponent, () => 0, 20, withAiRisk);
   assert.equal(decision.declare, false);
   assert.equal(decision.estimatedWinChance, 0);
+});
+
+test('draws at six and only forces the active Echo discard after reaching seven cards', () => {
+  assert.equal(getBotEchoAction(['troll', 'echo', 'knight', 'emperor', 'ai', 'shaman'], true), 'draw');
+  assert.equal(getBotEchoAction(['troll', 'echo', 'knight', 'emperor', 'ai', 'shaman', 'hobgoblin'], true), 'discard-echo');
+  assert.equal(getBotEchoAction(['troll', 'echo', 'knight', 'emperor', 'ai', 'shaman', 'hobgoblin'], false), null);
+  assert.equal(getBotEchoAction(['troll', 'knight', 'emperor', 'ai', 'shaman', 'hobgoblin', 'goblinLord'], true), null);
+});
+
+test('keeps Spirit King, Vision, Exposed, and Gaze knowledge through later discard decisions', () => {
+  const decision = chooseBotDiscard(observation(), score, () => 0.5);
+  for (const source of ['spiritKing', 'vision', 'exposed', 'gaze']) {
+    const remembered = rememberOpponentHand(createBotMemory(), ['goblinLord', 'troll', 'shaman', 'hobgoblin', 'knight'], 8, source);
+    const updated = rememberBotDecision(remembered, decision);
+    assert.deepEqual(updated.opponentHandSnapshot, remembered.opponentHandSnapshot);
+    assert.equal(updated.opponentHandObservedAtTurn, 8);
+    assert.equal(updated.opponentHandSource, source);
+    assert.equal(ageOpponentHandMemory(updated).opponentHandAge, 1);
+  }
+});
+
+test('an aging remembered leader prevents confidence against a previously strong hand', () => {
+  const botThirty = () => ({
+    highestPoints: 30,
+    points: { humans: 0, goblins: 30, elves: 0, dwarves: 0, beasts: 0, bots: 0, xenos: 0, spirits: 0 }
+  });
+  const rememberedThreat = hand => ({
+    botScore: 30,
+    opponentScore: hand.includes('goblinLord') ? 60 : score(hand).highestPoints
+  });
+  const threatened = observation({
+    turnCount: 15,
+    unseenCards: ['goblinLord', 'troll', 'shaman', 'hobgoblin', 'knight', 'android', 'protectron', 'neutralize'],
+    rememberedOpponentCards: ['goblinLord', 'troll', 'shaman', 'hobgoblin', 'knight'],
+    opponentMemoryAge: 7,
+    opponentMemorySource: 'vision'
+  });
+  const decision = decideBotDeclaration(threatened, botThirty, score, () => 0.5, 80, rememberedThreat);
+  assert.equal(decision.declare, false);
+  assert.ok(decision.estimatedWinChance < 0.8);
+  assert.match(decision.explanation, /vision memory from 7 turn/);
+});
+
+test('turn-15 hidden-hand samples assume some human race synergy', () => {
+  const botThirty = () => ({
+    highestPoints: 30,
+    points: { humans: 0, goblins: 30, elves: 0, dwarves: 0, beasts: 0, bots: 0, xenos: 0, spirits: 0 }
+  });
+  const synergizedOpponent = hand => ({ botScore: 30, opponentScore: score(hand).highestPoints });
+  const decision = decideBotDeclaration(observation({
+    turnCount: 15,
+    unseenCards: ['goblinLord', 'troll', 'shaman', 'hobgoblin', 'troll', 'shaman', 'knight', 'emperor', 'android', 'protectron']
+  }), botThirty, score, () => 0, 20, synergizedOpponent);
+  assert.equal(decision.declare, false);
 });

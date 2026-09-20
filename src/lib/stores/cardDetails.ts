@@ -412,7 +412,7 @@ const cardDetails = writable({
   longbeardLeader: {
     title: 'longbeardLeader',
     displayTitle: 'Longbeard Leader',
-    points: 12,
+    points: 15,
     amount: 1,
     rarity: 'legendary',
     traitTitle: 'Drunken revenge',

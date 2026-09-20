@@ -24,6 +24,14 @@ This is a personal project intended for private play over a local network. It is
 
 A round also ends if the draw pile is exhausted.
 
+## Singleplayer mode
+
+Choose **Singleplayer** in the connected-users panel, then press **Ready** to begin immediately without waiting for a second player. Player 1 remains the human player, while Player 2 is controlled locally by a balanced bot with a randomly selected name.
+
+The bot follows the normal draw, discard, card-effect, and Gobbledegook rules. It counts cards from its own point of view, remembers information legitimately revealed by cards, and evaluates several possible faction paths before making a decision. Its current reasoning, hand, discards, and faction scores can be shown in the browser console using the debug toggle documented in the [Bot Guide](./BOT_README.md).
+
+Singleplayer does not open a Socket.IO connection and does not require `server.js`; it can be played directly through the Vite development or preview server.
+
 ## Factions and card types
 
 The card catalogue currently includes:
@@ -188,7 +196,7 @@ Some current limitations are:
 - Mobile play is possible but not fully optimized.
 - The Socket.IO server address must currently be configured in the source.
 - Development and multiplayer server ports are not separated.
-- There is no automated test suite yet.
+- Automated tests currently cover the standalone bot strategy; the rest of the game is still tested manually.
 - Match state is not persisted.
 - Decks may be commented out temporarily during testing; check `resetGame()` before starting a match.
 

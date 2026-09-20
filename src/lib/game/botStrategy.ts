@@ -1,5 +1,6 @@
 // ai generated: KNOWLEDGE MODEL — these types describe only the hand, public effects, and countable unseen cards available to the bot.
 export type BotRace = 'humans' | 'goblins' | 'elves' | 'dwarves' | 'beasts' | 'bots' | 'xenos' | 'spirits' | 'cookies';
+export type BotOpponentInsightSource = 'spiritKing' | 'vision' | 'exposed' | 'gaze';
 
 export type BotCardDetails = Record<string, {
   race: string;
@@ -12,6 +13,9 @@ export type BotObservation = {
   activeDecks: string[];
   unseenCards: string[];
   knownOpponentCards: string[];
+  rememberedOpponentCards: string[];
+  opponentMemoryAge: number | null;
+  opponentMemorySource: BotOpponentInsightSource | '';
   boosts: string[];
   traps: string[];
   boostsBlocked: boolean;
@@ -48,6 +52,10 @@ export type BotMemory = {
   turnsPlayed: number;
   lastPath: BotRace | '';
   discardedCards: string[];
+  opponentHandSnapshot: string[];
+  opponentHandObservedAtTurn: number | null;
+  opponentHandSource: BotOpponentInsightSource | '';
+  opponentHandAge: number;
 };
 
 type ScoreResult = {
@@ -80,9 +88,49 @@ const scoreKeys: Record<Exclude<BotRace, 'cookies'>, string> = {
   spirits: 'spirits'
 };
 
+const strategicallyStickyCards = ['emperor', 'goblinLord', 'elfKing', 'longbeardLeader', 'dreamDestroyer', 'ai', 'spiritKing'];
+
 // ai generated: The memory records only information the bot was legitimately allowed to observe.
 export function createBotMemory(): BotMemory {
-  return { turnsPlayed: 0, lastPath: '', discardedCards: [] };
+  return {
+    turnsPlayed: 0,
+    lastPath: '',
+    discardedCards: [],
+    opponentHandSnapshot: [],
+    opponentHandObservedAtTurn: null,
+    opponentHandSource: '',
+    opponentHandAge: 0
+  };
+}
+
+// ai generated: Legitimate Spirit King, Vision, Exposed, and Gaze information is remembered without continuing to inspect a hidden hand.
+export function rememberOpponentHand(
+  memory: BotMemory,
+  cards: string[],
+  turnCount: number,
+  source: BotOpponentInsightSource
+): BotMemory {
+  return {
+    ...memory,
+    opponentHandSnapshot: [...cards],
+    opponentHandObservedAtTurn: turnCount,
+    opponentHandSource: source,
+    opponentHandAge: 0
+  };
+}
+
+// ai generated: Memory age follows actual human turns instead of the mutable game counter, which Tick Tock and Tock Tick can change.
+export function ageOpponentHandMemory(memory: BotMemory): BotMemory {
+  if (memory.opponentHandSnapshot.length === 0) return memory;
+  return { ...memory, opponentHandAge: memory.opponentHandAge + 1 };
+}
+
+// ai generated: This state helper keeps Echo's draw-at-six and discard-at-seven order explicit and testable.
+export function getBotEchoAction(hand: string[], playingTwice: boolean): 'draw' | 'discard-echo' | null {
+  if (!playingTwice) return null;
+  if (hand.length === 6) return 'draw';
+  if (hand.length >= 7 && hand.includes('echo')) return 'discard-echo';
+  return null;
 }
 
 // ai generated: STRATEGY MODEL — this evaluator compares every supported winning path without changing authoritative game points.
@@ -245,11 +293,9 @@ export function decideBotDeclaration(
   let wins = 0;
   let ties = 0;
   const pool = [...observation.unseenCards];
-  const knownCards = observation.knownOpponentCards.slice(0, 5);
-  const cardsNeededForTurn = Math.max(0, 6 - knownCards.length);
 
   for (let game = 0; game < simulations; game++) {
-    const sampled = [...knownCards, ...sampleWithoutReplacement(pool, cardsNeededForTurn, random)];
+    const sampled = sampleOpponentTurnHand(observation, pool, random);
     const possibleFinalHands = sampled.length > 5
       ? sampled.map((_, discardIndex) => sampled.filter((__, cardIndex) => cardIndex !== discardIndex))
       : [sampled];
@@ -262,21 +308,28 @@ export function decideBotDeclaration(
   }
 
   const estimatedWinChance = simulations === 0 ? 0 : (wins + ties * 0.25) / simulations;
-  const activeDeckPressure = observation.unseenCards.length < 25 ? -0.04 : 0;
-  const declarationThreshold = 0.72 + activeDeckPressure;
+  const earlyTurnCaution = Math.max(0, Math.min(0.08, (23 - observation.turnCount) * 0.01));
+  const activeDeckPressure = observation.turnCount >= 25 && observation.unseenCards.length < 25 ? -0.04 : 0;
+  const declarationThreshold = 0.72 + earlyTurnCaution + activeDeckPressure;
   const declare = estimatedWinChance >= declarationThreshold;
+  const knowledgeDescription = observation.knownOpponentCards.length > 0
+    ? 'current revealed-hand information'
+    : observation.rememberedOpponentCards.length > 0
+      ? `${observation.opponentMemorySource} memory from ${observation.opponentMemoryAge ?? 0} turn(s) ago`
+      : 'a synergy-weighted hidden hand';
   return {
     declare,
     estimatedWinChance,
     botScore,
     sampledGames: simulations,
-    explanation: `${botScore} points produced a ${(estimatedWinChance * 100).toFixed(0)}% estimated win chance across ${simulations} fair hidden-hand samples; threshold ${(declarationThreshold * 100).toFixed(0)}%.`
+    explanation: `${botScore} points produced a ${(estimatedWinChance * 100).toFixed(0)}% estimated win chance across ${simulations} samples using ${knowledgeDescription}; threshold ${(declarationThreshold * 100).toFixed(0)}%.`
   };
 }
 
 // ai generated: The path tracker can be reset each round without losing the bot implementation itself.
 export function rememberBotDecision(memory: BotMemory, decision: BotDiscardDecision): BotMemory {
   return {
+    ...memory,
     turnsPlayed: memory.turnsPlayed + 1,
     lastPath: decision.path.race,
     discardedCards: [...memory.discardedCards, decision.cardTitle]
@@ -293,7 +346,10 @@ function estimateOpponentAiRisk(observation: BotObservation): number {
   const aiRemaining = observation.unseenCards.filter(card => card === 'ai').length;
   if (aiRemaining === 0 || observation.unseenCards.length === 0) return 0;
   const unknownSlots = Math.max(0, 5 - observation.knownOpponentCards.length);
-  return 1 - Math.pow(1 - aiRemaining / observation.unseenCards.length, unknownSlots);
+  const unseenRisk = 1 - Math.pow(1 - aiRemaining / observation.unseenCards.length, unknownSlots);
+  if (!observation.rememberedOpponentCards.includes('ai')) return unseenRisk;
+  const rememberedRace = findDominantRace(observation.rememberedOpponentCards, observation.cardDetails);
+  return Math.max(unseenRisk, rememberedCardRetentionChance('ai', rememberedRace, observation));
 }
 
 function chanceOfDrawingAny(cards: string[], observation: BotObservation): number {
@@ -317,6 +373,81 @@ function specialDiscardCost(cardTitle: string, candidateHand: string[], observat
   if (['redSpirit', 'blueSpirit'].includes(cardTitle) && candidateHand.filter(card => card === cardTitle).length >= 2) cost += 8;
   if (cardTitle === 'cookieJar' && !observation.boostsBlocked) cost += 10;
   return cost;
+}
+
+// ai generated: Declaration samples preserve remembered threats and mildly favor a coherent race, reflecting a human who has curated five cards by turn 15.
+function sampleOpponentTurnHand(observation: BotObservation, cards: string[], random: () => number): string[] {
+  const pool = [...cards];
+  const currentlyKnown = observation.knownOpponentCards.slice(0, 5);
+  if (currentlyKnown.length > 0) return [...currentlyKnown, ...sampleWithoutReplacement(pool, 1, random)];
+
+  const remembered = observation.rememberedOpponentCards.slice(0, 5);
+  const rememberedRace = findDominantRace(remembered, observation.cardDetails);
+  const age = observation.opponentMemoryAge ?? 99;
+  const hand: string[] = [];
+
+  remembered.forEach(card => {
+    const poolIndex = pool.indexOf(card);
+    if (poolIndex === -1) return;
+    const retentionChance = rememberedCardRetentionChance(card, rememberedRace, observation, age);
+    if (random() < retentionChance) hand.push(...pool.splice(poolIndex, 1));
+  });
+
+  // ai generated: With no remembered anchor, one ordinary race card gives the sample a modest strategy direction instead of five unrelated random cards.
+  if (hand.length === 0) {
+    const strategicIndexes = pool
+      .map((card, index) => ({ index, race: getStrategicRace(card, observation.cardDetails) }))
+      .filter(candidate => candidate.race !== '');
+    if (strategicIndexes.length > 0) {
+      const chosen = strategicIndexes[Math.floor(random() * strategicIndexes.length)];
+      hand.push(...pool.splice(chosen.index, 1));
+    }
+  }
+
+  const targetRace = findDominantRace(hand, observation.cardDetails);
+  while (hand.length < 5 && pool.length > 0) {
+    const chosenIndex = chooseWeightedCardIndex(pool, targetRace, observation.cardDetails, random);
+    hand.push(...pool.splice(chosenIndex, 1));
+  }
+
+  return [...hand, ...sampleWithoutReplacement(pool, 1, random)];
+}
+
+function rememberedCardRetentionChance(card: string, rememberedRace: string, observation: BotObservation, age = observation.opponentMemoryAge ?? 99): number {
+  const isSticky = strategicallyStickyCards.includes(card);
+  const matchesRememberedRace = rememberedRace !== '' && cardHasRace(card, rememberedRace, observation.cardDetails);
+  const retentionPerTurn = isSticky ? 0.97 : matchesRememberedRace ? 0.90 : 0.75;
+  const minimumRetention = isSticky ? 0.55 : matchesRememberedRace ? 0.20 : 0.05;
+  return Math.max(minimumRetention, Math.pow(retentionPerTurn, age));
+}
+
+// ai generated: Only the eight scoring races define a synergy direction; boosts, traps, and neutrals remain possible off-path cards.
+function getStrategicRace(card: string, details: BotCardDetails): string {
+  const scoringRaces = Object.values(raceCards);
+  const cardInfo = details[card];
+  if (!cardInfo) return '';
+  return [cardInfo.race, ...cardInfo.otherRaces].find(race => scoringRaces.includes(race)) ?? '';
+}
+
+function findDominantRace(cards: string[], details: BotCardDetails): string {
+  const counts = new Map<string, number>();
+  cards.forEach(card => {
+    const race = getStrategicRace(card, details);
+    if (race) counts.set(race, (counts.get(race) ?? 0) + 1);
+  });
+  return [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? '';
+}
+
+function chooseWeightedCardIndex(cards: string[], targetRace: string, details: BotCardDetails, random: () => number): number {
+  if (!targetRace) return Math.floor(random() * cards.length);
+  const weights = cards.map(card => cardHasRace(card, targetRace, details) ? 3 : 1);
+  const totalWeight = weights.reduce((total, weight) => total + weight, 0);
+  let selection = random() * totalWeight;
+  for (let index = 0; index < weights.length; index++) {
+    selection -= weights[index];
+    if (selection < 0) return index;
+  }
+  return cards.length - 1;
 }
 
 function sampleWithoutReplacement(cards: string[], count: number, random: () => number): string[] {
