@@ -3,7 +3,7 @@
   import { fade } from 'svelte/transition';
 
   // Stores
-  import { cardDetails } from '../stores';
+  import { cardDetails, type Player } from '../stores';
 
   // Components
   import { Card } from './index';
@@ -11,47 +11,64 @@
   // Props
   export let draws: string[] = [];
   export let discards: string[] = [];
+  export let player: Player;
+  export let otherNeutralEffects: string[] = [];
+  export let boostsBlocked = false;
+  export let trapsBlocked = false;
 
-  // These will result in a multi-dimensional array [[card, details], [card, details]...]
-  let drawsWithCardDetails: any[] = [];
-  let discardsWithCardDetails: any[] = [];
-  draws.forEach(d => drawsWithCardDetails.push($cardDetails[d]));
-  discards.forEach(d => discardsWithCardDetails.push($cardDetails[d]));
+  // ai generated: Rebuild these lists when cards change so an open modal reflects the current turn.
+  $: drawsWithCardDetails = draws.map(card => $cardDetails[card]);
+  $: discardsWithCardDetails = discards.map(card => $cardDetails[card]);
 </script>
 
 <main class="main-content" transition:fade>
-  <div class="flex">
-    <h2 class="section-title">Draws</h2>
-    {#each drawsWithCardDetails as card}
-        <Card
-        displayTitle={card.displayTitle}
-        title={card.title}
-        img={card.image}
-        description={card.description}
-        traitTitle={card.traitTitle}
-        trait={card.trait}
-        race={card.race}
-        rarity={card.rarity}
-        points={card.points}
-        />
-    {/each}
-  </div>
+  <!-- ai generated: Mirrors the player's end-game effect summary while the round is still in progress. -->
+  <section class="effect-summary">
+    <h2>Your effects</h2>
+    <p>Boosts: <span class:line-through={boostsBlocked}>{player.boosts.join(', ') || 'None'}</span></p>
+    <p>Charge Points: <span class:line-through={boostsBlocked}>{player.chargePoints}</span></p>
+    <p>Growth Points: <span class:line-through={boostsBlocked}>{player.growthPoints}</span></p>
+    <p>Traps: <span class:line-through={trapsBlocked}>{player.traps.join(', ') || 'None'}</span></p>
+    <p>Infect Penalty: <span class:line-through={trapsBlocked}>{player.infectPoints}</span></p>
+    <p>Neutral Cards: {player.neutrals.join(', ') || 'None'}</p>
+    <p>Other Neutral Effects: {otherNeutralEffects.join(', ') || 'None'}</p>
+    <p>Neutralized Cards: {player.neutralizedCards.join(', ') || 'None'}</p>
+  </section>
 
-  <div class="flex">
-    <h2 class="section-title">Discards</h2>
-    {#each discardsWithCardDetails as card}
-        <Card
-        displayTitle={card.displayTitle}
-        title={card.title}
-        img={card.image}
-        description={card.description}
-        traitTitle={card.traitTitle}
-        trait={card.trait}
-        race={card.race}
-        rarity={card.rarity}
-        points={card.points}
-        />
-    {/each}
+  <div class="card-lists">
+    <div class="flex">
+      <h2 class="section-title">Draws</h2>
+      {#each drawsWithCardDetails as card}
+          <Card
+          displayTitle={card.displayTitle}
+          title={card.title}
+          img={card.image}
+          description={card.description}
+          traitTitle={card.traitTitle}
+          trait={card.trait}
+          race={card.race}
+          rarity={card.rarity}
+          points={card.points}
+          />
+      {/each}
+    </div>
+
+    <div class="flex">
+      <h2 class="section-title">Discards</h2>
+      {#each discardsWithCardDetails as card}
+          <Card
+          displayTitle={card.displayTitle}
+          title={card.title}
+          img={card.image}
+          description={card.description}
+          traitTitle={card.traitTitle}
+          trait={card.trait}
+          race={card.race}
+          rarity={card.rarity}
+          points={card.points}
+          />
+      {/each}
+    </div>
   </div>
 </main>
 
@@ -83,15 +100,33 @@
     transform: translate(50%, 50%);
 
     display: flex;
-    justify-content: space-around;
+    flex-direction: column;
+    gap: 1rem;
   }
 
-  .grid {  
-    display: grid;
-    grid-template-columns: repeat(5, minmax(3.5rem, 9.5rem)); // Match small card size mobile
+  .effect-summary {
+    padding: 0.75rem 1rem;
+    color: #fff0d2;
+    background-color: #00000059;
+    border-radius: 0.5rem;
+
+    h2 {
+      margin: 0 0 0.5rem;
+    }
+
+    p {
+      margin: 0.2rem 0;
+    }
+  }
+
+  .line-through {
+    text-decoration: line-through;
+  }
+
+  .card-lists {
+    display: flex;
+    justify-content: space-around;
     gap: 1rem;
-    justify-content: center;
-    min-height: 75%;
   }
 
   .section-title {
@@ -104,13 +139,6 @@
     padding-bottom: 0.5rem;
   }
 
-  .deck-section {
-    border-radius: 0.5rem;
-    padding-top: 1rem;
-    padding-bottom: 2rem;
-    border-top: 2px solid #00000059;
-  }
-
   .flex {
     display: flex;
     flex-direction: column;
@@ -120,12 +148,6 @@
 
   /* Breakpoints */
   @media only screen and (max-width: 1100px) {
-    .grid {  
-      grid-template-columns: repeat(4, minmax(3.5rem, 7rem)); // Match small card size mobile
-      gap: 0.5rem;
-      justify-content: center;
-    }
-
     .flex {
       gap: 14px;
     }

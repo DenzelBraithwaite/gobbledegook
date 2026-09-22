@@ -1,31 +1,39 @@
-// ai generated: KNOWLEDGE MODEL — these types describe only the hand, public effects, and countable unseen cards available to the bot.
-export type BotRace = 'humans' | 'goblins' | 'elves' | 'dwarves' | 'beasts' | 'bots' | 'xenos' | 'spirits' | 'cookies';
-export type BotOpponentInsightSource = 'spiritKing' | 'vision' | 'exposed' | 'gaze';
+// ai generated: KNOWLEDGE MODEL — these types describe only the hand, public effects, and countable unseen cards available to the CPU.
+export type CpuRace = 'humans' | 'goblins' | 'elves' | 'dwarves' | 'beasts' | 'bots' | 'xenos' | 'spirits' | 'cookies';
+export type CpuForcedRace = Exclude<CpuRace, 'cookies'>;
+export type CpuOpponentInsightSource = 'spiritKing' | 'vision' | 'exposed' | 'gaze';
 
-export type BotCardDetails = Record<string, {
+export type CpuCardDetails = Record<string, {
   race: string;
   otherRaces: string[];
+  rarity?: string;
 }>;
 
-export type BotObservation = {
+export type CpuObservation = {
   hand: string[];
   turnCount: number;
   activeDecks: string[];
   unseenCards: string[];
   knownOpponentCards: string[];
+  publicOpponentCards: string[];
   rememberedOpponentCards: string[];
   opponentMemoryAge: number | null;
-  opponentMemorySource: BotOpponentInsightSource | '';
+  opponentMemorySource: CpuOpponentInsightSource | '';
   boosts: string[];
   traps: string[];
   boostsBlocked: boolean;
   trapsBlocked: boolean;
   neutralizePossiblyAvailable: boolean;
-  cardDetails: BotCardDetails;
+  infectPoints: number;
+  numOfInfects: number;
+  chargePoints: number;
+  numOfCharges: number;
+  forcedRacePath: CpuForcedRace | '';
+  cardDetails: CpuCardDetails;
 };
 
-export type BotPathEvaluation = {
-  race: BotRace;
+export type CpuPathEvaluation = {
+  race: CpuRace;
   utility: number;
   currentPoints: number;
   drawPotential: number;
@@ -33,28 +41,28 @@ export type BotPathEvaluation = {
   explanation: string;
 };
 
-export type BotDiscardDecision = {
+export type CpuDiscardDecision = {
   cardTitle: string;
-  path: BotPathEvaluation;
+  path: CpuPathEvaluation;
   candidateScore: number;
   explanation: string;
 };
 
-export type BotDeclarationDecision = {
+export type CpuDeclarationDecision = {
   declare: boolean;
   estimatedWinChance: number;
-  botScore: number;
+  cpuScore: number;
   sampledGames: number;
   explanation: string;
 };
 
-export type BotMemory = {
+export type CpuMemory = {
   turnsPlayed: number;
-  lastPath: BotRace | '';
+  lastPath: CpuRace | '';
   discardedCards: string[];
   opponentHandSnapshot: string[];
   opponentHandObservedAtTurn: number | null;
-  opponentHandSource: BotOpponentInsightSource | '';
+  opponentHandSource: CpuOpponentInsightSource | '';
   opponentHandAge: number;
 };
 
@@ -63,10 +71,10 @@ type ScoreResult = {
   points: Record<string, number>;
 };
 
-export type BotScoreEvaluator = (hand: string[]) => ScoreResult;
-export type BotMatchEvaluator = (opponentHand: string[]) => { botScore: number; opponentScore: number };
+export type CpuScoreEvaluator = (hand: string[]) => ScoreResult;
+export type CpuMatchEvaluator = (opponentHand: string[]) => { cpuScore: number; opponentScore: number };
 
-const raceCards: Record<Exclude<BotRace, 'cookies'>, string> = {
+const raceCards: Record<CpuForcedRace, string> = {
   humans: 'human',
   goblins: 'goblin',
   elves: 'elf',
@@ -77,7 +85,7 @@ const raceCards: Record<Exclude<BotRace, 'cookies'>, string> = {
   spirits: 'spirit'
 };
 
-const scoreKeys: Record<Exclude<BotRace, 'cookies'>, string> = {
+const scoreKeys: Record<CpuForcedRace, string> = {
   humans: 'humans',
   goblins: 'goblins',
   elves: 'elves',
@@ -89,9 +97,23 @@ const scoreKeys: Record<Exclude<BotRace, 'cookies'>, string> = {
 };
 
 const strategicallyStickyCards = ['emperor', 'goblinLord', 'elfKing', 'longbeardLeader', 'dreamDestroyer', 'ai', 'spiritKing'];
+const rarityDiscardCost: Record<string, number> = { legendary: 0.4, epic: 0.25, amazing: 0.15, great: 0.08 };
 
-// ai generated: The memory records only information the bot was legitimately allowed to observe.
-export function createBotMemory(): BotMemory {
+// ai generated: An exact plural race name, in any letter case, is the deliberate testing cheat that locks the CPU to that path.
+export function getForcedCpuRacePath(cpuName: string): CpuForcedRace | '' {
+  const normalizedName = cpuName.toLowerCase();
+  return (Object.keys(raceCards) as CpuForcedRace[]).includes(normalizedName as CpuForcedRace)
+    ? normalizedName as CpuForcedRace
+    : '';
+}
+
+// ai generated: The exact testing name keeps long-running test games open without weakening normal CPU declaration logic.
+export function isCpuDeclarationDisabledByName(cpuName: string): boolean {
+  return cpuName.toLowerCase() === 'test';
+}
+
+// ai generated: The memory records only information the CPU was legitimately allowed to observe.
+export function createCpuMemory(): CpuMemory {
   return {
     turnsPlayed: 0,
     lastPath: '',
@@ -105,11 +127,11 @@ export function createBotMemory(): BotMemory {
 
 // ai generated: Legitimate Spirit King, Vision, Exposed, and Gaze information is remembered without continuing to inspect a hidden hand.
 export function rememberOpponentHand(
-  memory: BotMemory,
+  memory: CpuMemory,
   cards: string[],
   turnCount: number,
-  source: BotOpponentInsightSource
-): BotMemory {
+  source: CpuOpponentInsightSource
+): CpuMemory {
   return {
     ...memory,
     opponentHandSnapshot: [...cards],
@@ -120,13 +142,13 @@ export function rememberOpponentHand(
 }
 
 // ai generated: Memory age follows actual human turns instead of the mutable game counter, which Tick Tock and Tock Tick can change.
-export function ageOpponentHandMemory(memory: BotMemory): BotMemory {
+export function ageOpponentHandMemory(memory: CpuMemory): CpuMemory {
   if (memory.opponentHandSnapshot.length === 0) return memory;
   return { ...memory, opponentHandAge: memory.opponentHandAge + 1 };
 }
 
 // ai generated: This state helper keeps Echo's draw-at-six and discard-at-seven order explicit and testable.
-export function getBotEchoAction(hand: string[], playingTwice: boolean): 'draw' | 'discard-echo' | null {
+export function getCpuEchoAction(hand: string[], playingTwice: boolean): 'draw' | 'discard-echo' | null {
   if (!playingTwice) return null;
   if (hand.length === 6) return 'draw';
   if (hand.length >= 7 && hand.includes('echo')) return 'discard-echo';
@@ -134,13 +156,13 @@ export function getBotEchoAction(hand: string[], playingTwice: boolean): 'draw' 
 }
 
 // ai generated: STRATEGY MODEL — this evaluator compares every supported winning path without changing authoritative game points.
-export function evaluateBotPaths(observation: BotObservation, evaluate: BotScoreEvaluator): BotPathEvaluation[] {
+export function evaluateCpuPaths(observation: CpuObservation, evaluate: CpuScoreEvaluator): CpuPathEvaluation[] {
   const score = evaluate(observation.hand);
   const neutralizeChance = observation.neutralizePossiblyAvailable
     ? chanceOfDrawingAny(['neutralize'], observation)
     : 0;
 
-  const paths: BotPathEvaluation[] = (Object.keys(raceCards) as Exclude<BotRace, 'cookies'>[]).map(race => {
+  const paths: CpuPathEvaluation[] = (Object.keys(raceCards) as CpuForcedRace[]).map(race => {
     const matchingCards = observation.hand.filter(card => cardHasRace(card, raceCards[race], observation.cardDetails));
     const unseenMatchingCards = observation.unseenCards.filter(card => cardHasRace(card, raceCards[race], observation.cardDetails));
     const currentPoints = score.points[scoreKeys[race]] ?? 0;
@@ -149,6 +171,7 @@ export function evaluateBotPaths(observation: BotObservation, evaluate: BotScore
     let drawPotential = drawChance * (10 + matchingCards.length * 4);
     let risk = 0;
     const reasons = [`${matchingCards.length} matching card${matchingCards.length === 1 ? '' : 's'}`, `${currentPoints} current points`];
+    if (observation.forcedRacePath === race) reasons.unshift(`CPU name forces the ${race} path`);
 
     if (race === 'humans' && observation.hand.includes('emperor')) {
       drawPotential += 20;
@@ -184,8 +207,8 @@ export function evaluateBotPaths(observation: BotObservation, evaluate: BotScore
 
     if (race === 'bots') {
       const aiRisk = estimateOpponentAiRisk(observation);
-      const botValueAtRisk = Math.max(16, currentPoints * 0.8);
-      risk += aiRisk * botValueAtRisk;
+      const cpuValueAtRisk = Math.max(16, currentPoints * 0.8);
+      risk += aiRisk * cpuValueAtRisk;
       reasons.push(`opposing A.I. theft risk ${formatChance(aiRisk)}`);
     }
 
@@ -195,6 +218,24 @@ export function evaluateBotPaths(observation: BotObservation, evaluate: BotScore
       const majority = Math.max(redCount, blueCount);
       drawPotential += majority * majority * 4;
       if (majority >= 3) reasons.push(`${majority}/5 matching djinns makes the lottery route plausible`);
+    }
+
+    // ai generated: The real scorer already includes today's Infect/Charge points; these small adjustments value only a few future turns.
+    if (observation.numOfInfects > 0 && !observation.trapsBlocked) {
+      const futureInfectLoss = observation.numOfInfects * 4 * (1 - neutralizeChance * 0.5);
+      if (race === 'spirits') {
+        drawPotential += Math.min(8, futureInfectLoss);
+        reasons.push('Spirits are immune to worsening Infect');
+      } else {
+        risk += futureInfectLoss;
+        reasons.push(`Infect may cost another ${futureInfectLoss.toFixed(1)} points over the next few turns`);
+      }
+    }
+
+    if (observation.numOfCharges > 0 && !observation.boostsBlocked && ['humans', 'bots'].includes(race)) {
+      const futureChargeGain = observation.numOfCharges * 4;
+      drawPotential += futureChargeGain;
+      reasons.push(`Charge may add another ${futureChargeGain} points over the next few turns`);
     }
 
     if (observation.boostsBlocked) {
@@ -230,22 +271,57 @@ export function evaluateBotPaths(observation: BotObservation, evaluate: BotScore
     explanation: `${cookieCards.length} cookie/boost cards; Cookie route ${formatChance(cookieChance)}; boosts ${observation.boostsBlocked ? 'blocked' : 'active'}`
   });
 
-  return paths.sort((a, b) => b.utility - a.utility);
+  const rankedPaths = paths.sort((a, b) => b.utility - a.utility);
+  return observation.forcedRacePath
+    ? rankedPaths.filter(path => path.race === observation.forcedRacePath)
+    : rankedPaths;
 }
 
 // ai generated: Each possible discard is scored with the real game scorer, then adjusted for future card-counting value.
-export function chooseBotDiscard(
-  observation: BotObservation,
-  evaluate: BotScoreEvaluator,
-  random: () => number = Math.random
-): BotDiscardDecision {
-  if (observation.hand.length === 0) throw new Error('The bot cannot discard from an empty hand.');
+export function chooseCpuDiscard(
+  observation: CpuObservation,
+  evaluate: CpuScoreEvaluator,
+  random: () => number = Math.random,
+  evaluateSwappedHand?: (receivedHand: string[], givenHand: string[]) => ScoreResult
+): CpuDiscardDecision {
+  if (observation.hand.length === 0) throw new Error('The CPU cannot discard from an empty hand.');
 
   const decisions = observation.hand.map((cardTitle, index) => {
     const candidateHand = observation.hand.filter((_, cardIndex) => cardIndex !== index);
+    // ai generated: Discarding Switcharoo at five cards actually hands these cards away, so judge the received hand instead.
+    if (cardTitle === 'switcharoo' && candidateHand.length === 5) {
+      const exactHand = observation.knownOpponentCards.length === 5;
+      const sampleCount = exactHand ? 1 : 20;
+      const outcomes = Array.from({ length: sampleCount }, () => {
+        const receivedHand = exactHand
+          ? [...observation.knownOpponentCards]
+          : sampleOpponentCurrentHand(observation, observation.unseenCards, random);
+        const swappedEvaluator: CpuScoreEvaluator = hand => evaluateSwappedHand
+          ? evaluateSwappedHand(hand, candidateHand)
+          : evaluate(hand);
+        const path = evaluateCpuPaths({ ...observation, hand: receivedHand }, swappedEvaluator)[0];
+        const scored = swappedEvaluator(receivedHand);
+        const authoritativeScore = observation.forcedRacePath
+          ? scored.points[scoreKeys[observation.forcedRacePath]] ?? 0
+          : scored.highestPoints;
+        return { path, authoritativeScore, value: authoritativeScore + path.utility };
+      });
+      const expectedValue = outcomes.reduce((total, outcome) => total + outcome.value, 0) / outcomes.length;
+      const representative = [...outcomes].sort((a, b) => a.value - b.value)[Math.floor(outcomes.length / 2)];
+      const uncertaintyCost = exactHand ? 0 : 4;
+      return {
+        cardTitle,
+        path: representative.path,
+        candidateScore: expectedValue - uncertaintyCost + random() * 0.001,
+        explanation: `Discard switcharoo: ${exactHand ? 'known' : `${sampleCount} sampled`} opponent hand${exactHand ? '' : 's'} become the CPU hand; expected post-swap value ${expectedValue.toFixed(1)}${uncertaintyCost ? ` less ${uncertaintyCost} uncertainty points` : ''}.`
+      };
+    }
     const candidateObservation = { ...observation, hand: candidateHand };
-    const path = evaluateBotPaths(candidateObservation, evaluate)[0];
-    const authoritativeScore = evaluate(candidateHand).highestPoints;
+    const path = evaluateCpuPaths(candidateObservation, evaluate)[0];
+    const candidateEvaluation = evaluate(candidateHand);
+    const authoritativeScore = observation.forcedRacePath
+      ? candidateEvaluation.points[scoreKeys[observation.forcedRacePath]] ?? 0
+      : candidateEvaluation.highestPoints;
     const specialCardCost = specialDiscardCost(cardTitle, candidateHand, observation);
     const tieBreaker = random() * 0.001;
     return {
@@ -261,32 +337,35 @@ export function chooseBotDiscard(
 }
 
 // ai generated: Declaration uses hidden-card sampling and gives the human one final optimized discard, matching the game's last-turn rule.
-export function decideBotDeclaration(
-  observation: BotObservation,
-  evaluateBot: BotScoreEvaluator,
-  evaluateOpponent: BotScoreEvaluator,
+export function decideCpuDeclaration(
+  observation: CpuObservation,
+  evaluateCpu: CpuScoreEvaluator,
+  evaluateOpponent: CpuScoreEvaluator,
   random: () => number = Math.random,
   simulations = 240,
-  evaluateMatch?: BotMatchEvaluator
-): BotDeclarationDecision {
-  const botScore = evaluateBot(observation.hand).highestPoints;
+  evaluateMatch?: CpuMatchEvaluator
+): CpuDeclarationDecision {
+  const cpuEvaluation = evaluateCpu(observation.hand);
+  const cpuScore = observation.forcedRacePath
+    ? cpuEvaluation.points[scoreKeys[observation.forcedRacePath]] ?? 0
+    : cpuEvaluation.highestPoints;
   if (observation.turnCount < 15) {
     return {
       declare: false,
       estimatedWinChance: 0,
-      botScore,
+      cpuScore,
       sampledGames: 0,
       explanation: 'Gobbledegook is locked until turn 15.'
     };
   }
 
-  if (botScore >= 500_000) {
+  if (cpuScore >= 500_000) {
     return {
       declare: true,
       estimatedWinChance: 1,
-      botScore,
+      cpuScore,
       sampledGames: 0,
-      explanation: 'The bot has a guaranteed special-score hand.'
+      explanation: 'The CPU has a guaranteed special-score hand.'
     };
   }
 
@@ -301,33 +380,49 @@ export function decideBotDeclaration(
       : [sampled];
     const outcomes = possibleFinalHands.map(hand => evaluateMatch
       ? evaluateMatch(hand)
-      : { botScore, opponentScore: evaluateOpponent(hand).highestPoints });
-    const hardestOutcome = outcomes.sort((a, b) => (a.botScore - a.opponentScore) - (b.botScore - b.opponentScore))[0];
-    if (hardestOutcome.botScore > hardestOutcome.opponentScore) wins++;
-    else if (hardestOutcome.botScore === hardestOutcome.opponentScore) ties++;
+      : { cpuScore, opponentScore: evaluateOpponent(hand).highestPoints });
+    const hardestOutcome = outcomes.sort((a, b) => (a.cpuScore - a.opponentScore) - (b.cpuScore - b.opponentScore))[0];
+    if (hardestOutcome.cpuScore > hardestOutcome.opponentScore) wins++;
+    else if (hardestOutcome.cpuScore === hardestOutcome.opponentScore) ties++;
   }
 
   const estimatedWinChance = simulations === 0 ? 0 : (wins + ties * 0.25) / simulations;
   const earlyTurnCaution = Math.max(0, Math.min(0.08, (23 - observation.turnCount) * 0.01));
   const activeDeckPressure = observation.turnCount >= 25 && observation.unseenCards.length < 25 ? -0.04 : 0;
-  const declarationThreshold = 0.72 + earlyTurnCaution + activeDeckPressure;
+  let declarationThreshold = 0.72 + earlyTurnCaution + activeDeckPressure;
+  // ai generated: A 20-point lead is fragile, 35–70 is ordinary, and 100+ is exceptional; these are confidence guidelines, not substitute scores.
+  if (cpuScore <= 20) declarationThreshold = observation.knownOpponentCards.length === 5 ? 0.94 : 0.995;
+  else if (cpuScore < 35) declarationThreshold = Math.max(declarationThreshold, 0.86 + earlyTurnCaution);
+  else if (cpuScore < 70) declarationThreshold += 0.04;
+  else if (cpuScore >= 100) declarationThreshold = Math.min(declarationThreshold, 0.70);
+
+  // ai generated: Active Infect makes a reasonable score decay, while unblocked Charge gives a Human/Bot route a little more time to grow.
+  const activeInfects = observation.trapsBlocked ? 0 : observation.numOfInfects;
+  if (cpuScore > 20 && activeInfects > 0) declarationThreshold -= Math.min(0.05, activeInfects * 0.025);
+  const chargePathActive = cpuEvaluation.points.humans === cpuScore || cpuEvaluation.points.bots === cpuScore;
+  if (cpuScore < 100 && chargePathActive && observation.numOfCharges > 0 && !observation.boostsBlocked) {
+    declarationThreshold += Math.min(0.03, observation.numOfCharges * 0.015);
+  }
+  declarationThreshold = Math.max(0.6, Math.min(0.995, declarationThreshold));
   const declare = estimatedWinChance >= declarationThreshold;
   const knowledgeDescription = observation.knownOpponentCards.length > 0
     ? 'current revealed-hand information'
+    : observation.publicOpponentCards.length > 0
+      ? `publicly visible ${observation.publicOpponentCards.join(', ')} plus a synergy-weighted hidden hand`
     : observation.rememberedOpponentCards.length > 0
       ? `${observation.opponentMemorySource} memory from ${observation.opponentMemoryAge ?? 0} turn(s) ago`
       : 'a synergy-weighted hidden hand';
   return {
     declare,
     estimatedWinChance,
-    botScore,
+    cpuScore,
     sampledGames: simulations,
-    explanation: `${botScore} points produced a ${(estimatedWinChance * 100).toFixed(0)}% estimated win chance across ${simulations} samples using ${knowledgeDescription}; threshold ${(declarationThreshold * 100).toFixed(0)}%.`
+    explanation: `${cpuScore} points produced a ${(estimatedWinChance * 100).toFixed(0)}% estimated win chance across ${simulations} samples using ${knowledgeDescription}; threshold ${(declarationThreshold * 100).toFixed(1)}%${activeInfects ? ` (active Infect ×${activeInfects} favors ending sooner)` : ''}${chargePathActive && observation.numOfCharges > 0 && !observation.boostsBlocked ? ' (Charge favors waiting for growth)' : ''}.`
   };
 }
 
-// ai generated: The path tracker can be reset each round without losing the bot implementation itself.
-export function rememberBotDecision(memory: BotMemory, decision: BotDiscardDecision): BotMemory {
+// ai generated: The path tracker can be reset each round without losing the CPU implementation itself.
+export function rememberCpuDecision(memory: CpuMemory, decision: CpuDiscardDecision): CpuMemory {
   return {
     ...memory,
     turnsPlayed: memory.turnsPlayed + 1,
@@ -336,23 +431,23 @@ export function rememberBotDecision(memory: BotMemory, decision: BotDiscardDecis
   };
 }
 
-function cardHasRace(card: string, race: string, details: BotCardDetails): boolean {
+function cardHasRace(card: string, race: string, details: CpuCardDetails): boolean {
   const cardInfo = details[card];
   return Boolean(cardInfo && [cardInfo.race, ...cardInfo.otherRaces].includes(race));
 }
 
-function estimateOpponentAiRisk(observation: BotObservation): number {
-  if (observation.knownOpponentCards.includes('ai')) return 1;
+function estimateOpponentAiRisk(observation: CpuObservation): number {
+  if ([...observation.knownOpponentCards, ...observation.publicOpponentCards].includes('ai')) return 1;
   const aiRemaining = observation.unseenCards.filter(card => card === 'ai').length;
   if (aiRemaining === 0 || observation.unseenCards.length === 0) return 0;
-  const unknownSlots = Math.max(0, 5 - observation.knownOpponentCards.length);
+  const unknownSlots = Math.max(0, 5 - observation.knownOpponentCards.length - observation.publicOpponentCards.length);
   const unseenRisk = 1 - Math.pow(1 - aiRemaining / observation.unseenCards.length, unknownSlots);
   if (!observation.rememberedOpponentCards.includes('ai')) return unseenRisk;
   const rememberedRace = findDominantRace(observation.rememberedOpponentCards, observation.cardDetails);
   return Math.max(unseenRisk, rememberedCardRetentionChance('ai', rememberedRace, observation));
 }
 
-function chanceOfDrawingAny(cards: string[], observation: BotObservation): number {
+function chanceOfDrawingAny(cards: string[], observation: CpuObservation): number {
   if (observation.unseenCards.length === 0) return 0;
   const matching = observation.unseenCards.filter(card => cards.includes(card)).length;
   const matchingDecks = new Set(observation.unseenCards
@@ -365,26 +460,50 @@ function chanceOfDrawingAny(cards: string[], observation: BotObservation): numbe
   return Math.min(1, matching / observation.unseenCards.length * activeDeckFactor * 4);
 }
 
-function specialDiscardCost(cardTitle: string, candidateHand: string[], observation: BotObservation): number {
-  let cost = 0;
-  if (['emperor', 'goblinLord', 'elfKing', 'longbeardLeader', 'dreamDestroyer', 'ai', 'spiritKing'].includes(cardTitle)) cost += 16;
+function specialDiscardCost(cardTitle: string, candidateHand: string[], observation: CpuObservation): number {
+  const cardMatchesForcedRace = observation.forcedRacePath
+    ? cardHasRace(cardTitle, raceCards[observation.forcedRacePath], observation.cardDetails)
+    : true;
+  // ai generated: Rarity is a tiny tie-breaker only for scoring-race cards; boost, trap, and neutral abilities need their own context.
+  const isScoringRaceCard = getStrategicRace(cardTitle, observation.cardDetails) !== '';
+  let cost = isScoringRaceCard && cardMatchesForcedRace
+    ? rarityDiscardCost[observation.cardDetails[cardTitle]?.rarity ?? ''] ?? 0
+    : 0;
+  // ai generated: A forced path does not protect an unrelated race leader merely because that leader is normally valuable.
+  if (cardMatchesForcedRace && ['emperor', 'goblinLord', 'elfKing', 'longbeardLeader', 'dreamDestroyer', 'ai', 'spiritKing'].includes(cardTitle)) cost += 16;
   if (cardTitle === 'neutralize' && (observation.boostsBlocked || observation.trapsBlocked)) cost += 10;
-  if (cardTitle === 'goblinLordsMark' && candidateHand.some(card => cardHasRace(card, 'goblin', observation.cardDetails))) cost += 12;
-  if (['redSpirit', 'blueSpirit'].includes(cardTitle) && candidateHand.filter(card => card === cardTitle).length >= 2) cost += 8;
-  if (cardTitle === 'cookieJar' && !observation.boostsBlocked) cost += 10;
+  if ((!observation.forcedRacePath || observation.forcedRacePath === 'goblins') && cardTitle === 'goblinLordsMark' && candidateHand.some(card => cardHasRace(card, 'goblin', observation.cardDetails))) cost += 12;
+  if ((!observation.forcedRacePath || observation.forcedRacePath === 'spirits') && ['redSpirit', 'blueSpirit'].includes(cardTitle) && candidateHand.filter(card => card === cardTitle).length >= 2) cost += 8;
+  if (!observation.forcedRacePath && cardTitle === 'cookieJar' && !observation.boostsBlocked) cost += 10;
   return cost;
 }
 
-// ai generated: Declaration samples preserve remembered threats and mildly favor a coherent race, reflecting a human who has curated five cards by turn 15.
-function sampleOpponentTurnHand(observation: BotObservation, cards: string[], random: () => number): string[] {
+// ai generated: A declaration adds the human's final draw to a plausible current five-card hand; Switcharoo uses that five-card hand directly.
+function sampleOpponentTurnHand(observation: CpuObservation, cards: string[], random: () => number): string[] {
+  const hand = sampleOpponentCurrentHand(observation, cards, random);
+  if (hand.length < 5) return hand;
+  const remaining = [...cards];
+  // ai generated: A currently revealed hand is already excluded from the unseen deck; sampled hidden cards must be removed one copy at a time.
+  if (observation.knownOpponentCards.length !== 5) {
+    hand.forEach(card => {
+      const index = remaining.indexOf(card);
+      if (index !== -1) remaining.splice(index, 1);
+    });
+  }
+  return [...hand, ...sampleWithoutReplacement(remaining, 1, random)];
+}
+
+// ai generated: Hidden hands reflect cards the human has deliberately kept, including occasional available leaders and matching race cards.
+function sampleOpponentCurrentHand(observation: CpuObservation, cards: string[], random: () => number): string[] {
   const pool = [...cards];
   const currentlyKnown = observation.knownOpponentCards.slice(0, 5);
-  if (currentlyKnown.length > 0) return [...currentlyKnown, ...sampleWithoutReplacement(pool, 1, random)];
+  if (currentlyKnown.length === 5) return currentlyKnown;
 
+  // ai generated: Always-visible cards such as Brite anchor only their own slot; the CPU still samples the remaining hidden cards fairly.
+  const hand = currentlyKnown.length > 0 ? currentlyKnown : observation.publicOpponentCards.slice(0, 5);
   const remembered = observation.rememberedOpponentCards.slice(0, 5);
-  const rememberedRace = findDominantRace(remembered, observation.cardDetails);
+  const rememberedRace = findDominantRace([...hand, ...remembered], observation.cardDetails);
   const age = observation.opponentMemoryAge ?? 99;
-  const hand: string[] = [];
 
   remembered.forEach(card => {
     const poolIndex = pool.indexOf(card);
@@ -405,15 +524,26 @@ function sampleOpponentTurnHand(observation: BotObservation, cards: string[], ra
   }
 
   const targetRace = findDominantRace(hand, observation.cardDetails);
+  // ai generated: By turn 15 a curated human hand can contain a rare leader; sample that possibility without assuming one every game.
+  if (hand.length < 5 && targetRace && random() < Math.min(0.28, 0.16 + Math.max(0, observation.turnCount - 15) * 0.01)) {
+    const leaders = pool
+      .map((card, index) => ({ card, index }))
+      .filter(candidate => observation.cardDetails[candidate.card]?.rarity === 'legendary'
+        && cardHasRace(candidate.card, targetRace, observation.cardDetails));
+    if (leaders.length > 0) {
+      const leader = leaders[Math.floor(random() * leaders.length)];
+      hand.push(...pool.splice(leader.index, 1));
+    }
+  }
   while (hand.length < 5 && pool.length > 0) {
     const chosenIndex = chooseWeightedCardIndex(pool, targetRace, observation.cardDetails, random);
     hand.push(...pool.splice(chosenIndex, 1));
   }
 
-  return [...hand, ...sampleWithoutReplacement(pool, 1, random)];
+  return hand;
 }
 
-function rememberedCardRetentionChance(card: string, rememberedRace: string, observation: BotObservation, age = observation.opponentMemoryAge ?? 99): number {
+function rememberedCardRetentionChance(card: string, rememberedRace: string, observation: CpuObservation, age = observation.opponentMemoryAge ?? 99): number {
   const isSticky = strategicallyStickyCards.includes(card);
   const matchesRememberedRace = rememberedRace !== '' && cardHasRace(card, rememberedRace, observation.cardDetails);
   const retentionPerTurn = isSticky ? 0.97 : matchesRememberedRace ? 0.90 : 0.75;
@@ -422,14 +552,14 @@ function rememberedCardRetentionChance(card: string, rememberedRace: string, obs
 }
 
 // ai generated: Only the eight scoring races define a synergy direction; boosts, traps, and neutrals remain possible off-path cards.
-function getStrategicRace(card: string, details: BotCardDetails): string {
+function getStrategicRace(card: string, details: CpuCardDetails): string {
   const scoringRaces = Object.values(raceCards);
   const cardInfo = details[card];
   if (!cardInfo) return '';
   return [cardInfo.race, ...cardInfo.otherRaces].find(race => scoringRaces.includes(race)) ?? '';
 }
 
-function findDominantRace(cards: string[], details: BotCardDetails): string {
+function findDominantRace(cards: string[], details: CpuCardDetails): string {
   const counts = new Map<string, number>();
   cards.forEach(card => {
     const race = getStrategicRace(card, details);
@@ -438,7 +568,7 @@ function findDominantRace(cards: string[], details: BotCardDetails): string {
   return [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? '';
 }
 
-function chooseWeightedCardIndex(cards: string[], targetRace: string, details: BotCardDetails, random: () => number): number {
+function chooseWeightedCardIndex(cards: string[], targetRace: string, details: CpuCardDetails, random: () => number): number {
   if (!targetRace) return Math.floor(random() * cards.length);
   const weights = cards.map(card => cardHasRace(card, targetRace, details) ? 3 : 1);
   const totalWeight = weights.reduce((total, weight) => total + weight, 0);

@@ -6,7 +6,7 @@ Each race is scored independently. At the end of a round, a player's final score
 
 ## Humans
 
-Humans are the flexible, dependable race. Commanders reward Human-heavy hands, the Emperor expands the race's scoring options, and several hybrid cards allow Humans to benefit from other synergies.
+Humans are the flexible, dependable race. Commanders reward Human-heavy hands, the Emperor expands the race's scoring options, and Human-compatible hybrids count toward the Human subtotal.
 
 **Weaknesses:** Ordinary Human cards decline quickly in value, the Emperor cannot recruit Xenos into the Human score, and the race performs best when its support pieces appear together.
 
@@ -14,7 +14,7 @@ Humans are the flexible, dependable race. Commanders reward Human-heavy hands, t
 
 ### Human cards
 
-- **Emperor — 10 points.** Doubles the Human subtotal, then adds the base value of non-Human, non-Xeno race cards in the hand.
+- **Emperor — 10 points.** Doubles the Human subtotal after Commander bonuses, then adds only the printed base points of non-Human, non-Xeno cards. Their other-race ability bonuses do not carry over; for example, Pawl Barkington adds 4 to Humans even when worth 14 to Beasts.
 - **Commander — 7 points.** Each Commander gives every Human-compatible card, including Commanders and hybrids, +1 point.
 - **Lupin — 8 points.** Counts as both a Human and a Beast/Wolf.
 - **Assassin — 5 points.**
@@ -85,16 +85,16 @@ Beasts thrive on synergy. Their leaders normalize every Beast to a high value, L
 
 ### Beast cards
 
-- **Dream Destroyer — 14 points.** Makes every Beast in the hand worth 14 before pack and Dog bonuses.
-- **Night Terror — 12 points.** Makes every Beast worth 12 unless Dream Destroyer overrides it at 14.
-- **Rhinestone/Rhino — 10 points.** Blocks traps while held.
+- **Dream Destroyer — 18 points.** Makes every Beast in the hand worth 18 before pack and Dog bonuses.
+- **Night Terror — 15 points.** Makes every Beast worth 15 unless Dream Destroyer overrides it at 18.
+- **Rhinestone/Rhino — 12 points.** Blocks traps while held.
 - **Theo Thunderpaw/Bear — 9 points.** Bears become worth zero if another Bear, or a Bear-mimicking Leon, is present.
 - **Goldenmane/Lion — 8 points.** Each Lion or Lion-compatible Leon contributes a +3-per-Lion pride bonus.
 - **Panth Nocturna/Panther — 7 points.**
 - **Alpha Wolfbane/Wolf — 6 points.** Wolves and Wolf-compatible Leons receive the pack bonus; Lupin contributes to the pack as well.
 - **Finn Foxglove/Fox — 5 points.**
 - **Pawl Barkington/Dog — 4 points.** Gains +10 points when the hand contains a Human-compatible card.
-- **Giraffe growth chain:** Egg Giraffe 0 → Calfy 1 → Giraffey 6 → Granffey 10 → Night Terror 12. Each stage replaces the previous form as the Giraffe matures.
+- **Giraffe growth chain:** Egg Giraffe 0 → Calfy 1 → Giraffey 6 → Granffey 10 → Night Terror 15. Each stage replaces the previous form as the Giraffe matures.
 
 ## Bots
 
@@ -104,8 +104,8 @@ Bots combine strong base cards with dangerous Viruses. Protectron turns Viruses 
 
 ### Bot cards
 
-- **A.I. — 11 points.** Gives every Bot card +2, bringing Viruses to zero, and adds the opponent's Bot-card value to its score at the end of the game.
-- **Protectron — 9 points.** Adds +8 to each Virus per Protectron and gains additional value from Viruses.
+- **A.I. — 11 points.** Gives every Bot card +4, bringing Viruses to 2 points, and adds the opponent's Bot-card value to its score at the end of the game.
+- **Protectron — 9 points.** If at least one Protectron is present, each real Virus receives +8 once. Every Protectron also gains +1 for each Virus or Leon; Leon does not receive +8.
 - **Fae Bot — 8 points.** Counts as both a Bot and an Elf.
 - **Cyborg — 8 points.** Counts as both a Bot and a Human.
 - **Sawbot-3000 — 7 points.**
@@ -193,7 +193,7 @@ Neutral cards create events and unusual interactions instead of contributing an 
 - **Switcharoo.** When discarded from a normal six-card hand before Gobbledegook is declared, swaps the five remaining cards between players.
 - **Vision.** Reveals the opponent's hand for the current turn unless they are protected.
 - **Echo.** Grants another draw, allows a hand of up to seven cards, and keeps the turn active until the hand returns to five.
-- **Leon.** Has zero base points, belongs to all eight races, and imitates several synergy cards. Leon uses the most valuable relevant imitation available.
+- **Leon.** Has zero base points, belongs to all eight races, and imitates several synergy cards. Leon uses the most valuable relevant imitation available. It triggers Protectron's +1 as though it were a Virus, but does not receive the Virus-specific +8; A.I.'s Bot-wide +4 still applies.
 - **Xeno Bloom.** Permanently gives both players +15 Xeno points.
 - **Xeno Blossom.** Permanently gives both players +5 Xeno points.
 - **Ticktock.** Advances the turn counter by 3.

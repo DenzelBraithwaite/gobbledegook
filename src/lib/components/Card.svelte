@@ -18,6 +18,7 @@
   export let trait = '';
   export let traitTitle = '';
   export let buffed = false;
+  export let reduced = false;
 
   $: if (race === 'goblin-ish') race = 'goblin';
 
@@ -49,9 +50,9 @@
   <div on:contextmenu|preventDefault on:click={cardClickHandler} class="card bg-{race}{rarity === 'legendary' ? '-rare' : ''}" in:fly={{x: 100}} out:fade>
     <img class="card-img" src={img} alt="img of card">
     <p class="race {race}-race">{capitalize(race)}</p>
-    <p class="points {race}-race" class:line-through={buffed}>{points}</p>
-    {#if buffed}
-      <p class="points__modified {race}-race">{modifiedPoints}</p>
+    <p class="points {race}-race" class:line-through={buffed || reduced}>{points}</p>
+    {#if buffed || reduced}
+      <p class="points__modified {race}-race" class:points__modified--reduced={reduced}>{modifiedPoints}</p>
     {/if}
     <p class="card-title {race}-title">{displayTitle}</p>
     <div class="card-bottom-section">
@@ -207,6 +208,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
+  }
+
+  .points__modified--reduced {
+    color: #ff4d4d;
   }
 
   .trait-title {

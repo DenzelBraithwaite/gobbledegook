@@ -16,7 +16,7 @@
   import GGCard from './Card.svelte';
 
   // ai generated: The decision engine stays independent from Svelte and receives only the information a real player could know.
-  import { ageOpponentHandMemory, chooseBotDiscard, createBotMemory, decideBotDeclaration, getBotEchoAction, rememberBotDecision, rememberOpponentHand, type BotObservation, type BotOpponentInsightSource } from '../game/botStrategy';
+  import { ageOpponentHandMemory, chooseCpuDiscard, createCpuMemory, decideCpuDeclaration, getCpuEchoAction, getForcedCpuRacePath, isCpuDeclarationDisabledByName, rememberCpuDecision, rememberOpponentHand, type CpuObservation, type CpuOpponentInsightSource } from '../game/cpuStrategy';
 
   // Websocket
   import { io } from 'socket.io-client';
@@ -24,16 +24,14 @@
   type DeckRace = 'humans' | 'goblins' | 'elves' | 'dwarves' | 'beasts' | 'bots' | 'xenos' | 'spirits' | 'boosts' | 'traps' | 'neutrals' | 'giraffe' | 'xenoEgg' | '';
   type Race = 'human' | 'goblin' | 'elf' | 'dwarf' | 'beast' | 'bot' | 'xeno' | 'spirit' | 'boost' | 'trap' | 'neutral' | '';
   const bardCards = ['bardLute', 'bardFlute', 'bardHorn', 'bardDrum', 'bardSinger'];
-
-  // Thanos: http://192.168.2.10:6912; 
-  // Work Mac at home: http://192.168.2.19:6912;
+  const aiBotCardBonus = 4;
   let socket = io('http://192.168.2.14:6912', { autoConnect: false });
   let gameMode: 'singleplayer' | 'multiplayer' = 'singleplayer';
-  // ai generated: Toggle this value while testing to show or hide detailed bot path explanations in the browser console.
-  let botStrategyDebugEnabled = true;
-  const botNames = ['Gruntilda', 'KazBot', 'TinkBot', 'CPU', 'AI', 'Guest#445', 'LawjokerBot', 'DefinitelyNotABot', 'Player 2', 'Challenger', 'Mr Quack', 'Mrs Quack', 'A Duck'];
-  let botMemory = createBotMemory();
-  let botTurnTimeout: ReturnType<typeof setTimeout> | undefined;
+  // ai generated: Toggle this value while testing to show or hide detailed CPU path explanations in the browser console.
+  let cpuStrategyDebugEnabled = true;
+  const cpuNames = ['Gruntilda', 'KazBot', 'TinkBot', 'CPU', 'AI', 'Guest#445', 'LawjokerBot', 'DefinitelyNotABot', 'Player 2', 'Challenger', 'Mr Quack', 'Mrs Quack', 'A Duck', 'Bot', 'Benny'];
+  let cpuMemory = createCpuMemory();
+  let cpuTurnTimeout: ReturnType<typeof setTimeout> | undefined;
   $: gameState = {
     gobbledegookDeclared: false,
     gobbledegookDisabled: false,
@@ -252,10 +250,10 @@
     // ai generated: Singleplayer initializes locally and never opens the websocket connection.
     initializeSingleplayer();
 
-    // ai generated: Clearing timers and the optional socket prevents rematches or navigation from leaving ghost bot turns behind.
+    // ai generated: Clearing timers and the optional socket prevents rematches or navigation from leaving ghost CPU turns behind.
     return () => {
       stopHeartbeat();
-      if (botTurnTimeout) clearTimeout(botTurnTimeout);
+      if (cpuTurnTimeout) clearTimeout(cpuTurnTimeout);
       socket.disconnect();
     };
   });
@@ -274,25 +272,25 @@
     timeoutId = undefined;
   }
 
-  // ai generated: Player one is always the human and player two is always the local bot in the first singleplayer version.
+  // ai generated: Player one is always the human and player two is always the local CPU in the first singleplayer version.
   function initializeSingleplayer(): void {
     stopHeartbeat();
     socket.disconnect();
     gameState.playingAs = 'p1';
     p1Connected = true;
     p2Connected = true;
-    const botName = botNames[Math.floor(Math.random() * botNames.length)];
+    const cpuName = cpuNames[Math.floor(Math.random() * cpuNames.length)];
     player1.update(player => ({ ...player, id: 'singleplayer-human' }));
-    player2.update(player => ({ ...player, id: 'singleplayer-bot', title: botName }));
+    player2.update(player => ({ ...player, id: 'singleplayer-cpu', title: cpuName }));
     player1Reset.update(player => ({ ...player, id: 'singleplayer-human' }));
-    player2Reset.update(player => ({ ...player, id: 'singleplayer-bot', title: botName }));
-    botMemory = createBotMemory();
+    player2Reset.update(player => ({ ...player, id: 'singleplayer-cpu', title: cpuName }));
+    cpuMemory = createCpuMemory();
   }
 
   // ai generated: Mode changes are available between rounds and preserve the original server-backed multiplayer flow.
   function selectGameMode(mode: 'singleplayer' | 'multiplayer'): void {
     if (gameMode === mode || !gameState.gameOver) return;
-    if (botTurnTimeout) clearTimeout(botTurnTimeout);
+    if (cpuTurnTimeout) clearTimeout(cpuTurnTimeout);
     gameState.connectedNameChangeSide = '';
     gameState.p1NameChangeVisible = false;
     gameState.p2NameChangeVisible = false;
@@ -375,7 +373,7 @@
     player1.update(player => ({ ...player, turn: !data.player1.turn, playingTwice: false, hasVision: false }));
     player2.update(player => ({ ...player, turn: !data.player2.turn, playingTwice: false, hasVision: false }));
     // ai generated: Starting a new human turn ages previously learned cards by one opportunity to draw and replace something.
-    if (gameMode === 'singleplayer' && $player1.turn) botMemory = ageOpponentHandMemory(botMemory);
+    if (gameMode === 'singleplayer' && $player1.turn) cpuMemory = ageOpponentHandMemory(cpuMemory);
 
     const activePlayer = gameMode === 'singleplayer'
       ? ($player1.turn ? $player1 : $player2)
@@ -389,7 +387,7 @@
     const gdgButtonAvailable = !gameState.gameOver && !gameState.gobbledegookDeclared && gameState.turnCount >= 15;
     if (gdgButtonAvailable && isPlayerTurn(localPlayer)) gameState.gobbledegookDisabled = false;
     if (isPlayerTurn(localPlayer)) void showEvent('turn-change');
-    if (gameMode === 'singleplayer' && $player2.turn) scheduleBotTurn();
+    if (gameMode === 'singleplayer' && $player2.turn) scheduleCpuTurn();
   }
 
   // ai generated: Chester's selected legendary is removed from both the choice list and the shared local deck immediately.
@@ -449,7 +447,7 @@
 
     // Send data to websocket server
     emitGameEvent('start-game', {player1: $player1, player2: $player2, fullDeck});
-    if (gameMode === 'singleplayer' && $player2.turn) scheduleBotTurn();
+    if (gameMode === 'singleplayer' && $player2.turn) scheduleCpuTurn();
   }
 
   // When both players are ready the game starts/restarts
@@ -468,7 +466,7 @@
 
   // Ends current round
   function endGame() {
-    if (botTurnTimeout) clearTimeout(botTurnTimeout);
+    if (cpuTurnTimeout) clearTimeout(cpuTurnTimeout);
     gameState.gameOver = true;
     gameState.startBtnDisabled = false;
     gameState.gobbledegookDisabled = true;
@@ -494,7 +492,7 @@
 
   // Resets values to restart the game.
   function resetGame() {
-    if (botTurnTimeout) clearTimeout(botTurnTimeout);
+    if (cpuTurnTimeout) clearTimeout(cpuTurnTimeout);
     // Reset p1
     player1.set({...$player1Reset, title: $player1.title});
     // Reset p2
@@ -534,7 +532,7 @@
 
     remainingLegendaries = getAllLegendaries();
     remainingXenoEggs = ['drainite', 'xerandium', 'sporax'];
-    botMemory = createBotMemory();
+    cpuMemory = createCpuMemory();
   }
 
   // Ensures player 1 isn't always first to start
@@ -806,7 +804,7 @@
 
     // ai generated: Reveal only after Spirit King is in the hand so both the card draw and face-up opponent hand render together.
     if (cardDrawn === 'spiritKing') await revealPlayers();
-    refreshBotOpponentMemory();
+    refreshCpuOpponentMemory();
 
     calculateCurrentPlayerPoints(player, isNewTurn(player));
     
@@ -860,7 +858,7 @@
     // Emits to server that a card was discarded
     emitGameEvent('discard-card', {player1: $player1, player2: $player2});
     // ai generated: If the hand is currently visible, remember its post-discard five-card state before Spirit King or another reveal ends.
-    refreshBotOpponentMemory();
+    refreshCpuOpponentMemory();
 
     // Remove all traps from deck
     if (cardTitle === 'eradicate') await eradicateTraps();
@@ -1067,7 +1065,7 @@
   async function revealPlayers(): Promise<void> {
     // ai generated: Reassigning gameState gives Svelte an explicit reveal update before any multiplayer synchronization begins.
     gameState = {...gameState, playersRevealed: true};
-    refreshBotOpponentMemory('spiritKing');
+    refreshCpuOpponentMemory('spiritKing');
     await tick();
     // Must be before updateClientsToShareState()
     emitGameEvent('reveal-players');
@@ -1139,7 +1137,7 @@
     calculatePlayerPointsAgainst(player, otherPlayer, true);
   }
 
-  // ai generated: The bot calls this same authoritative scoring pipeline on cloned players, so its predictions cannot alter the live match.
+  // ai generated: The CPU calls this same authoritative scoring pipeline on cloned players, so its predictions cannot alter the live match.
   function calculatePlayerPointsAgainst(player: Player, otherPlayer: Player, forEndGameCalculation = false): void {
     setPlayerPointsToZero(player);
     calculateHumanPoints(player);
@@ -1153,8 +1151,8 @@
     calculatePlayerHighestPoints(player);
   }
 
-  // ai generated: These are the four legitimate ways the bot can learn the human hand; Darqnos blocks direct reveals but not Gaze's deck deduction.
-  function getBotOpponentInsightSource(): BotOpponentInsightSource | '' {
+  // ai generated: These are the four legitimate ways the CPU can learn the human hand; Darqnos blocks direct reveals but not Gaze's deck deduction.
+  function getCpuOpponentInsightSource(): CpuOpponentInsightSource | '' {
     if (gameMode !== 'singleplayer') return '';
     const directRevealBlocked = $player1.hand.includes('darkSpirit');
     if (!directRevealBlocked && gameState.playersRevealed) return 'spiritKing';
@@ -1165,125 +1163,163 @@
   }
 
   // ai generated: A snapshot is taken only while information is legitimately available; later decisions use this aging memory rather than rereading the hidden hand.
-  function refreshBotOpponentMemory(source = getBotOpponentInsightSource()): void {
+  function refreshCpuOpponentMemory(source = getCpuOpponentInsightSource()): void {
     if (gameMode !== 'singleplayer' || !source) return;
     if (source !== 'gaze' && $player1.hand.includes('darkSpirit')) return;
-    botMemory = rememberOpponentHand(botMemory, $player1.hand, gameState.turnCount, source);
+    cpuMemory = rememberOpponentHand(cpuMemory, $player1.hand, gameState.turnCount, source);
   }
 
-  // ai generated: This observation contains the bot's hand, public information, and an unseen pool derived by card counting rather than opponent-hand cheating.
-  function buildBotObservation(): BotObservation {
-    const insightSource = getBotOpponentInsightSource();
-    refreshBotOpponentMemory(insightSource);
+  // ai generated: This observation contains the CPU's hand, public information, and an unseen pool derived by card counting rather than opponent-hand cheating.
+  function buildCpuObservation(): CpuObservation {
+    const insightSource = getCpuOpponentInsightSource();
+    refreshCpuOpponentMemory(insightSource);
     const canSeeHumanHand = insightSource !== '';
     const knownOpponentCards = canSeeHumanHand ? [...$player1.hand] : [];
+    const publicOpponentCards = canSeeHumanHand || $player1.hand.includes('darkSpirit')
+      ? []
+      : $player1.hand.filter(card => card === 'lightSpirit');
     const cardsStillInDeck = Object.values(fullDeck).flat() as string[];
-    const unseenCards = canSeeHumanHand ? cardsStillInDeck : [...cardsStillInDeck, ...$player1.hand];
+    const hiddenOpponentCards = $player1.hand.filter(card => !publicOpponentCards.includes(card));
+    const unseenCards = canSeeHumanHand ? cardsStillInDeck : [...cardsStillInDeck, ...hiddenOpponentCards];
     return {
       hand: [...$player2.hand],
       turnCount: gameState.turnCount,
       activeDecks: [...deckTypes],
       unseenCards,
       knownOpponentCards,
-      rememberedOpponentCards: [...botMemory.opponentHandSnapshot],
-      opponentMemoryAge: botMemory.opponentHandObservedAtTurn === null ? null : botMemory.opponentHandAge,
-      opponentMemorySource: botMemory.opponentHandSource,
+      publicOpponentCards,
+      rememberedOpponentCards: [...cpuMemory.opponentHandSnapshot],
+      opponentMemoryAge: cpuMemory.opponentHandObservedAtTurn === null ? null : cpuMemory.opponentHandAge,
+      opponentMemorySource: cpuMemory.opponentHandSource,
       boosts: [...$player2.boosts],
       traps: [...$player2.traps],
       boostsBlocked: areBoostsBlocked($player2),
       trapsBlocked: areTrapsBlocked($player2),
       neutralizePossiblyAvailable: unseenCards.includes('neutralize'),
+      infectPoints: $player2.infectPoints,
+      numOfInfects: $player2.numOfInfects,
+      chargePoints: $player2.chargePoints,
+      numOfCharges: $player2.numOfCharges,
+      forcedRacePath: getForcedCpuRacePath($player2.title),
       cardDetails: $cardDetails
     };
   }
 
-  // ai generated: Cloning protects live hands, point totals, counters, and status effects while the bot asks many what-if questions.
-  function scoreBotHand(hand: string[]) {
-    const botCopy = structuredClone($player2);
+  // ai generated: Cloning protects live hands, point totals, counters, and status effects while the CPU asks many what-if questions.
+  function scoreCpuHand(hand: string[]) {
+    const cpuCopy = structuredClone($player2);
     const humanCopy = structuredClone($player1);
-    botCopy.hand = [...hand];
-    humanCopy.hand = getBotOpponentInsightSource() ? [...$player1.hand] : [];
-    calculatePlayerPointsAgainst(botCopy, humanCopy, true);
-    return { highestPoints: botCopy.highestPoints, points: { ...botCopy.points } };
+    cpuCopy.hand = [...hand];
+    humanCopy.hand = getCpuOpponentInsightSource() ? [...$player1.hand] : [];
+    calculatePlayerPointsAgainst(cpuCopy, humanCopy, true);
+    return { highestPoints: cpuCopy.highestPoints, points: { ...cpuCopy.points } };
   }
 
-  // ai generated: Console snapshots use the bot's fair strategy scorer so the logged race totals match what informed its decision.
-  function getBotRacePointsForLog(): { race: string; points: number }[] {
-    return Object.entries(scoreBotHand($player2.hand).points).map(([race, points]) => ({ race, points }));
+  // ai generated: Switcharoo trades the CPU's kept cards for the human's hand, so score the received cards against the cards handed away.
+  function scoreCpuSwappedHand(receivedHand: string[], givenHand: string[]) {
+    const cpuCopy = structuredClone($player2);
+    const humanCopy = structuredClone($player1);
+    cpuCopy.hand = [...receivedHand];
+    humanCopy.hand = [...givenHand];
+    calculatePlayerPointsAgainst(cpuCopy, humanCopy, true);
+    // ai generated: Switcharoo also trades evolving Xeno values; the scorer still sees the pre-swap copies, so adjust only those card bases.
+    const transferredXenos = ['voidRunner', 'warpstalker', 'drainite', 'xerandium', 'sporax'];
+    receivedHand.forEach(card => {
+      if (transferredXenos.includes(card)) cpuCopy.points.xenos += $cardDetails[card].points - remoteCardDetails[card].points;
+    });
+    calculatePlayerHighestPoints(cpuCopy);
+    return { highestPoints: cpuCopy.highestPoints, points: { ...cpuCopy.points } };
   }
 
-  // ai generated: Opponent simulations use the same rules, including A.I. stealing the bot's bot-race points at end game.
+  // ai generated: Console snapshots use the CPU's fair strategy scorer so the logged race totals match what informed its decision.
+  function getCpuRacePointsForLog(): { race: string; points: number }[] {
+    return Object.entries(scoreCpuHand($player2.hand).points).map(([race, points]) => ({ race, points }));
+  }
+
+  // ai generated: Keeping opponent knowledge in every CPU status log makes reveal and memory behavior observable during manual testing.
+  function getCpuOpponentKnowledgeForLog(observation: CpuObservation) {
+    return {
+      currentlyKnownHand: [...observation.knownOpponentCards],
+      publiclyVisibleCards: [...observation.publicOpponentCards],
+      rememberedHand: [...observation.rememberedOpponentCards],
+      memorySource: observation.opponentMemorySource || 'none',
+      memoryAge: observation.opponentMemoryAge
+    };
+  }
+
+  // ai generated: Opponent simulations use the same rules, including A.I. stealing the CPU's Bot-race points at end game.
   function scoreHumanHand(hand: string[]) {
     const humanCopy = structuredClone($player1);
-    const botCopy = structuredClone($player2);
+    const cpuCopy = structuredClone($player2);
     humanCopy.hand = [...hand];
-    calculatePlayerPointsAgainst(humanCopy, botCopy, true);
+    calculatePlayerPointsAgainst(humanCopy, cpuCopy, true);
     return { highestPoints: humanCopy.highestPoints, points: { ...humanCopy.points } };
   }
 
-  // ai generated: Declaration samples score both sides together so a hidden human A.I. can really steal the bot path in that sample.
+  // ai generated: Declaration samples score both sides together so a hidden human A.I. can really steal the CPU's Bot path in that sample.
   function scoreMatchAgainstHumanHand(hand: string[]) {
     const humanCopy = structuredClone($player1);
-    const botCopy = structuredClone($player2);
+    const cpuCopy = structuredClone($player2);
     humanCopy.hand = [...hand];
-    calculatePlayerPointsAgainst(botCopy, humanCopy, true);
-    calculatePlayerPointsAgainst(humanCopy, botCopy, true);
-    calculatePlayerHighestPoints(botCopy);
-    return { botScore: botCopy.highestPoints, opponentScore: humanCopy.highestPoints };
+    calculatePlayerPointsAgainst(cpuCopy, humanCopy, true);
+    calculatePlayerPointsAgainst(humanCopy, cpuCopy, true);
+    calculatePlayerHighestPoints(cpuCopy);
+    const forcedRacePath = getForcedCpuRacePath($player2.title);
+    const cpuScore = forcedRacePath ? cpuCopy.points[forcedRacePath] : cpuCopy.highestPoints;
+    return { cpuScore, opponentScore: humanCopy.highestPoints };
   }
 
   // ai generated: A short randomized pause makes the local opponent feel responsive without ever deliberately waiting five seconds.
-  function scheduleBotTurn(): void {
+  function scheduleCpuTurn(): void {
     if (gameMode !== 'singleplayer' || gameState.gameOver || !$player2.turn) return;
-    if (botTurnTimeout) clearTimeout(botTurnTimeout);
+    if (cpuTurnTimeout) clearTimeout(cpuTurnTimeout);
     const thinkingDelay = 650 + Math.floor(Math.random() * 1550);
-    botTurnTimeout = setTimeout(() => void runBotTurn(), thinkingDelay);
+    cpuTurnTimeout = setTimeout(() => void runCpuTurn(), thinkingDelay);
   }
 
   // ai generated: The controller preserves Echo's full draw-seven, discard-Echo, draw-seven sequence before its final two discards.
-  async function runBotTurn(): Promise<void> {
+  async function runCpuTurn(): Promise<void> {
     if (gameMode !== 'singleplayer' || gameState.gameOver || !$player2.turn) return;
 
-    let observation = buildBotObservation();
-    if (!gameState.gobbledegookDeclared && gameState.turnCount >= 15) {
-      const declaration = decideBotDeclaration(observation, scoreBotHand, scoreHumanHand, Math.random, 240, scoreMatchAgainstHumanHand);
-      if (botStrategyDebugEnabled) {
-        console.groupCollapsed(`[Gobbledegook A.I.] Declaration check for ${$player2.title}`);
+    let observation = buildCpuObservation();
+    const declarationDisabledForTesting = isCpuDeclarationDisabledByName($player2.title);
+    if (!gameState.gobbledegookDeclared && gameState.turnCount >= 15 && !declarationDisabledForTesting) {
+      const declaration = decideCpuDeclaration(observation, scoreCpuHand, scoreHumanHand, Math.random, 240, scoreMatchAgainstHumanHand);
+      if (cpuStrategyDebugEnabled) {
+        console.groupCollapsed(`[Gobbledegook CPU] Declaration check for ${$player2.title}`);
         console.info(declaration.explanation);
-        console.info('Opponent knowledge:', {
-          currentlyKnownHand: [...observation.knownOpponentCards],
-          rememberedHand: [...observation.rememberedOpponentCards],
-          memorySource: observation.opponentMemorySource || 'none',
-          memoryAge: observation.opponentMemoryAge
-        });
+        console.info('Opponent knowledge:', getCpuOpponentKnowledgeForLog(observation));
         console.groupEnd();
       }
       if (declaration.declare) {
         await clickOnGobbledegook($player2);
         return;
       }
+    } else if (!gameState.gobbledegookDeclared && gameState.turnCount >= 15 && declarationDisabledForTesting && cpuStrategyDebugEnabled) {
+      console.info(`[Gobbledegook CPU] ${$player2.title} will not declare while its name is "test".`);
     }
 
-    // ai generated: This is the bot's ordinary once-per-turn draw; Echo follow-up draws are handled below.
+    // ai generated: This is the CPU's ordinary once-per-turn draw; Echo follow-up draws are handled below.
     await drawCard($player2);
     if (gameState.gameOver || !$player2.turn) return;
     await wait(1100 + Math.floor(Math.random() * 1300));
 
     // ai generated: Three Echo cards can legitimately repeat this loop; 12 actions is only a fail-safe against a broken card state trapping the browser forever.
-    const maxBotTurnActions = 12;
-    let botTurnActionCount = 0;
-    while ($player2.turn && !gameState.gameOver && botTurnActionCount < maxBotTurnActions) {
-      botTurnActionCount++;
-      const echoAction = getBotEchoAction($player2.hand, $player2.playingTwice);
+    const maxCpuTurnActions = 12;
+    let cpuTurnActionCount = 0;
+    while ($player2.turn && !gameState.gameOver && cpuTurnActionCount < maxCpuTurnActions) {
+      cpuTurnActionCount++;
+      const echoAction = getCpuEchoAction($player2.hand, $player2.playingTwice);
 
       if (echoAction === 'draw') {
-        if (botStrategyDebugEnabled) {
-          console.groupCollapsed(`[Gobbledegook A.I.] ${$player2.title} takes Echo's immediate extra draw`);
-          console.info('Echo does not replace the normal turn draw, so the bot draws up to seven before discarding.');
+        if (cpuStrategyDebugEnabled) {
+          console.groupCollapsed(`[Gobbledegook CPU] ${$player2.title} takes Echo's immediate extra draw`);
+          console.info('Echo does not replace the normal turn draw, so the CPU draws up to seven before discarding.');
           console.info('Visible status:', {
             currentHand: [...$player2.hand],
             discards: [...$player2.discards],
-            racePoints: getBotRacePointsForLog()
+            racePoints: getCpuRacePointsForLog(),
+            opponentKnowledge: getCpuOpponentKnowledgeForLog(observation)
           });
           console.groupEnd();
         }
@@ -1296,15 +1332,16 @@
       }
 
       if ($player2.hand.length <= 5) return;
-      observation = buildBotObservation();
+      observation = buildCpuObservation();
       if (echoAction === 'discard-echo') {
-        if (botStrategyDebugEnabled) {
-          console.groupCollapsed(`[Gobbledegook A.I.] ${$player2.title} discards Echo and draws back to seven`);
-          console.info('Discarding Echo first preserves its replacement draw before the bot makes its final two discards.');
+        if (cpuStrategyDebugEnabled) {
+          console.groupCollapsed(`[Gobbledegook CPU] ${$player2.title} discards Echo and draws back to seven`);
+          console.info('Discarding Echo first preserves its replacement draw before the CPU makes its final two discards.');
           console.info('Visible status:', {
             currentHand: [...$player2.hand],
             discards: [...$player2.discards],
-            racePoints: getBotRacePointsForLog()
+            racePoints: getCpuRacePointsForLog(),
+            opponentKnowledge: getCpuOpponentKnowledgeForLog(observation)
           });
           console.groupEnd();
         }
@@ -1312,18 +1349,20 @@
         continue;
       }
 
-      const decision = chooseBotDiscard(observation, scoreBotHand);
-      botMemory = rememberBotDecision(botMemory, decision);
-      if (botStrategyDebugEnabled) {
-        console.groupCollapsed(`[Gobbledegook A.I.] ${$player2.title} follows the ${decision.path.race} path`);
+      const decision = chooseCpuDiscard(observation, scoreCpuHand, Math.random, scoreCpuSwappedHand);
+      cpuMemory = rememberCpuDecision(cpuMemory, decision);
+      if (cpuStrategyDebugEnabled) {
+        console.groupCollapsed(`[Gobbledegook CPU] ${$player2.title} follows the ${decision.path.race} path`);
         console.info(decision.explanation);
         console.info('Visible status:', {
           currentHand: [...$player2.hand],
           discards: [...$player2.discards],
-          racePoints: getBotRacePointsForLog(),
+          racePoints: getCpuRacePointsForLog(),
           boostsBlocked: observation.boostsBlocked,
           trapsBlocked: observation.trapsBlocked,
           neutralizePossiblyAvailable: observation.neutralizePossiblyAvailable,
+          forcedRacePath: observation.forcedRacePath || 'balanced strategy',
+          opponentKnowledge: getCpuOpponentKnowledgeForLog(observation),
           opposingAiRisk: decision.path.race === 'bots' ? decision.path.risk : 'not the active path'
         });
         console.groupEnd();
@@ -1349,6 +1388,8 @@
 
   // Modifies card points depending on cards in player hand
   function displayCardPoints(player: Player, cardTitle: string): number {
+    if (cardTitle === 'bear' && player.hand.filter(card => ['bear', 'leon'].includes(card)).length > 1) return 0;
+
     let highestPoints = cardTitle === 'virus' ? -2 : 0; // only virus starts below 0.
     const triggerTwinEffect = player.hand.some(c => ['nelladan', 'leon'].includes(c)) && player.hand.includes('nadallen');
     if ((player.hand.some(card => ['dreamDestroyer', 'nightTerror'].includes(card)) || ['dog', 'wolf', 'lion', 'bear'].includes(cardTitle)) && getRaces(cardTitle).includes('beast')) highestPoints = Math.max(highestPoints, displayBeastPoints(player, cardTitle));
@@ -1363,7 +1404,7 @@
     const xenoCards = ['voidRunner', 'warpstalker', 'nebulite'];
     if (player.hand.some(c => xenoCards.includes(c)) && getRaces(cardTitle).includes('xeno')) highestPoints = Math.max(highestPoints, displayXenoPoints(player, cardTitle));
 
-    return Math.max(highestPoints, $cardDetails[cardTitle].points);
+    return Math.max(highestPoints, getRuntimeCardDetails(player)[cardTitle].points);
   }
 
   // --------------------- HUMAN CALCULATIONS ----------------------- \\
@@ -1430,6 +1471,7 @@
   function calculateEmperor(player: Player) {
     player.points.humans *= 2;
     const otherRaceCards = player.hand.filter(card => !getRaces(card).includes('human') && !getRaces(card).includes('xeno'));
+    // ai generated: Emperor adds printed base points; displayCardPoints can show bonuses from a different race and is only for the card label.
     otherRaceCards.forEach(card => player.points.humans += $cardDetails[card].points);
   }
 
@@ -1868,18 +1910,18 @@
     player.points.beasts -= (numOfRottenCrumbs * 3);
   }
 
-  // Sets all beast bast points to 12
+  // ai generated: Night Terror sets every Beast's base contribution to 15 before other Beast bonuses.
   function calculateNightTerror(player: Player) {
     const numOfBeastCards = player.hand.filter(card => getRaces(card).includes('beast')).length;
     player.points.beasts = 0;
-    player.points.beasts += (numOfBeastCards * 12);
+    player.points.beasts += (numOfBeastCards * 15);
   }
   
-  // Sets all beast bast points to 14
+  // ai generated: Dream Destroyer overrides Night Terror and sets every Beast's base contribution to 18.
   function calculateDreamDestroyer(player: Player) {
     const numOfBeastCards = player.hand.filter(card => getRaces(card).includes('beast')).length;
     player.points.beasts = 0;
-    player.points.beasts += (numOfBeastCards * 14);
+    player.points.beasts += (numOfBeastCards * 18);
   }
 
   // +3 points for every lion on the field, including himself (base lion points already calculated in calculateBasePoints)
@@ -1901,10 +1943,10 @@
     const numOfBears = player.hand.filter(card => card === 'bear').length;
 
     if (player.hand.includes('dreamDestroyer')) {
-      player.points.beasts -= numOfBears * 14; // Since she buffs to 14
+      player.points.beasts -= numOfBears * 18; // ai generated: Remove the new Dream Destroyer value for each zero-point Bear.
       
     } else if (player.hand.includes('nightTerror')) {
-      player.points.beasts -= numOfBears * 12; // Since she buffs to 12
+      player.points.beasts -= numOfBears * 15; // ai generated: Remove the new Night Terror value for each zero-point Bear.
 
     } else {
       player.points.beasts -= numOfBears * $cardDetails['bear'].points;
@@ -1924,8 +1966,8 @@
 
     if (['lion', 'leon'].includes(cardTitle)) {
       let leaderBonus = 0;
-      if (hasNightTerror) leaderBonus = 12;
-      if (hasDreamDestroyer) leaderBonus = 14; // overwrites night terror
+      if (hasNightTerror) leaderBonus = 15;
+      if (hasDreamDestroyer) leaderBonus = 18; // ai generated: Dream Destroyer overrides Night Terror.
 
       lionPridePoints = $cardDetails[cardTitle].points + (numOfLions * 3) + ((hasDreamDestroyer || hasNightTerror) ? (leaderBonus - $cardDetails[cardTitle].points) : 0);
       if (cardTitle === 'lion') return lionPridePoints;
@@ -1933,8 +1975,8 @@
     
     if (['wolf', 'leon'].includes(cardTitle)) {
       let leaderBonus = 0;
-      if (hasNightTerror) leaderBonus = 12;
-      if (hasDreamDestroyer) leaderBonus = 14; // overwrites night terror
+      if (hasNightTerror) leaderBonus = 15;
+      if (hasDreamDestroyer) leaderBonus = 18; // ai generated: Dream Destroyer overrides Night Terror.
       
       wolfPackPoints = $cardDetails[cardTitle].points + (numOfWolves * 2) + (numOfWerewolves * 2) + ((hasDreamDestroyer || hasNightTerror) ? (leaderBonus - $cardDetails[cardTitle].points) : 0);
       if (cardTitle === 'wolf') return wolfPackPoints;
@@ -1947,11 +1989,11 @@
     if (cardTitle === 'bear' && numOfBears > 1) return 0;
 
     // dog base points already calculated
-    if (cardTitle === 'dog' && hasHumans && hasDreamDestroyer) return 24;
-    if (cardTitle === 'dog' && hasHumans && hasNightTerror) return 22;
+    if (cardTitle === 'dog' && hasHumans && hasDreamDestroyer) return 28;
+    if (cardTitle === 'dog' && hasHumans && hasNightTerror) return 25;
     if (cardTitle === 'dog' && hasHumans) return 14;
-    if (hasDreamDestroyer) return 14;
-    if (hasNightTerror) return 12;
+    if (hasDreamDestroyer) return 18;
+    if (hasNightTerror) return 15;
 
     return $cardDetails[cardTitle].points;
   }
@@ -1986,11 +2028,12 @@
     if (forEndGameCalculation && otherPlayer.hand.includes('ai')) {
       player.points.bots = 0;
     } else {
-      // Adds +2 to all bot cards (player + otherPlayer) then steals all bot points.
+      // Adds +4 to all bot cards (player + otherPlayer) then steals all bot points.
       if (player.hand.includes('ai')) calculateAi(player, otherPlayer, forEndGameCalculation);
   
-      // Must be after A.I. since A.I. resets bot points. Quarantine all viruses adding +8 to their value and +1 bot point to Protectron per quarantined virus.
-      if (player.hand.includes('protectron')) calculateProtectron(player, otherPlayer, forEndGameCalculation);
+      // ai generated: Run after A.I. resets Bot points; real Viruses gain +8, while Viruses and Leon each trigger Protectron's +1.
+      const shouldCalculateProtectrons = player.hand.includes('protectron') || (forEndGameCalculation && player.hand.includes('ai') && otherPlayer.hand.includes('protectron'));
+      if (shouldCalculateProtectrons) calculateProtectron(player, otherPlayer, forEndGameCalculation);
     }
     
     // Currently no neutrals that affect bot points
@@ -2042,57 +2085,49 @@
 
   // Handles Protectrons who negate viruses
   function calculateProtectron(player: Player, otherPlayer: Player, calculateHackingAbility = false) {
-    let numOfProtectrons = player.hand.filter(card => card === 'protectron').length;
-    let numOfViruses = player.hand.filter(card => card === 'virus').length;
-    
-    player.hand.forEach(card => {
-      if (card === 'virus') player.points.bots += (numOfProtectrons * 8);
-
-      // Buffed for each virus, base points already calculated.
-      if (card === 'protectron') player.points.bots += (numOfProtectrons * numOfViruses);
-    });
+    const numOfProtectrons = player.hand.filter(card => card === 'protectron').length;
+    const numOfViruses = player.hand.filter(card => card === 'virus').length;
+    // ai generated: Leon triggers each Protectron's +1 like a Virus, but only real Viruses receive the +8 cleanup.
+    // TODO (ai generated): Audit Leon's trigger-only interactions across every race; he should not inherit card-specific self-bonuses by default.
+    const numOfVirusTriggers = player.hand.filter(card => card === 'virus' || card === 'leon').length;
+    if (numOfProtectrons > 0) player.points.bots += numOfViruses * 8;
+    player.points.bots += numOfProtectrons * numOfVirusTriggers;
 
     // If player also has A.I. steal otherPlayer bots too
     if (calculateHackingAbility && player.hand.includes('ai')) {
-      let otherPlayerNumOfProtectrons = otherPlayer.hand.filter(card => card === 'protectron').length;
-      let otherPlayerNumOfViruses = otherPlayer.hand.filter(card => card === 'virus').length;
-      
-      otherPlayer.hand.forEach(card => {
-        if (card === 'virus') player.points.bots += (otherPlayerNumOfProtectrons * 8);
-        
-        // Buffed for each virus, base points already calculated.
-        if (card === 'protectron') player.points.bots += (otherPlayerNumOfProtectrons * otherPlayerNumOfViruses);
-      });
+      const otherPlayerNumOfProtectrons = otherPlayer.hand.filter(card => card === 'protectron').length;
+      const otherPlayerNumOfViruses = otherPlayer.hand.filter(card => card === 'virus').length;
+      const otherPlayerNumOfVirusTriggers = otherPlayer.hand.filter(card => card === 'virus' || card === 'leon').length;
+      if (otherPlayerNumOfProtectrons > 0) player.points.bots += otherPlayerNumOfViruses * 8;
+      player.points.bots += otherPlayerNumOfProtectrons * otherPlayerNumOfVirusTriggers;
     }
   }
 
-  // Adds ALL bot card points on the field to players score, and bots have +2
+  // Adds ALL bot card points on the field to players score, and bots have +4
   function calculateAi(player: Player, otherPlayer: Player, calculateOpponentCards = false) {  
     // Need to reset since base bot points already calculated
     player.points.bots = 0;
     player.hand.forEach(card => {
-      if (getRaces(card).includes('bot')) player.points.bots += ($cardDetails[card].points + 2);
+      if (getRaces(card).includes('bot')) player.points.bots += ($cardDetails[card].points + aiBotCardBonus);
     });
 
     if (calculateOpponentCards) {
       // Add all bot points from otherPlayer hand as well
       otherPlayer.points.bots = 0;
       otherPlayer.hand.forEach(card => {
-        if (getRaces(card).includes('bot')) player.points.bots += ($cardDetails[card].points + 2);
+        if (getRaces(card).includes('bot')) player.points.bots += ($cardDetails[card].points + aiBotCardBonus);
       });
     }
   }
 
   function displayBotPoints(player: Player, cardTitle: string): number {
-    let numOfProtectrons = player.hand.filter(card => card === 'protectron').length;
-    let numOfViruses = player.hand.filter(card => card === 'virus').length;
+    const numOfProtectrons = player.hand.filter(card => card === 'protectron').length;
+    const numOfVirusTriggers = player.hand.filter(card => card === 'virus' || card === 'leon').length;
+    const aiBonus = player.hand.includes('ai') ? aiBotCardBonus : 0;
 
-    if (player.hand.includes('ai') && player.hand.includes('protectron') && cardTitle === 'virus') return (numOfProtectrons * 8);
-    if (player.hand.includes('protectron') && cardTitle === 'virus') return (numOfProtectrons * 8) - 2; // $cardDetails[card].points -s a negative num here
-    if (player.hand.includes('ai') && cardTitle === 'virus') return $cardDetails[cardTitle].points + 2;
-    if (player.hand.includes('ai') && cardTitle === 'protectron') return $cardDetails[cardTitle].points + numOfViruses + 2;
-    if (cardTitle === 'protectron') return $cardDetails[cardTitle].points + numOfViruses;
-    if (player.hand.includes('ai')) return $cardDetails[cardTitle].points + 2;
+    if (cardTitle === 'virus') return $cardDetails[cardTitle].points + aiBonus + (numOfProtectrons > 0 ? 8 : 0);
+    if (cardTitle === 'protectron') return $cardDetails[cardTitle].points + aiBonus + numOfVirusTriggers;
+    if (player.hand.includes('ai')) return $cardDetails[cardTitle].points + aiBotCardBonus;
 
     return $cardDetails[cardTitle].points;
   }
@@ -2105,7 +2140,7 @@
     const xenoCards = player.hand.filter(card => getRaces(card).includes('xeno'));
     xenoCards.forEach(card => calculatingForSelf ? player.points.xenos += $cardDetails[card].points : player.points.xenos += remoteCardDetails[card].points);
 
-    // Nebulites buff xenos by 4 points
+    // ai generated: A Nebulite adds 5 to each other Xeno and multiple Nebulites do not stack this bonus.
     if (player.hand.includes('nebulite')) calculateSpecialXenoCard(player, 'nebulite');
 
     calculateXenoBoosts(player);
@@ -2166,18 +2201,9 @@
   }
 
   function displayXenoPoints(player: Player, cardTitle: string): number {
-    const specialXenoCards = ['voidRunner', 'warpstalker'];
+    const runtimeCardDetails = getRuntimeCardDetails(player);
     const numOfNebulites = player.hand.filter(card => card === 'nebulite').length;
-
-    if (player.id === $player1.id && (numOfNebulites > 0 && cardTitle !== 'nebulite')) {
-      return (specialXenoCards.includes(cardTitle) && gameState.playingAs === 'p2') ? remoteCardDetails[cardTitle].points + 5 : $cardDetails[cardTitle].points + 5;
-    } else if (player.id === $player1.id) {
-      return (specialXenoCards.includes(cardTitle) && gameState.playingAs === 'p2') ? remoteCardDetails[cardTitle].points : $cardDetails[cardTitle].points;
-    } else if (player.id === $player2.id && (numOfNebulites > 0 && cardTitle !== 'nebulite')) {
-      return (specialXenoCards.includes(cardTitle) && gameState.playingAs === 'p1') ? remoteCardDetails[cardTitle].points + 5 : $cardDetails[cardTitle].points + 5;
-    } else if (player.id === $player2.id) {
-      return (specialXenoCards.includes(cardTitle) && gameState.playingAs === 'p1') ? remoteCardDetails[cardTitle].points : $cardDetails[cardTitle].points;
-    }
+    return runtimeCardDetails[cardTitle].points + (numOfNebulites > 0 && cardTitle !== 'nebulite' ? 5 : 0);
   }
 
   // Calculates special xeno card points
@@ -2212,7 +2238,7 @@
     while (gameState.showSpinner) await wait(500);
   }
 
-  // ai generated: Singleplayer stores the human's changing xeno values locally and the bot's in the existing remote-value copy.
+  // ai generated: Singleplayer stores the human's changing xeno values locally and the CPU's in the existing remote-value copy.
   function getRuntimeCardDetails(player: Player) {
     const playerIsLocal = (gameState.playingAs === 'p1' && player.id === $player1.id)
       || (gameState.playingAs === 'p2' && player.id === $player2.id);
@@ -2371,7 +2397,9 @@
       player.id === $player1.id ? player1.set({...$player1, hasVision: true}) : player2.set({...$player2, hasVision: true});
       updateClientsToShareState();
       while (gameState.showSpinner) await wait(500);
-      showEvent('vision');
+      // ai generated: A CPU turn runs in the human's browser, so only show this private event when the on-screen player drew Vision.
+      const localPlayer = gameState.playingAs === 'p1' ? $player1 : $player2;
+      if (player.id === localPlayer.id) void showEvent('vision');
     }
 
     // Add turn to turnCount if card is Ticktock
@@ -2497,14 +2525,36 @@
     return $cardDetails[cardTitle].rarity;
   }
 
+  // ai generated: Bear and Drainite use their printed values as the neutral color baseline, while other cards retain the existing buff comparison.
+  function getCardPointColorBaseline(cardTitle: string): number {
+    if (cardTitle === 'drainite') return controlCopyOfCardDetails['drainite'].points;
+    return controlCopyOfCardDetails[cardTitle].points;
+  }
+
+  // ai generated: A changed Bear or Drainite shows its printed value crossed out so the effective green/red value is easy to compare.
+  function getCardPointsForDisplay(player: Player, cardTitle: string): number {
+    const effectivePoints = displayCardPoints(player, cardTitle);
+    if (cardTitle === 'drainite' && effectivePoints === getCardPointColorBaseline(cardTitle)) return effectivePoints;
+    if (['bear', 'drainite'].includes(cardTitle) && effectivePoints !== getCardPointColorBaseline(cardTitle)) {
+      return getCardPointColorBaseline(cardTitle);
+    }
+    return getRuntimeCardDetails(player)[cardTitle].points;
+  }
+
   // Conditionally displays card points as green if they are buffed.
   function determineIfPointColorGreen(player: Player, cardTitle: string): boolean {
-    const specialXenoCards = ['voidRunner', 'warpstalker'];
     const pointValue = displayCardPoints(player, cardTitle);
-    const isPeakingAtOtherHand = ((gameState.playingAs === 'p1' && player.id === $player2.id) || gameState.playingAs === 'p2' && player.id === $player1.id);
+    const baseline = cardTitle === 'drainite'
+      ? getCardPointColorBaseline(cardTitle)
+      : getRuntimeCardDetails(player)[cardTitle].points;
 
-    if (isPeakingAtOtherHand && specialXenoCards.includes(cardTitle)) return (pointValue > remoteCardDetails[cardTitle].points);
-    return (pointValue > $cardDetails[cardTitle].points);
+    return pointValue > baseline;
+  }
+
+  // ai generated: Only intentionally degrading cards opt into the red point display; normal negative or random values keep their usual color.
+  function determineIfPointColorRed(player: Player, cardTitle: string): boolean {
+    if (!['bear', 'drainite'].includes(cardTitle)) return false;
+    return displayCardPoints(player, cardTitle) < getCardPointColorBaseline(cardTitle);
   }
 
   function updateUsernameForOtherClient(playerSide: 'p1' | 'p2' = gameState.playingAs): void {
@@ -2588,9 +2638,8 @@
   }
 
   // Determines if card should be visible or not
-  function isCardVisible(playerSide: 'p1' | 'p2', card: string) {
+  function isCardVisible(playerSide: 'p1' | 'p2', card: string, viewerHasVision: boolean, playersRevealed: boolean) {
     const isLookingAtOwnSide = (gameState.playingAs === 'p1' && playerSide === 'p1') || (gameState.playingAs === 'p2' && playerSide === 'p2');
-    const hasVision = (playerSide === 'p1' && $player2.hasVision) || (playerSide === 'p2' && $player1.hasVision);
     const isExposed = (gameState.playingAs === 'p1' && $player2.isExposed && playerSide === 'p2') || (gameState.playingAs === 'p2' && $player1.isExposed && playerSide === 'p1');
     const visionBlockedByDarkSpirit = (gameState.playingAs === 'p1' && $player2.hand.includes('darkSpirit') && playerSide === 'p2') || (gameState.playingAs === 'p2' && $player1.hand.includes('darkSpirit') && playerSide === 'p1');
     const visionBlockedByChastityOrRhino = (gameState.playingAs === 'p1' && ($player2.hasChastity || $player2.hand.some(card => ['chastity', 'rhino'].includes(card))) || (gameState.playingAs === 'p2' && ($player1.hasChastity || $player1.hand.some(card => ['chastity', 'rhino'].includes(card)))));
@@ -2598,8 +2647,8 @@
     
     if (isLookingAtOwnSide) return true;
     if (isExposed && !visionBlockedByDarkSpirit && !visionBlockedByChastityOrRhino) return true;
-    if (hasVision && !visionBlockedByDarkSpirit) return true;
-    if ((cardIsLightSpirit || gameState.playersRevealed) && !visionBlockedByDarkSpirit) return true;
+    if (viewerHasVision && !visionBlockedByDarkSpirit) return true;
+    if ((cardIsLightSpirit || playersRevealed) && !visionBlockedByDarkSpirit) return true;
 
     // player has vision?
     return false;
@@ -2762,7 +2811,7 @@
       {#if gameState.connectedNameChangeSide === 'p2'}
         <input class="connected-name-input" bind:value={gameState.newPlayerTitle} on:blur={() => updateUsernameForOtherClient('p2')} type="text" maxlength="20"/>
       {:else}
-        <p class:name-editable={canEditPlayerName('p2')} on:click={() => toggleConnectedNameChange('p2')}>{p2Connected ? '🟢 ' + $player2.title : gameMode === 'singleplayer' ? '🟢 Local bot' : '🔴 Player 2'}</p>
+        <p class:name-editable={canEditPlayerName('p2')} on:click={() => toggleConnectedNameChange('p2')}>{p2Connected ? '🟢 ' + $player2.title : gameMode === 'singleplayer' ? '🟢 Local CPU' : '🔴 Player 2'}</p>
       {/if}
     </div>
   {/if}
@@ -2775,7 +2824,14 @@
       <path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"/>
     </svg>
     {#if gameState.discardsVisible}
-      <Discards draws={gameState.playingAs === 'p1' ? $player1.cardsDrawn : $player2.cardsDrawn} discards={gameState.playingAs === 'p1' ? $player1.discards : $player2.discards}/>
+      <Discards
+        draws={gameState.playingAs === 'p1' ? $player1.cardsDrawn : $player2.cardsDrawn}
+        discards={gameState.playingAs === 'p1' ? $player1.discards : $player2.discards}
+        player={gameState.playingAs === 'p1' ? $player1 : $player2}
+        boostsBlocked={areBoostsBlocked(gameState.playingAs === 'p1' ? $player1 : $player2)}
+        trapsBlocked={areTrapsBlocked(gameState.playingAs === 'p1' ? $player1 : $player2)}
+        otherNeutralEffects={(gameState.playingAs === 'p1' ? $player2 : $player1).neutrals.filter(neutral => ['neutralize', 'switcharoo', 'ticktock', 'tocktick', 'xenoBloom', 'xenoBlossom'].includes(neutral))}
+      />
     {/if}
 
     <!-- Gaze, remaining cards library -->
@@ -2976,9 +3032,10 @@
                     description={$cardDetails[card].description}
                     race={$cardDetails[card].race}
                     rarity={$cardDetails[card].rarity}
-                    points={endGameXenoPointHandler(card, 'p1')}
+                    points={getCardPointsForDisplay($player1, card)}
                     modifiedPoints={displayCardPoints($player1, card)}
                     buffed={determineIfPointColorGreen($player1, card)}
+                    reduced={determineIfPointColorRed($player1, card)}
                   />
                 </div>
               {/each}
@@ -3060,9 +3117,10 @@
                   description={$cardDetails[card].description}
                   race={$cardDetails[card].race}
                   rarity={$cardDetails[card].rarity}
-                  points={endGameXenoPointHandler(card, 'p2')}
+                  points={getCardPointsForDisplay($player2, card)}
                   modifiedPoints={displayCardPoints($player2, card)}
                   buffed={determineIfPointColorGreen($player2, card)}
+                  reduced={determineIfPointColorRed($player2, card)}
                   />
                 </div>
               {/each}
@@ -3151,7 +3209,7 @@
             <GGCard
               on:cardClick={async () => await clickOnCard($player1, card)}
               on:contextmenu={() => openLibraryToCard($cardDetails[card].race)}        
-              faceUp={isCardVisible('p1', card)}
+              faceUp={isCardVisible('p1', card, $player2.hasVision, gameState.playersRevealed)}
               displayTitle={$cardDetails[card].displayTitle}
               title={$cardDetails[card].title}
               img={$cardDetails[card].image}
@@ -3160,9 +3218,10 @@
               description={$cardDetails[card].description}
               race={$cardDetails[card].race}
               rarity={determineRarity($player1, card)}
-              points={endGameXenoPointHandler(card, 'p1')}
+              points={getCardPointsForDisplay($player1, card)}
               modifiedPoints={displayCardPoints($player1, card)}
               buffed={determineIfPointColorGreen($player1, card)}
+              reduced={determineIfPointColorRed($player1, card)}
             />
           {/each}
         </div>
@@ -3213,7 +3272,7 @@
             <GGCard
               on:cardClick={async () => await clickOnCard($player2, card)}
               on:contextmenu={() => openLibraryToCard($cardDetails[card].race)}
-              faceUp={isCardVisible('p2', card)}
+              faceUp={isCardVisible('p2', card, $player1.hasVision, gameState.playersRevealed)}
               displayTitle={$cardDetails[card].displayTitle}
               title={$cardDetails[card].title}
               img={$cardDetails[card].image}
@@ -3222,9 +3281,10 @@
               description={$cardDetails[card].description}
               race={$cardDetails[card].race}
               rarity={determineRarity($player2, card)}
-              points={endGameXenoPointHandler(card, 'p2')}
+              points={getCardPointsForDisplay($player2, card)}
               modifiedPoints={displayCardPoints($player2, card)}
               buffed={determineIfPointColorGreen($player2, card)}
+              reduced={determineIfPointColorRed($player2, card)}
             />
           {/each}
         </div>

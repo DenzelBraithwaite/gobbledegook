@@ -1,7 +1,7 @@
 {
   "name": "gobbledegook",
   "private": true,
-  "version": "3.21.1",
+  "version": "3.21.2",
   "type": "module",
   "packageManager": "pnpm@11.21.0",
   "scripts": {
@@ -10,7 +10,7 @@
     "build": "vite build && shx cp -r server/serve/* public/",
     "preview": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.json",
-    "test:bot": "node --test --experimental-strip-types src/lib/game/botStrategy.test.mjs"
+    "test:cpu": "node --test --experimental-strip-types src/lib/game/cpuStrategy.test.mjs"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^2.5.3",
