@@ -27,6 +27,12 @@
   const aiBotCardBonus = 4;
   let socket = io('http://192.168.2.14:6912', { autoConnect: false });
   let gameMode: 'singleplayer' | 'multiplayer' = 'singleplayer';
+  // ai generated: These are server-owned multiplayer records; singleplayer never loads or saves them.
+  type MultiplayerRecord = { name: string; wins: number; losses: number; draws: number; elo: number };
+  let multiplayerRecords: { p1: MultiplayerRecord; p2: MultiplayerRecord } = {
+    p1: { name: 'Player 1', wins: 0, losses: 0, draws: 0, elo: 1000 },
+    p2: { name: 'Player 2', wins: 0, losses: 0, draws: 0, elo: 1000 }
+  };
   // ai generated: Toggle this value while testing to show or hide detailed CPU path explanations in the browser console.
   let cpuStrategyDebugEnabled = true;
   const cpuNames = ['Gruntilda', 'KazBot', 'TinkBot', 'CPU', 'AI', 'Guest#445', 'LawjokerBot', 'DefinitelyNotABot', 'Player 2', 'Challenger', 'Mr Quack', 'Mrs Quack', 'A Duck', 'Bot', 'Benny'];
@@ -197,7 +203,18 @@
     });
 
     // Handles game end for all users
-    socket.on('game-ended', data => endGame());
+    socket.on('game-ended', data => {
+      endGame();
+      // ai generated: Only the server-selected reporter submits scores, so both clients cannot count one game twice.
+      if (data.reporterId === socket.id) socket.emit('record-game-result', { p1: $player1.highestPoints, p2: $player2.highestPoints });
+    });
+
+    socket.on('player-records', records => { multiplayerRecords = records; });
+    socket.on('player-names', names => {
+      player1.update(player => ({ ...player, title: names.p1 }));
+      player2.update(player => ({ ...player, title: names.p2 }));
+    });
+    socket.on('record-save-error', () => console.error('Multiplayer record could not be saved on the server.'));
 
     // Let's user change their username at anytime
     socket.on('update-username', data => updateUsernameForThisClient(data))
@@ -300,6 +317,11 @@
       return;
     }
 
+    // ai generated: Wait for fresh records from the multiplayer server; no solo result carries over.
+    multiplayerRecords = {
+      p1: { name: 'Player 1', wins: 0, losses: 0, draws: 0, elo: 1000 },
+      p2: { name: 'Player 2', wins: 0, losses: 0, draws: 0, elo: 1000 }
+    };
     stopHeartbeat();
     p1Connected = false;
     p2Connected = false;
@@ -946,76 +968,17 @@
 
   // Display game results
   function determineWinner() {
+    // ai generated: This only describes the round; multiplayer lifetime totals come from the server, and solo retains none.
     if($player1.highestPoints > $player2.highestPoints) {
-      player1.update($player1 => {
-        $player1.wins += 1;
-        return $player1;
-      });
-      player1Reset.update($player1Reset => {
-        $player1Reset.wins += 1;
-        return $player1Reset;
-      });
-      player2.update($player2 => {
-        $player2.losses += 1;
-        return $player2;
-      });
-      player2Reset.update($player2Reset => {
-        $player2Reset.losses += 1;
-        return $player2Reset;
-      });
-
       gameState.winMessage = `${$player1.title} is the winner with ${$player1.highestPoints} points!🎊🥳🍾`;
       gameState.loseMessage = `${$player2.title} loses with ${$player2.highestPoints} points...${$player2.highestPoints <= 0 ? '💩💩💩' : '💩'}`;
     } else if($player2.highestPoints > $player1.highestPoints) {
-      player1.update($player1 => {
-        $player1.losses += 1;
-        return $player1;
-      });
-      player1Reset.update($player1Reset => {
-        $player1Reset.losses += 1;
-        return $player1Reset;
-      });
-      player2.update($player2 => {
-        $player2.wins += 1;
-        return $player2;
-      });
-      player2Reset.update($player2Reset => {
-        $player2Reset.wins += 1;
-        return $player2Reset;
-      });
-
       gameState.winMessage = `${$player2.title} is the winner with ${$player2.highestPoints} points!🎊🥳🍾`;
       gameState.loseMessage = `${$player1.title} loses with ${$player1.highestPoints} points...${$player1.highestPoints <= 0 ? '💩💩💩' : '💩'}`;
     } else if ($player1.highestPoints === 500_000 && $player2.highestPoints === 500_000) {
-      player1.update($player1 => {
-        $player1.draws += 1;
-        return $player1;
-      });
-      player1Reset.update($player1Reset => {
-        $player1Reset.draws += 1;
-        return $player1Reset;
-      });
-      player2.update($player2 => {
-        $player2.draws += 1;
-        return $player2;
-      });
-      player2Reset.update($player2Reset => {
-        $player2Reset.draws += 1;
-        return $player2Reset;
-      });
-
       gameState.winMessage = `It seems neither the goblins nor the elves want to go to war with each other while their leaders are on the field...`;
       gameState.loseMessage = " it's a draw!😓😓😓"
     } else {
-      player1.update($player1 => {
-        $player1.draws += 1;
-        return $player1;
-      });
-      player2.update($player2 => {
-        $player2.draws += 1;
-        return $player2;
-      });
-
       gameState.winMessage = `${$player1.title} had ${$player1.highestPoints} points and ${$player2.title} had ${$player2.highestPoints} points...`;
       gameState.loseMessage = " it's a draw!😓"
     }
@@ -1175,7 +1138,7 @@
     refreshCpuOpponentMemory(insightSource);
     const canSeeHumanHand = insightSource !== '';
     const knownOpponentCards = canSeeHumanHand ? [...$player1.hand] : [];
-    const publicOpponentCards = canSeeHumanHand || $player1.hand.includes('darkSpirit')
+    const publicOpponentCards: string[] = canSeeHumanHand || $player1.hand.includes('darkSpirit')
       ? []
       : $player1.hand.filter(card => card === 'lightSpirit');
     const cardsStillInDeck = Object.values(fullDeck).flat() as string[];
@@ -1206,10 +1169,12 @@
   }
 
   // ai generated: Cloning protects live hands, point totals, counters, and status effects while the CPU asks many what-if questions.
-  function scoreCpuHand(hand: string[]) {
+  function scoreCpuHand(hand: string[], prospectiveDiscard = '') {
     const cpuCopy = structuredClone($player2);
     const humanCopy = structuredClone($player1);
     cpuCopy.hand = [...hand];
+    // ai generated: Only the cloned scorer sees a proposed discard; the live discard list changes after the real action.
+    if (prospectiveDiscard) cpuCopy.discards = [...cpuCopy.discards, prospectiveDiscard];
     humanCopy.hand = getCpuOpponentInsightSource() ? [...$player1.hand] : [];
     calculatePlayerPointsAgainst(cpuCopy, humanCopy, true);
     return { highestPoints: cpuCopy.highestPoints, points: { ...cpuCopy.points } };
@@ -1349,11 +1314,14 @@
         continue;
       }
 
-      const decision = chooseCpuDiscard(observation, scoreCpuHand, Math.random, scoreCpuSwappedHand);
+      const decision = chooseCpuDiscard(observation, scoreCpuHand, Math.random, scoreCpuSwappedHand, scoreCpuHand);
       cpuMemory = rememberCpuDecision(cpuMemory, decision);
       if (cpuStrategyDebugEnabled) {
         console.groupCollapsed(`[Gobbledegook CPU] ${$player2.title} follows the ${decision.path.race} path`);
         console.info(decision.explanation);
+        // ai generated: Show both live priorities so a secondary route is visible while testing discard decisions.
+        console.info('Primary path:', { race: decision.path.race, utility: decision.path.utility, reasoning: decision.path.explanation });
+        console.info('Backup path:', { race: decision.backupPath.race, utility: decision.backupPath.utility, reasoning: decision.backupPath.explanation });
         console.info('Visible status:', {
           currentHand: [...$player2.hand],
           discards: [...$player2.discards],
@@ -1446,7 +1414,7 @@
     // Add cookie jar points
     if (isCookieJarActive(player)) {
       const numOfCookieJars = player.hand.filter(card => card === 'cookieJar').length;
-      const fullCookieJar = player.hand.every(c => cookies.includes(c) || (c === 'cookieJar' && numOfCookieJars === 1));
+      const fullCookieJar = isFullCookieJarHand(player, cookies);
       fullCookieJar ? player.points.humans += 100 : player.points.humans += (numOfCookieJars * 40);
     }
   }
@@ -1526,7 +1494,7 @@
     // Add cookie jar points
     if (isCookieJarActive(player)) {
       const numOfCookieJars = player.hand.filter(card => card === 'cookieJar').length;
-      const fullCookieJar = player.hand.every(c => cookies.includes(c) || (c === 'cookieJar' && numOfCookieJars === 1));
+      const fullCookieJar = isFullCookieJarHand(player, cookies);
       fullCookieJar ? player.points.goblins += 100 : player.points.goblins += (numOfCookieJars * 40);
     }
   }
@@ -1617,7 +1585,7 @@
     // Add cookie jar points
     if (isCookieJarActive(player)) {
       const numOfCookieJars = player.hand.filter(card => card === 'cookieJar').length;
-      const fullCookieJar = player.hand.every(c => cookies.includes(c) || (c === 'cookieJar' && numOfCookieJars === 1));
+      const fullCookieJar = isFullCookieJarHand(player, cookies);
       fullCookieJar ? player.points.elves += 100 : player.points.elves += (numOfCookieJars * 40);
     }
   }
@@ -1640,19 +1608,22 @@
 
   // Adds bonus points for matching elf twins
   function calculateElfTwins(player: Player) {
-    // Each Nelladan gets +5 points and Nadallen gets +5p for each Nelladan. So +10 per Nelladan.
-    const bonusTwinPoints = player.hand.filter(card => card === 'nelladan' || card === 'leon').length * 10;
+    // ai generated: Leon pairs with Nadallen, but only Nadallen receives the +5 from that pairing.
+    const numOfNelladans = player.hand.filter(card => card === 'nelladan').length;
+    const numOfLeons = player.hand.filter(card => card === 'leon').length;
+    const bonusTwinPoints = numOfNelladans * 10 + numOfLeons * 5;
     player.points.elves += bonusTwinPoints;
   }
 
   // Adds bonus points for matching bards
   function calculateBards(player: Player) {
-    // Each bard gets +1 point for every OTHER bard. If full bard hand, elves gain +20 points.
+    // ai generated: Leon completes Bard synergies but does not receive a Bard's personal +1-per-other-Bard bonus.
     const fullBand = player.hand.every(card => bardCards.includes(card) || card === 'leon');
     const numOfBards = player.hand.filter(card => bardCards.includes(card) || card === 'leon').length;
+    const numOfActualBards = player.hand.filter(card => bardCards.includes(card)).length;
 
     if (fullBand) player.points.elves += 20;
-    player.points.elves += numOfBards * (numOfBards - 1);
+    player.points.elves += numOfActualBards * (numOfBards - 1);
   }
 
   // Calculates special elf king effects
@@ -1689,31 +1660,32 @@
 
     // Elf king, full hand and twins (can't have full band + elf king)
     if ((hasElfKing && fullElfHand && triggerTwinEffect)) {
-      if (cardTitle === 'nadallen') return ($cardDetails[cardTitle].points + (numOfNelladans * 5) * 3);
-      // Leon can't be a bard here since being nelladan is always better. Also, bard doesn't buff self.
-      if (cardTitle === 'nelladan' || cardTitle === 'leon') return (($cardDetails[cardTitle].points + 5) * 3);
+      // ai generated: Multiply Nadallen's full twin-adjusted value, including Leon's trigger, under a full-hand Elf King.
+      if (cardTitle === 'nadallen') return ($cardDetails[cardTitle].points + numOfNelladans * 5) * 3;
+      // ai generated: Leon triggers the twin pair but does not receive Nelladan's personal +5.
+      if (cardTitle === 'nelladan') return (($cardDetails[cardTitle].points + 5) * 3);
       if (bardCards.includes(cardTitle) && numOfBards > 1) return (($cardDetails[cardTitle].points + (numOfBards - 1)) * 3);
       
       // Elf king and full hand (can't have full band + elf king)
     } else if (hasElfKing && fullElfHand) {
-      if (bardCards.includes(cardTitle) || cardTitle === 'leon') return (($cardDetails[cardTitle].points + (numOfBards - 1)) * 3);
+      if (bardCards.includes(cardTitle)) return (($cardDetails[cardTitle].points + (numOfBards - 1)) * 3);
       return $cardDetails[cardTitle].points * 3;
       
 
       // Elf King + Twins
     } else if (hasElfKing && triggerTwinEffect) {
       if (cardTitle === 'nadallen') return (($cardDetails[cardTitle].points + (numOfNelladans * 5)) * 2);
-      if (cardTitle === 'nelladan' || cardTitle === 'leon') return ($cardDetails[cardTitle].points + 5) * 2;
+      if (cardTitle === 'nelladan') return ($cardDetails[cardTitle].points + 5) * 2;
     
       // Twins
     } else if (triggerTwinEffect) {
       if (cardTitle === 'nadallen') return ($cardDetails[cardTitle].points + (numOfNelladans * 5));
-      if (cardTitle === 'nelladan' || cardTitle === 'leon') return ($cardDetails[cardTitle].points + 5);
+      if (cardTitle === 'nelladan') return ($cardDetails[cardTitle].points + 5);
     }
 
     // Bards and elf king
     else if (hasElfKing && numOfBards > 1) {
-      if (bardCards.includes(cardTitle) || cardTitle === 'leon') return (($cardDetails[cardTitle].points + (numOfBards - 1)) * 2);
+      if (bardCards.includes(cardTitle)) return (($cardDetails[cardTitle].points + (numOfBards - 1)) * 2);
     }
     
     // King
@@ -1723,7 +1695,7 @@
 
     // Bards
     else if (numOfBards > 1) {
-      if (bardCards.includes(cardTitle) || cardTitle === 'leon') return ($cardDetails[cardTitle].points + (numOfBards - 1));
+      if (bardCards.includes(cardTitle)) return ($cardDetails[cardTitle].points + (numOfBards - 1));
     }
 
     // Default
@@ -1767,7 +1739,7 @@
     // Add cookie jar points
     if (isCookieJarActive(player)) {
       const numOfCookieJars = player.hand.filter(card => card === 'cookieJar').length;
-      const fullCookieJar = player.hand.every(c => cookies.includes(c) || (c === 'cookieJar' && numOfCookieJars === 1));
+      const fullCookieJar = isFullCookieJarHand(player, cookies);
       fullCookieJar ? player.points.dwarves += 100 : player.points.dwarves += (numOfCookieJars * 40);
     }
   }
@@ -1851,10 +1823,10 @@
       player.points.beasts += (10 * numOfDogs);
     }
 
-    // Player gains +3 for every lion on the field, including himself.
+    // ai generated: Leon joins the pride count, but only real Lions receive its personal bonus.
     if (player.hand.includes('lion')) calculateLionPride(player);
 
-    // Player gains +2 for every wolf on the field, including himself.
+    // ai generated: Leon joins the pack count, but only real Wolves receive its personal bonus.
     if (player.hand.includes('wolf')) calculateWolfPack(player);
 
     // Bears worth 0 points if other bears in hand.
@@ -1889,7 +1861,7 @@
     // Add cookie jar points
     if (isCookieJarActive(player)) {
       const numOfCookieJars = player.hand.filter(card => card === 'cookieJar').length;
-      const fullCookieJar = player.hand.every(c => cookies.includes(c) || (c === 'cookieJar' && numOfCookieJars === 1));
+      const fullCookieJar = isFullCookieJarHand(player, cookies);
       fullCookieJar ? player.points.beasts += 100 : player.points.beasts += (numOfCookieJars * 40);
     }
   }
@@ -1924,17 +1896,20 @@
     player.points.beasts += (numOfBeastCards * 18);
   }
 
-  // +3 points for every lion on the field, including himself (base lion points already calculated in calculateBasePoints)
+  // ai generated: Each real Lion gains +3 per Lion-compatible card, including Leon; Leon receives none of this bonus.
   function calculateLionPride(player: Player) {
     const numOfLions = player.hand.filter(card => card === 'lion' || card === 'leon').length;
-    player.points.beasts += numOfLions * (numOfLions * 3);
+    const numOfActualLions = player.hand.filter(card => card === 'lion').length;
+    player.points.beasts += numOfActualLions * numOfLions * 3;
   }
 
-  // +2 points for every wolf on the field, including himself (base wolf points already calculated in calculateBasePoints)
+  // ai generated: Each real Wolf gains pack points from Wolf-compatible cards; Leon contributes but does not receive them.
   function calculateWolfPack(player: Player) {
     const numOfWolves = player.hand.filter(card => card === 'wolf' || card === 'leon').length;
+    const numOfActualWolves = player.hand.filter(card => card === 'wolf').length;
     const numOfWereWolves = player.hand.filter(card => card === 'lupin').length;
-    player.points.beasts += numOfWolves * (numOfWolves * 2) + (numOfWereWolves * 2);
+    // ai generated: Lupin contributes +2 to each real Wolf, matching each Wolf's displayed pack value.
+    player.points.beasts += numOfActualWolves * (numOfWolves * 2 + numOfWereWolves * 2);
   }
 
   // Remove bear points if player has more than 1 bear in hand.
@@ -1982,8 +1957,8 @@
       if (cardTitle === 'wolf') return wolfPackPoints;
     }
     
-    // So Leon takes highest point value. I deduct points since he shouldn't really buff himself as wolf or lion.
-    if (player.hand.some(c => ['wolf', 'lion'].includes(c)) && cardTitle === 'leon') return Math.max((wolfPackPoints - 2), (lionPridePoints - 3));
+    // ai generated: Leon triggers Wolf and Lion bonuses without displaying either card-specific bonus himself.
+    if (cardTitle === 'leon') return hasDreamDestroyer ? 18 : hasNightTerror ? 15 : 0;
 
     // Check for extra bears, wipe points if multiple.
     if (cardTitle === 'bear' && numOfBears > 1) return 0;
@@ -2066,7 +2041,7 @@
     // Add cookie jar points
     if (isCookieJarActive(player)) {
       const numOfCookieJars = player.hand.filter(card => card === 'cookieJar').length;
-      const fullCookieJar = player.hand.every(c => cookies.includes(c) || (c === 'cookieJar' && numOfCookieJars === 1));
+      const fullCookieJar = isFullCookieJarHand(player, cookies);
       fullCookieJar ? player.points.bots += 200 : player.points.bots += (numOfCookieJars * 80);
     }
   }
@@ -2168,7 +2143,7 @@
     // Add cookie jar points
     if (isCookieJarActive(player)) {
       const numOfCookieJars = player.hand.filter(card => card === 'cookieJar').length;
-      const fullCookieJar = player.hand.every(c => cookies.includes(c) || (c === 'cookieJar' && numOfCookieJars === 1));
+      const fullCookieJar = isFullCookieJarHand(player, cookies);
       fullCookieJar ? player.points.xenos += 100 : player.points.xenos += (numOfCookieJars * 40);
     }
   }
@@ -2323,8 +2298,9 @@
   }
 
   function displaySpiritPoints(player: Player, cardTitle: string): number {
-    if (player.hand.every(card => ['redSpirit', 'leon'].includes(card)) && ['redSpirit', 'leon'].includes(cardTitle)) return 20;
-    if (player.hand.every(card => ['blueSpirit', 'leon'].includes(card)) && ['blueSpirit', 'leon'].includes(cardTitle)) return 40;
+    // ai generated: Leon completes a Jinn hand, but only actual Jinns display their personal share of that hand's score.
+    if (player.hand.every(card => ['redSpirit', 'leon'].includes(card)) && cardTitle === 'redSpirit') return 20;
+    if (player.hand.every(card => ['blueSpirit', 'leon'].includes(card)) && cardTitle === 'blueSpirit') return 40;
     
     return $cardDetails[cardTitle].points;
   }
@@ -2471,11 +2447,18 @@
     calculateCurrentPlayerPoints(player);
   }
 
-  // Determines if cookie jar granting bonus points
+  // ai generated: A held Trap now breaks the Jar hand; Boosts and Neutrals (including Leon) remain eligible.
   function isCookieJarActive(player: Player): boolean {
-    const bonusRaces = ['boost', 'trap', 'neutral'];
+    const bonusRaces = ['boost', 'neutral'];
     const isHandOnlyBonusCards = player.hand.every(card => getRaces(card).some(race => bonusRaces.includes(race)));
     return isHandOnlyBonusCards && !areBoostsBlocked(player);
+  }
+
+  // ai generated: Leon counts as a Cookie for the exact Jar hand, but does not create a Cookie's separate draw boost.
+  function isFullCookieJarHand(player: Player, cookies: string[]): boolean {
+    return player.hand.length === 5
+      && player.hand.filter(card => card === 'cookieJar').length === 1
+      && player.hand.every(card => card === 'cookieJar' || cookies.includes(card) || card === 'leon');
   }
 
   // ---------------------------------------------------------------- \\
@@ -2816,6 +2799,11 @@
     </div>
   {/if}
 
+  <!-- ai generated: Show only the human's saved multiplayer ELO while the board is in play. -->
+  {#if gameMode === 'multiplayer' && !gameState.gameOver}
+    <div class="multiplayer-elo">ELO: {gameState.playingAs === 'p1' ? multiplayerRecords.p1.elo : multiplayerRecords.p2.elo}</div>
+  {/if}
+
     <!-- Discards -->
      <svg on:click={toggleDiscardVisibility} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="card-discards-btn">
       <path d="M15 12h-5"/>
@@ -2921,8 +2909,11 @@
           </div>
 
           <div>
-            <p>{$player1.title} Win/Lose/Draw: {$player1.wins}/{$player1.losses}/{$player1.draws}</p>
-            <p class="margin-bottom-sm">{$player2.title} Win/Lose/Draw: {$player2.wins}/{$player2.losses}/{$player2.draws}</p>
+            {#if gameMode === 'multiplayer'}
+              <!-- ai generated: These lifetime totals come from the shared CSV, not the resettable round stores. -->
+              <p>{$player1.title} Win/Lose/Draw: {multiplayerRecords.p1.wins}/{multiplayerRecords.p1.losses}/{multiplayerRecords.p1.draws} · ELO: {multiplayerRecords.p1.elo}</p>
+              <p class="margin-bottom-sm">{$player2.title} Win/Lose/Draw: {multiplayerRecords.p2.wins}/{multiplayerRecords.p2.losses}/{multiplayerRecords.p2.draws} · ELO: {multiplayerRecords.p2.elo}</p>
+            {/if}
             
             <hr>
 
@@ -3316,6 +3307,19 @@
 
 
 <style lang="scss">
+  // ai generated: The in-game rating sits top left while the between-round name panel is hidden.
+  .multiplayer-elo {
+    position: absolute;
+    top: 2px;
+    left: 8px;
+    z-index: 3;
+    padding: 0.25rem 0.6rem;
+    border: 1px solid #d44215;
+    border-radius: 0.5rem;
+    color: #fff0d2;
+    background: #0c0c0cd3;
+  }
+
   .main-content {
     position: relative;
     overflow-y: hidden;

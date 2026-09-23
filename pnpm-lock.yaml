@@ -17,9 +17,6 @@ importers:
       socket.io-client:
         specifier: ^4.7.4
         version: 4.8.3
-      svelte-routing:
-        specifier: ^1.11.0
-        version: 1.11.0
     devDependencies:
       '@sveltejs/vite-plugin-svelte':
         specifier: ^2.5.3
@@ -929,9 +926,6 @@ packages:
         optional: true
       typescript:
         optional: true
-
-  svelte-routing@1.11.0:
-    resolution: {integrity: sha512-/JlBAB6KxgM+Xl+4J/vOy4i4uYAJpWWbjh7vtRwsuu0MPl5B+ml+N/jCRkfjRa9ulODcS/G6PL8opyhczmrV8Q==}
 
   svelte@4.2.20:
     resolution: {integrity: sha512-eeEgGc2DtiUil5ANdtd8vPwt9AgaMdnuUFnPft9F5oMvU/FHu5IHFic+p1dR/UOB7XU2mX2yHW+NcTch4DCh5Q==}
@@ -1897,8 +1891,6 @@ snapshots:
       postcss: 8.5.26
       sass: 1.102.0
       typescript: 5.9.3
-
-  svelte-routing@1.11.0: {}
 
   svelte@4.2.20:
     dependencies:

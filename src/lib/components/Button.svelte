@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { Link } from 'svelte-routing';
-
   export let customClasses = '';
   export let bgColor = '';
 

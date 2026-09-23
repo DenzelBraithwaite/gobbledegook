@@ -3,13 +3,21 @@ import assert from 'node:assert/strict';
 import { ageOpponentHandMemory, chooseCpuDiscard, createCpuMemory, decideCpuDeclaration, evaluateCpuPaths, getCpuEchoAction, getForcedCpuRacePath, isCpuDeclarationDisabledByName, rememberCpuDecision, rememberOpponentHand } from './cpuStrategy.ts';
 
 const details = {
-  goblinLord: { race: 'goblin', otherRaces: [] },
+  goblinLord: { race: 'goblin', otherRaces: [], rarity: 'legendary' },
   troll: { race: 'goblin', otherRaces: [] },
   shaman: { race: 'goblin', otherRaces: [] },
   hobgoblin: { race: 'goblin', otherRaces: [] },
   emperor: { race: 'human', otherRaces: [], rarity: 'legendary' },
   knight: { race: 'human', otherRaces: [] },
   ai: { race: 'bot', otherRaces: [] },
+  nightTerror: { race: 'beast', otherRaces: [], rarity: 'legendary' },
+  longbeardLeader: { race: 'dwarf', otherRaces: [], rarity: 'legendary', points: 15 },
+  miner: { race: 'dwarf', otherRaces: [], rarity: 'poor', points: 3 },
+  traveller: { race: 'dwarf', otherRaces: [], rarity: 'poor', points: 4 },
+  dwarfWarrior: { race: 'dwarf', otherRaces: [], rarity: 'great', points: 6 },
+  dwarfCommander: { race: 'dwarf', otherRaces: [], rarity: 'epic', points: 10 },
+  commander: { race: 'human', otherRaces: [] },
+  villager: { race: 'human', otherRaces: [] },
   protectron: { race: 'bot', otherRaces: [] },
   android: { race: 'bot', otherRaces: [] },
   lightSpirit: { race: 'spirit', otherRaces: [] },
@@ -22,7 +30,14 @@ const details = {
   rareTrap: { race: 'trap', otherRaces: [], rarity: 'legendary' },
   plainTrap: { race: 'trap', otherRaces: [], rarity: 'poor' },
   rareNeutral: { race: 'neutral', otherRaces: [], rarity: 'legendary' },
-  plainNeutral: { race: 'neutral', otherRaces: [], rarity: 'poor' }
+  plainNeutral: { race: 'neutral', otherRaces: [], rarity: 'poor' },
+  cookieJar: { race: 'boost', otherRaces: [], rarity: 'amazing' },
+  leon: { race: 'neutral', otherRaces: ['human', 'goblin', 'elf', 'dwarf', 'beast', 'bot', 'xeno', 'spirit'] },
+  oreoCookie: { race: 'boost', otherRaces: [] },
+  chocoChipCookie: { race: 'boost', otherRaces: [] },
+  thumbprintCookie: { race: 'boost', otherRaces: [] },
+  oatmealCookie: { race: 'boost', otherRaces: [] },
+  cookieCrumbs: { race: 'boost', otherRaces: [] }
 };
 
 // ai generated: This small scorer keeps these tests focused on strategy behavior instead of duplicating production scoring.
@@ -66,6 +81,19 @@ test('keeps a concentrated goblin route and discards the weaker off-race card', 
   const decision = chooseCpuDiscard(observation(), score, () => 0.5);
   assert.equal(decision.cardTitle, 'knight');
   assert.equal(decision.path.race, 'goblins');
+});
+
+test('a live secondary path can preserve useful backup cards without overriding a forced race', () => {
+  const hand = ['troll', 'shaman', 'hobgoblin', 'knight', 'knight', 'lightSpirit'];
+  const balanced = chooseCpuDiscard(observation({ hand }), score, () => 0.5);
+  const forced = chooseCpuDiscard(observation({ hand, forcedRacePath: 'goblins' }), score, () => 0.5);
+  assert.equal(balanced.path.race, 'goblins');
+  assert.equal(balanced.backupPath.race, 'humans');
+  assert.equal(balanced.cardTitle, 'lightSpirit');
+  assert.equal(forced.cardTitle, 'knight');
+  assert.equal(forced.path.race, 'goblins');
+  assert.notEqual(forced.backupPath.race, forced.path.race);
+  assert.equal(rememberCpuDecision(createCpuMemory(), balanced).lastBackupPath, 'humans');
 });
 
 test('recognizes only exact plural race names as case-insensitive forced paths', () => {
@@ -289,6 +317,65 @@ test('boost, trap, and neutral rarity does not break equivalent discard choices'
   }
 });
 
+test('a bare Cookie Jar does not entice the CPU to discard Goblin Lord', () => {
+  // ai generated: This scorer models the Jar's real +40 bonus only with Boosts and Neutrals in hand.
+  const jarScorer = hand => {
+    const goblins = hand.includes('goblinLord') ? 20 : 0;
+    const jarBonus = hand.includes('cookieJar') && hand.every(card => ['boost', 'neutral'].includes(details[card]?.race)) ? 40 : 0;
+    return { highestPoints: Math.max(goblins, jarBonus), points: { humans: jarBonus, goblins: goblins + jarBonus, elves: jarBonus, dwarves: jarBonus, beasts: jarBonus, bots: jarBonus, xenos: jarBonus, spirits: 0 } };
+  };
+  const hand = ['goblinLord', 'cookieJar', 'neutralize', 'plainBoost', 'rareBoost', 'plainNeutral'];
+  const decision = chooseCpuDiscard(observation({ hand, activeDecks: ['boosts', 'goblins'], unseenCards: ['oreoCookie', 'troll', 'shaman', 'hobgoblin'] }), jarScorer, () => 0.5);
+  assert.notEqual(decision.cardTitle, 'goblinLord');
+  assert.equal(decision.path.race, 'goblins');
+});
+
+test('Night Terror remains more valuable than a weak human-only detour', () => {
+  // ai generated: A leader's future Beast potential matters even when a few Humans narrowly lead the current score.
+  const mixedScorer = hand => {
+    const humans = hand.reduce((total, card) => total + (card === 'villager' ? 1 : ['commander', 'knight'].includes(card) ? 7 : 0), 0);
+    const beasts = hand.includes('nightTerror') ? 15 : 0;
+    return { highestPoints: Math.max(humans, beasts), points: { humans, goblins: 0, elves: 0, dwarves: 0, beasts, bots: 0, xenos: 0, spirits: 0 } };
+  };
+  const hand = ['nightTerror', 'commander', 'villager', 'knight', 'knight', 'plainNeutral'];
+  const decision = chooseCpuDiscard(observation({ hand, activeDecks: ['humans', 'beasts'], unseenCards: ['knight', 'villager', 'plainNeutral'] }), mixedScorer, () => 0.5);
+  assert.notEqual(decision.cardTitle, 'nightTerror');
+});
+
+test('Longbeard banks a weak discarded Dwarf instead of holding it for its printed points', () => {
+  // ai generated: Model the same post-discard +5 that the real Longbeard scorer reads from the discard pile.
+  const dwarfScore = (hand, discarded = '') => {
+    const dwarves = hand.reduce((total, card) => total + (details[card]?.race === 'dwarf' ? details[card].points : 0), 0)
+      + (hand.includes('longbeardLeader') && details[discarded]?.race === 'dwarf' ? 5 : 0);
+    const humans = hand.includes('knight') ? 8 : 0;
+    return { highestPoints: Math.max(dwarves, humans), points: { humans, goblins: 0, elves: 0, dwarves, beasts: 0, bots: 0, xenos: 0, spirits: 0 } };
+  };
+  const hand = ['longbeardLeader', 'miner', 'traveller', 'dwarfWarrior', 'dwarfCommander', 'knight'];
+  const seen = observation({ hand, activeDecks: ['dwarves', 'humans'], unseenCards: ['knight'] });
+  const withoutDiscardSimulation = chooseCpuDiscard(seen, hand => dwarfScore(hand), () => 0.5);
+  const withDiscardSimulation = chooseCpuDiscard(seen, hand => dwarfScore(hand), () => 0.5, undefined, dwarfScore);
+  assert.equal(withoutDiscardSimulation.cardTitle, 'knight');
+  assert.equal(withDiscardSimulation.cardTitle, 'miner');
+  assert.match(withDiscardSimulation.explanation, /Longbeard banks \+5/);
+  assert.deepEqual(seen.hand, hand);
+});
+
+test('one Cookie or two matching Djinns do not receive lottery setup value', () => {
+  // ai generated: These rare routes should become attractive only after the CPU has collected meaningful pieces.
+  const cookiePath = hand => evaluateCpuPaths(observation({ hand, activeDecks: ['boosts'], unseenCards: ['oreoCookie', 'chocoChipCookie'] }), score)
+    .find(path => path.race === 'cookies');
+  assert.equal(cookiePath(['cookieJar', 'knight']).utility, 0);
+  assert.equal(cookiePath(['cookieJar', 'oreoCookie', 'knight']).utility, 0);
+  assert.ok(cookiePath(['cookieJar', 'oreoCookie', 'chocoChipCookie', 'knight']).utility > 0);
+
+  const spirits = { ...details, redSpirit: { race: 'spirit', otherRaces: [] } };
+  const spiritPath = unseenCards => evaluateCpuPaths(observation({
+    hand: ['redSpirit', 'redSpirit'], cardDetails: spirits, unseenCards, activeDecks: ['spirits']
+  }), score).find(path => path.race === 'spirits');
+  assert.equal(spiritPath(['redSpirit']).drawPotential, 18);
+  assert.equal(spiritPath(['knight']).drawPotential, 0);
+});
+
 test('active Infect favors Spirits while growing Charge favors Humans and Bots', () => {
   const base = observation({ hand: ['knight', 'lightSpirit'], unseenCards: ['knight', 'lightSpirit'] });
   const baseline = evaluateCpuPaths(base, score);
@@ -331,4 +418,44 @@ test('active Infect can justify ending a reasonable hand sooner while Charge sup
   assert.equal(decisionAt({ numOfInfects: 2, infectPoints: 10 }, 82).declare, true);
   assert.equal(decisionAt({}, 85).declare, true);
   assert.equal(decisionAt({ numOfCharges: 2, chargePoints: 10 }, 85).declare, false);
+});
+
+test('Cookie Jar path distinguishes a bonus-only +40 hand, Cookie-compatible +100 hands, and Cookie Crumbs', () => {
+  const cookies = ['oreoCookie', 'chocoChipCookie', 'thumbprintCookie', 'oatmealCookie'];
+  const cookiePath = hand => evaluateCpuPaths(observation({ hand, activeDecks: ['boosts'], unseenCards: ['oatmealCookie', 'cookieJar', 'cookieCrumbs'] }), score)
+    .find(path => path.race === 'cookies');
+  assert.equal(cookiePath(['cookieJar', ...cookies]).currentPoints, 100);
+  assert.equal(cookiePath(['cookieJar', ...cookies.slice(0, 3), 'neutralize']).currentPoints, 40);
+  assert.equal(cookiePath(['cookieJar', ...cookies.slice(0, 3), 'cookieCrumbs']).currentPoints, 40);
+  assert.equal(cookiePath(['cookieJar', ...cookies.slice(0, 3), 'leon']).currentPoints, 100);
+  assert.equal(cookiePath(['cookieJar', ...cookies.slice(0, 3), 'plainTrap']).currentPoints, 0);
+  assert.equal(cookiePath(['cookieJar', ...cookies.slice(0, 3), 'knight']).currentPoints, 0);
+  assert.equal(cookiePath(cookies).currentPoints, 0);
+  assert.match(cookiePath(['cookieJar', ...cookies.slice(0, 3), 'neutralize']).explanation, /3\/4 Cookie-compatible cards/);
+});
+
+test('the CPU recognizes an unseen Leon as a possible final Cookie Jar piece', () => {
+  // ai generated: Leon is drawn from Neutrals, so the Cookie plan must count that deck as well as Boosts.
+  const hand = ['cookieJar', 'oreoCookie', 'chocoChipCookie', 'leon', 'neutralize'];
+  const cookiePath = unseenCards => evaluateCpuPaths(observation({
+    hand, activeDecks: ['neutrals'], unseenCards
+  }), score).find(path => path.race === 'cookies');
+  assert.ok(cookiePath(['leon']).drawPotential > 0);
+  assert.equal(cookiePath(['plainNeutral']).drawPotential, 0);
+});
+
+test('a near-complete Cookie Jar delays a marginal declaration only while a fourth Cookie is drawable', () => {
+  const cpuFifty = () => ({ highestPoints: 50, points: { humans: 50, goblins: 0, elves: 0, dwarves: 0, beasts: 0, bots: 0, xenos: 0, spirits: 0 } });
+  const hand = ['cookieJar', 'oreoCookie', 'chocoChipCookie', 'thumbprintCookie', 'neutralize'];
+  const check = unseenCards => {
+    let sample = 0;
+    return decideCpuDeclaration(observation({ hand, turnCount: 15, activeDecks: ['boosts'], unseenCards }), cpuFifty, score, () => 0.5, 100,
+      () => ({ cpuScore: 50, opponentScore: Math.floor(sample++ / 6) < 85 ? 40 : 60 }));
+  };
+  const cookieAvailable = check(['oatmealCookie', ...Array(12).fill('cookieCrumbs')]);
+  const noCookie = check(Array(13).fill('cookieCrumbs'));
+  assert.equal(cookieAvailable.estimatedWinChance, 0.85);
+  assert.equal(cookieAvailable.declare, false);
+  assert.equal(noCookie.declare, true);
+  assert.match(cookieAvailable.explanation, /Jar \+ 3 Cookie-compatible cards/);
 });

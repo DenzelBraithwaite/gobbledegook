@@ -1,10 +1,7 @@
 <script lang="ts">
-    // Plugins
-    import { Link } from 'svelte-routing';
-        
     // Other custom components
     import Game from '../lib/components/Game.svelte';
-    import LoginForm from '../lib/components/LoginForm.svelte';
+    // import LoginForm from '../lib/components/LoginForm.svelte';
   
   </script>
   

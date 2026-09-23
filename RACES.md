@@ -53,10 +53,10 @@ Elves have the strongest conventional leader multiplier and several internal com
 - **High Elf — 10 points.**
 - **Dark Elf — 9 points.**
 - **Wood Elf — 6 points.**
-- **Nadallen — 5 points.** Partners with Nelladan and receives +5 points for each Nelladan or Leon.
+- **Nadallen — 5 points.** Partners with Nelladan and receives +5 points for each Nelladan or Leon. Leon triggers the pair but does not receive Nelladan's +5.
 - **Wild Elf/Forest Dweller — 4 points.**
 - **Nelladan — 2 points.** Each paired Nelladan receives +5 points. A complete pair contributes +10 before the Elf King multiplier.
-- **Bard Lute, Bard Flute, Bard Horn, Bard Drum, and Bard Singer — 2 points each.** Bards buff one another by +1. A complete five-Bard band adds another 20 Elf points.
+- **Bard Lute, Bard Flute, Bard Horn, Bard Drum, and Bard Singer — 2 points each.** Bards gain +1 per other Bard or Leon. Leon counts toward the five-card concert and its +20 Elf points but does not receive a Bard's personal bonus.
 
 ## Dwarves
 
@@ -89,10 +89,14 @@ Beasts thrive on synergy. Their leaders normalize every Beast to a high value, L
 - **Night Terror — 15 points.** Makes every Beast worth 15 unless Dream Destroyer overrides it at 18.
 - **Rhinestone/Rhino — 12 points.** Blocks traps while held.
 - **Theo Thunderpaw/Bear — 9 points.** Bears become worth zero if another Bear, or a Bear-mimicking Leon, is present.
-- **Goldenmane/Lion — 8 points.** Each Lion or Lion-compatible Leon contributes a +3-per-Lion pride bonus.
-- **Panth Nocturna/Panther — 7 points.**
-- **Alpha Wolfbane/Wolf — 6 points.** Wolves and Wolf-compatible Leons receive the pack bonus; Lupin contributes to the pack as well.
-- **Finn Foxglove/Fox — 5 points.**
+- **Goldenmane/Lion — 8 points.** Each real Lion gains +3 for every Lion or Leon in hand; Leon contributes to the pride but does not receive this bonus.
+- **Alpha Wolfbane/Wolf — 6 points.** Each real Wolf gains +2 per Wolf, Leon, or Lupin in the pack; Leon contributes but does not receive the Wolf-specific bonus.
+- **Vultoor/Vulture — 7 points.**
+- **Duck/Waddles — 3 points.**
+- **Rat/Goliath — 1 point.**
+- **Rat/Eeyore — 1 point.**
+- **Rat/Lofi — 1 point.**
+- **Rat/Chester — 1 point.**
 - **Pawl Barkington/Dog — 4 points.** Gains +10 points when the hand contains a Human-compatible card.
 - **Giraffe growth chain:** Egg Giraffe 0 → Calfy 1 → Giraffey 6 → Granffey 10 → Night Terror 15. Each stage replaces the previous form as the Giraffe matures.
 
@@ -170,7 +174,7 @@ Boosts remain in a player's effect log after being discarded unless another effe
 - **Feast.** Permanently adds +10 Beast points.
 - **Oreo, Chocolate Chip, Thumbprint, and Oatmeal Cookie.** Each permanently adds +5 points to every race except Spirits and +10 points to Bots.
 - **Cookie Crumbs.** Each copy permanently adds +3 points to every race except Spirits and +6 points to Bots.
-- **Cookie Jar.** Provides a special hand-dependent score when paired with Cookies or other Boosts.
+- **Cookie Jar.** Gives +100 with exactly one Jar and four Cookies or Cookie-mimicking Leons; otherwise gives +40 per Jar in a hand containing only Boosts and Neutrals. A Trap in hand prevents either bonus. Bots double these amounts. Leon does not create a Cookie's separate draw boost.
 
 ## Traps
 
@@ -193,7 +197,7 @@ Neutral cards create events and unusual interactions instead of contributing an 
 - **Switcharoo.** When discarded from a normal six-card hand before Gobbledegook is declared, swaps the five remaining cards between players.
 - **Vision.** Reveals the opponent's hand for the current turn unless they are protected.
 - **Echo.** Grants another draw, allows a hand of up to seven cards, and keeps the turn active until the hand returns to five.
-- **Leon.** Has zero base points, belongs to all eight races, and imitates several synergy cards. Leon uses the most valuable relevant imitation available. It triggers Protectron's +1 as though it were a Virus, but does not receive the Virus-specific +8; A.I.'s Bot-wide +4 still applies.
+- **Leon.** Has zero base points and belongs to all eight races. He counts toward other cards' requirements—including Dog, Bear, Elf Twins, Bards, Wolves, Lions, Jinn hands, and Cookie Jar—but does not receive those cards' personal bonuses or Bear's zero-point penalty. Race-wide effects such as Emperor/Commander, Beast leaders, Elf King, A.I., and Nebulite can still affect him. He triggers Protectron's +1 as a Virus would but does not receive the Virus-specific +8.
 - **Xeno Bloom.** Permanently gives both players +15 Xeno points.
 - **Xeno Blossom.** Permanently gives both players +5 Xeno points.
 - **Ticktock.** Advances the turn counter by 3.

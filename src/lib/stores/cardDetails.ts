@@ -726,31 +726,83 @@ const cardDetails = writable({
     otherRaces: [],
     image: '/beasts/bear.png'
   },
-  panther: {
-    title: 'panther',
-    displayTitle: 'Panth Nocturna',
+  vulture: {
+    title: 'vulture',
+    displayTitle: 'Vultoor',
     points: 7,
-    amount: 3,
+    amount: 2,
     rarity: 'great',
     traitTitle: '',
     trait: '',
-    description: "A quick and efficient beast, known to stalk it's prey before pouncing.",
+    description: "A resourceful and efficient vulture, known to scavenge prey remains from stronger beasts.",
     race: 'beast',
     otherRaces: [],
-    image: '/beasts/panther.png'
+    image: '/beasts/vulture.png'
   },
-  fox: {
-    title: 'fox',
-    displayTitle: 'Finn Foxglove',
-    points: 5,
+  duck: {
+    title: 'duck',
+    displayTitle: 'Waddles',
+    points: 3,
     amount: 2,
     rarity: 'poor',
     traitTitle: '',
     trait: '',
-    description: 'A fox on steroids.',
+    description: "One hell of a duck, an OG quacker.",
     race: 'beast',
     otherRaces: [],
-    image: '/beasts/fox.png'
+    image: '/beasts/duck.png'
+  },
+  dumboRat: {
+    title: 'dumboRat',
+    displayTitle: 'Goliath',
+    points: 1,
+    amount: 1,
+    rarity: 'poor',
+    traitTitle: '',
+    trait: '',
+    description: 'A cute rat based off of a past pet.',
+    race: 'beast',
+    otherRaces: [],
+    image: '/beasts/dumbo_rat_1.png'
+  },
+    dumboRat2: {
+    title: 'dumboRat2',
+    displayTitle: 'Eeyore',
+    points: 1,
+    amount: 1,
+    rarity: 'poor',
+    traitTitle: '',
+    trait: '',
+    description: 'A cute rat based off of a past pet.',
+    race: 'beast',
+    otherRaces: [],
+    image: '/beasts/dumbo_rat_2.png'
+  },
+    whiteRat: {
+    title: 'whiteRat',
+    displayTitle: 'Lofi',
+    points: 1,
+    amount: 1,
+    rarity: 'poor',
+    traitTitle: '',
+    trait: '',
+    description: 'A cute rat based off of a past pet.',
+    race: 'beast',
+    otherRaces: [],
+    image: '/beasts/white_rat.png'
+  },
+    brownRat: {
+    title: 'brownRat',
+    displayTitle: 'Chester',
+    points: 1,
+    amount: 1,
+    rarity: 'poor',
+    traitTitle: '',
+    trait: '',
+    description: 'A cute rat based off of a past pet.',
+    race: 'beast',
+    otherRaces: [],
+    image: '/beasts/brown_rat.png'
   },
   // Giraffes
   nightTerror: {
@@ -1183,7 +1235,7 @@ const cardDetails = writable({
     amount: 2,
     rarity: 'amazing',
     traitTitle: 'No Cookie For You',
-    trait: 'Gain +100 points if hand contains 1 cookie jar and 4 cookies, +40 points per cookie jar if hand includes no race cards (only boosts, traps, or neutrals). Bots double this effect and spirits are not compatible with cookies. Can be blocked!',
+    trait: 'Gain +100 points with exactly 1 Cookie Jar and 4 Cookies (Leon can stand in for a Cookie), or +40 per Jar with only Boosts and Neutrals in hand. A Trap in hand prevents either bonus. Bots double this effect; Spirits cannot use Cookies. Can be blocked!',
     description: 'This notorius cookie jar gained sentience after being desecrated repeatedly. It vows to figure out once and for all who stole the cookie from the cookie jar.',
     race: 'boost',
     otherRaces: [],
@@ -1460,7 +1512,7 @@ const cardDetails = writable({
     amount: 2,
     rarity: 'amazing',
     traitTitle: 'Camouflage',
-    trait: "Leon can blend into any race and can mimic abilities that rely on card synergies such as a red/blue jinn, wolf/lion pack, elf twin (nelladan), bears and even bards. In events where it can blend into multiple, it will choose the highest point value. Leon triggers Protectron's +1 but does not gain its Virus +8.",
+    trait: "Leon counts as every race and can complete card abilities such as Cookie Jar, Jinn, Elf Twin (can only be nelladan), Bard, Wolf, and Lion combinations. He also triggers other cards' specific abilities like the Bear penalty, without receiving those effects himself. Race-wide bonuses such as A.I. and Beast leaders still affect him.",
     description: 'A docile chameleon who hates being mistaken for a gecko.',
     race: 'neutral',
     otherRaces: ['human', 'goblin', 'elf', 'dwarf', 'beast', 'bot', 'xeno', 'spirit'],

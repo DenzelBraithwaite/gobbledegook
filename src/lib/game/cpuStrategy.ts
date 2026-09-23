@@ -7,6 +7,7 @@ export type CpuCardDetails = Record<string, {
   race: string;
   otherRaces: string[];
   rarity?: string;
+  points?: number;
 }>;
 
 export type CpuObservation = {
@@ -44,6 +45,7 @@ export type CpuPathEvaluation = {
 export type CpuDiscardDecision = {
   cardTitle: string;
   path: CpuPathEvaluation;
+  backupPath: CpuPathEvaluation;
   candidateScore: number;
   explanation: string;
 };
@@ -59,6 +61,7 @@ export type CpuDeclarationDecision = {
 export type CpuMemory = {
   turnsPlayed: number;
   lastPath: CpuRace | '';
+  lastBackupPath: CpuRace | '';
   discardedCards: string[];
   opponentHandSnapshot: string[];
   opponentHandObservedAtTurn: number | null;
@@ -96,8 +99,10 @@ const scoreKeys: Record<CpuForcedRace, string> = {
   spirits: 'spirits'
 };
 
-const strategicallyStickyCards = ['emperor', 'goblinLord', 'elfKing', 'longbeardLeader', 'dreamDestroyer', 'ai', 'spiritKing'];
+const strategicallyStickyCards = ['emperor', 'goblinLord', 'elfKing', 'longbeardLeader', 'dreamDestroyer', 'nightTerror', 'ai', 'spiritKing'];
 const rarityDiscardCost: Record<string, number> = { legendary: 0.4, epic: 0.25, amazing: 0.15, great: 0.08 };
+const cookieNames = ['oreoCookie', 'chocoChipCookie', 'thumbprintCookie', 'oatmealCookie'];
+const backupPathWeight = 0.12;
 
 // ai generated: An exact plural race name, in any letter case, is the deliberate testing cheat that locks the CPU to that path.
 export function getForcedCpuRacePath(cpuName: string): CpuForcedRace | '' {
@@ -117,6 +122,7 @@ export function createCpuMemory(): CpuMemory {
   return {
     turnsPlayed: 0,
     lastPath: '',
+    lastBackupPath: '',
     discardedCards: [],
     opponentHandSnapshot: [],
     opponentHandObservedAtTurn: null,
@@ -216,8 +222,13 @@ export function evaluateCpuPaths(observation: CpuObservation, evaluate: CpuScore
       const redCount = observation.hand.filter(card => card === 'redSpirit').length;
       const blueCount = observation.hand.filter(card => card === 'blueSpirit').length;
       const majority = Math.max(redCount, blueCount);
-      drawPotential += majority * majority * 4;
-      if (majority >= 3) reasons.push(`${majority}/5 matching djinns makes the lottery route plausible`);
+      // ai generated: Djinn sets are a lottery until three match; only remaining matching draws justify future value.
+      if (majority >= 3 && majority < 5) {
+        const color = redCount >= blueCount ? 'redSpirit' : 'blueSpirit';
+        const matchingDrawChance = chanceOfDrawingAny([color], observation);
+        drawPotential += majority * majority * 2 * matchingDrawChance;
+        reasons.push(`${majority}/5 matching djinns; matching draw ${formatChance(matchingDrawChance)}`);
+      }
     }
 
     // ai generated: The real scorer already includes today's Infect/Charge points; these small adjustments value only a few future turns.
@@ -258,17 +269,23 @@ export function evaluateCpuPaths(observation: CpuObservation, evaluate: CpuScore
     };
   });
 
-  const cookieCards = observation.hand.filter(card => cardHasRace(card, 'boost', observation.cardDetails) || card.includes('Cookie'));
-  const cookieChance = chanceOfDrawingAny(['cookieJar', 'oreoCookie', 'chocoChipCookie', 'thumbprintCookie', 'oatmealCookie', 'cookieCrumbs'], observation);
-  const cookieCurrentPoints = observation.hand.includes('cookieJar') && cookieCards.length === observation.hand.length && !observation.boostsBlocked ? 40 : 0;
-  const cookieRisk = observation.boostsBlocked ? 30 : 0;
+  // ai generated: Cookie Jar's +40 accepts only Boost/Neutral hands; +100 needs one Jar and four Cookies or Cookie-mimicking Leons.
+  const cookiePlan = getCookiePlan(observation);
+  // ai generated: One loose Cookie or an empty Jar is not enough to count as a serious lottery setup.
+  const cookieSetup = cookiePlan.cookieCount < 2 ? 0
+    : cookiePlan.jarCount > 0 ? cookiePlan.cookieCount * cookiePlan.cookieCount * 2
+    : cookiePlan.cookieCount * cookiePlan.jarDrawChance * 10;
+  const cookieDrawPotential = cookiePlan.jarCount > 0 && cookiePlan.cookieCount === 3
+    ? cookiePlan.fourDrawCookieChance * (cookiePlan.currentBonus > 0 ? 60 : 100)
+    : cookiePlan.jarCount === 0 && cookiePlan.cookieCount >= 2 ? cookiePlan.jarDrawChance * 40 : 0;
+  const cookieRisk = observation.boostsBlocked && cookiePlan.jarCount > 0 ? 30 : 0;
   paths.push({
     race: 'cookies',
-    utility: cookieCurrentPoints + cookieCards.length * cookieCards.length * 2 + cookieChance * 26 - cookieRisk,
-    currentPoints: cookieCurrentPoints,
-    drawPotential: cookieChance * 26,
+    utility: cookiePlan.currentBonus + cookieSetup + cookieDrawPotential - cookieRisk,
+    currentPoints: cookiePlan.currentBonus,
+    drawPotential: cookieDrawPotential,
     risk: cookieRisk,
-    explanation: `${cookieCards.length} cookie/boost cards; Cookie route ${formatChance(cookieChance)}; boosts ${observation.boostsBlocked ? 'blocked' : 'active'}`
+    explanation: `${cookiePlan.jarCount} jar(s), ${cookiePlan.cookieCount}/4 Cookie-compatible cards; ${cookiePlan.currentBonus} current Jar bonus; next-compatible draw ${formatChance(cookiePlan.nextCookieDrawChance)}; boosts ${observation.boostsBlocked ? 'blocked' : 'active'}`
   });
 
   const rankedPaths = paths.sort((a, b) => b.utility - a.utility);
@@ -282,7 +299,8 @@ export function chooseCpuDiscard(
   observation: CpuObservation,
   evaluate: CpuScoreEvaluator,
   random: () => number = Math.random,
-  evaluateSwappedHand?: (receivedHand: string[], givenHand: string[]) => ScoreResult
+  evaluateSwappedHand?: (receivedHand: string[], givenHand: string[]) => ScoreResult,
+  evaluateAfterDiscard?: (hand: string[], discardedCard: string) => ScoreResult
 ): CpuDiscardDecision {
   if (observation.hand.length === 0) throw new Error('The CPU cannot discard from an empty hand.');
 
@@ -299,12 +317,12 @@ export function chooseCpuDiscard(
         const swappedEvaluator: CpuScoreEvaluator = hand => evaluateSwappedHand
           ? evaluateSwappedHand(hand, candidateHand)
           : evaluate(hand);
-        const path = evaluateCpuPaths({ ...observation, hand: receivedHand }, swappedEvaluator)[0];
+        const { path, backupPath } = selectCpuPaths({ ...observation, hand: receivedHand }, swappedEvaluator);
         const scored = swappedEvaluator(receivedHand);
         const authoritativeScore = observation.forcedRacePath
           ? scored.points[scoreKeys[observation.forcedRacePath]] ?? 0
           : scored.highestPoints;
-        return { path, authoritativeScore, value: authoritativeScore + path.utility };
+        return { path, backupPath, authoritativeScore, value: authoritativeScore + path.utility + backupValue(backupPath, observation) };
       });
       const expectedValue = outcomes.reduce((total, outcome) => total + outcome.value, 0) / outcomes.length;
       const representative = [...outcomes].sort((a, b) => a.value - b.value)[Math.floor(outcomes.length / 2)];
@@ -312,28 +330,57 @@ export function chooseCpuDiscard(
       return {
         cardTitle,
         path: representative.path,
+        backupPath: representative.backupPath,
         candidateScore: expectedValue - uncertaintyCost + random() * 0.001,
-        explanation: `Discard switcharoo: ${exactHand ? 'known' : `${sampleCount} sampled`} opponent hand${exactHand ? '' : 's'} become the CPU hand; expected post-swap value ${expectedValue.toFixed(1)}${uncertaintyCost ? ` less ${uncertaintyCost} uncertainty points` : ''}.`
+        explanation: `Discard switcharoo: ${exactHand ? 'known' : `${sampleCount} sampled`} opponent hand${exactHand ? '' : 's'} become the CPU hand; expected post-swap value ${expectedValue.toFixed(1)}${uncertaintyCost ? ` less ${uncertaintyCost} uncertainty points` : ''}; representative backup ${representative.backupPath.race}.`
       };
     }
     const candidateObservation = { ...observation, hand: candidateHand };
-    const path = evaluateCpuPaths(candidateObservation, evaluate)[0];
-    const candidateEvaluation = evaluate(candidateHand);
+    // ai generated: Score the discard pile after this exact card leaves the hand, so Longbeard's +5 is not missed.
+    const candidateEvaluator: CpuScoreEvaluator = evaluateAfterDiscard
+      ? hand => evaluateAfterDiscard(hand, cardTitle)
+      : evaluate;
+    const { path, backupPath } = selectCpuPaths(candidateObservation, candidateEvaluator);
+    const candidateEvaluation = candidateEvaluator(candidateHand);
     const authoritativeScore = observation.forcedRacePath
       ? candidateEvaluation.points[scoreKeys[observation.forcedRacePath]] ?? 0
       : candidateEvaluation.highestPoints;
     const specialCardCost = specialDiscardCost(cardTitle, candidateHand, observation);
+    // ai generated: A recycled low Dwarf still advances Longbeard's route; do not penalize its loss of hand concentration twice.
+    const lowDwarfRecycled = Boolean(evaluateAfterDiscard) && candidateHand.includes('longbeardLeader')
+      && observation.cardDetails[cardTitle]?.race === 'dwarf'
+      && (observation.cardDetails[cardTitle]?.points ?? Infinity) <= 5;
+    const dwarfCountBeforeDiscard = observation.hand.filter(card => cardHasRace(card, 'dwarf', observation.cardDetails)).length;
+    const recycledDwarfValue = lowDwarfRecycled
+      ? (dwarfCountBeforeDiscard * dwarfCountBeforeDiscard - (dwarfCountBeforeDiscard - 1) * (dwarfCountBeforeDiscard - 1)) * 1.5
+        * (path.race === 'dwarves' ? 1 : backupPath.race === 'dwarves' && !observation.forcedRacePath ? backupPathWeight : 0)
+      : 0;
     const tieBreaker = random() * 0.001;
     return {
       cardTitle,
       path,
-      candidateScore: authoritativeScore + path.utility - specialCardCost + tieBreaker,
-      explanation: `Discard ${cardTitle}: ${authoritativeScore} scored points; ${path.race} path utility ${path.utility.toFixed(1)}; ${path.explanation}`
+      backupPath,
+      candidateScore: authoritativeScore + path.utility + backupValue(backupPath, observation) - specialCardCost + recycledDwarfValue + tieBreaker,
+      explanation: `Discard ${cardTitle}: ${authoritativeScore} scored points; primary ${path.race} utility ${path.utility.toFixed(1)}; backup ${backupPath.race} utility ${backupPath.utility.toFixed(1)}${observation.forcedRacePath ? ' (informational only under forced path)' : ''}${lowDwarfRecycled ? `; Longbeard banks +5 from this Dwarf${recycledDwarfValue > 0 ? ` and preserves ${recycledDwarfValue.toFixed(1)} Dwarf-path value` : ''}` : ''}; ${path.explanation}`
     };
   });
 
   decisions.sort((a, b) => b.candidateScore - a.candidateScore);
   return decisions[0];
+}
+
+// ai generated: A backup is recomputed for each candidate hand and mildly rewards a viable second route without locking the CPU to yesterday's plan.
+function selectCpuPaths(observation: CpuObservation, evaluate: CpuScoreEvaluator): { path: CpuPathEvaluation; backupPath: CpuPathEvaluation } {
+  const ranked = evaluateCpuPaths({ ...observation, forcedRacePath: '' }, evaluate);
+  const path = observation.forcedRacePath
+    ? evaluateCpuPaths(observation, evaluate)[0]
+    : ranked[0];
+  const backupPath = ranked.find(candidate => candidate.race !== path.race) ?? ranked[1];
+  return { path, backupPath };
+}
+
+function backupValue(backupPath: CpuPathEvaluation, observation: CpuObservation): number {
+  return observation.forcedRacePath ? 0 : Math.max(0, backupPath.utility) * backupPathWeight;
 }
 
 // ai generated: Declaration uses hidden-card sampling and gives the human one final optimized discard, matching the game's last-turn rule.
@@ -403,6 +450,11 @@ export function decideCpuDeclaration(
   if (cpuScore < 100 && chargePathActive && observation.numOfCharges > 0 && !observation.boostsBlocked) {
     declarationThreshold += Math.min(0.03, observation.numOfCharges * 0.015);
   }
+  // ai generated: Three Cookie-compatible cards plus a Jar can be one draw from +100; wait only while a Cookie or Leon remains drawable.
+  const cookiePlan = getCookiePlan(observation);
+  const nearCompleteCookieJar = cpuScore < 100 && cookiePlan.jarCount === 1 && cookiePlan.cookieCount === 3
+    && !observation.boostsBlocked && cookiePlan.nextCookieDrawChance > 0;
+  if (nearCompleteCookieJar) declarationThreshold += Math.min(0.08, 0.02 + cookiePlan.fourDrawCookieChance * 0.15);
   declarationThreshold = Math.max(0.6, Math.min(0.995, declarationThreshold));
   const declare = estimatedWinChance >= declarationThreshold;
   const knowledgeDescription = observation.knownOpponentCards.length > 0
@@ -417,7 +469,7 @@ export function decideCpuDeclaration(
     estimatedWinChance,
     cpuScore,
     sampledGames: simulations,
-    explanation: `${cpuScore} points produced a ${(estimatedWinChance * 100).toFixed(0)}% estimated win chance across ${simulations} samples using ${knowledgeDescription}; threshold ${(declarationThreshold * 100).toFixed(1)}%${activeInfects ? ` (active Infect ×${activeInfects} favors ending sooner)` : ''}${chargePathActive && observation.numOfCharges > 0 && !observation.boostsBlocked ? ' (Charge favors waiting for growth)' : ''}.`
+    explanation: `${cpuScore} points produced a ${(estimatedWinChance * 100).toFixed(0)}% estimated win chance across ${simulations} samples using ${knowledgeDescription}; threshold ${(declarationThreshold * 100).toFixed(1)}%${activeInfects ? ` (active Infect ×${activeInfects} favors ending sooner)` : ''}${chargePathActive && observation.numOfCharges > 0 && !observation.boostsBlocked ? ' (Charge favors waiting for growth)' : ''}${nearCompleteCookieJar ? ` (Jar + 3 Cookie-compatible cards: fourth-card draw ${formatChance(cookiePlan.nextCookieDrawChance)} favors waiting)` : ''}.`
   };
 }
 
@@ -427,6 +479,7 @@ export function rememberCpuDecision(memory: CpuMemory, decision: CpuDiscardDecis
     ...memory,
     turnsPlayed: memory.turnsPlayed + 1,
     lastPath: decision.path.race,
+    lastBackupPath: decision.backupPath.race,
     discardedCards: [...memory.discardedCards, decision.cardTitle]
   };
 }
@@ -460,6 +513,41 @@ function chanceOfDrawingAny(cards: string[], observation: CpuObservation): numbe
   return Math.min(1, matching / observation.unseenCards.length * activeDeckFactor * 4);
 }
 
+// ai generated: This uses the game's one-deck-then-one-card draw pattern for Cookie planning, rather than treating all unseen cards as equally drawable next.
+function chanceOfDrawingBoostCards(cards: string[], observation: CpuObservation): number {
+  if (observation.activeDecks.length > 0 && !observation.activeDecks.includes('boosts')) return 0;
+  const unseenBoosts = observation.unseenCards.filter(card => cardHasRace(card, 'boost', observation.cardDetails));
+  if (unseenBoosts.length === 0) return 0;
+  const matching = unseenBoosts.filter(card => cards.includes(card)).length;
+  const boostDeckChance = observation.activeDecks.length > 0 ? 1 / observation.activeDecks.length : 1;
+  return boostDeckChance * matching / unseenBoosts.length;
+}
+
+// ai generated: Leon is drawn from Neutrals, so a near-complete Jar may be finished by a Cookie or by Leon.
+function chanceOfDrawingLeon(observation: CpuObservation): number {
+  if (observation.activeDecks.length > 0 && !observation.activeDecks.includes('neutrals')) return 0;
+  const unseenNeutrals = observation.unseenCards.filter(card => cardHasRace(card, 'neutral', observation.cardDetails));
+  if (unseenNeutrals.length === 0) return 0;
+  const neutralDeckChance = observation.activeDecks.length > 0 ? 1 / observation.activeDecks.length : 1;
+  return neutralDeckChance * unseenNeutrals.filter(card => card === 'leon').length / unseenNeutrals.length;
+}
+
+// ai generated: Leon can substitute for a Cookie in the five-card Jar hand; Cookie Crumbs cannot.
+function getCookiePlan(observation: CpuObservation) {
+  const jarCount = observation.hand.filter(card => card === 'cookieJar').length;
+  const cookieCount = observation.hand.filter(card => cookieNames.includes(card) || card === 'leon').length;
+  const bonusOnly = observation.hand.every(card => ['boost', 'neutral'].some(race => cardHasRace(card, race, observation.cardDetails)));
+  const fullCookieHand = observation.hand.length === 5 && jarCount === 1
+    && observation.hand.every(card => card === 'cookieJar' || cookieNames.includes(card) || card === 'leon');
+  const currentBonus = jarCount > 0 && bonusOnly && !observation.boostsBlocked
+    ? fullCookieHand ? 100 : jarCount * 40
+    : 0;
+  const nextCookieDrawChance = Math.min(1, chanceOfDrawingBoostCards(cookieNames, observation) + chanceOfDrawingLeon(observation));
+  const jarDrawChance = chanceOfDrawingBoostCards(['cookieJar'], observation);
+  const fourDrawCookieChance = 1 - Math.pow(1 - nextCookieDrawChance, Math.min(4, observation.unseenCards.length));
+  return { jarCount, cookieCount, bonusOnly, currentBonus, nextCookieDrawChance, jarDrawChance, fourDrawCookieChance };
+}
+
 function specialDiscardCost(cardTitle: string, candidateHand: string[], observation: CpuObservation): number {
   const cardMatchesForcedRace = observation.forcedRacePath
     ? cardHasRace(cardTitle, raceCards[observation.forcedRacePath], observation.cardDetails)
@@ -470,7 +558,12 @@ function specialDiscardCost(cardTitle: string, candidateHand: string[], observat
     ? rarityDiscardCost[observation.cardDetails[cardTitle]?.rarity ?? ''] ?? 0
     : 0;
   // ai generated: A forced path does not protect an unrelated race leader merely because that leader is normally valuable.
-  if (cardMatchesForcedRace && ['emperor', 'goblinLord', 'elfKing', 'longbeardLeader', 'dreamDestroyer', 'ai', 'spiritKing'].includes(cardTitle)) cost += 16;
+  // ai generated: A real race leader is worth retaining through a weak detour; a bare Jar is not a completed Cookie strategy.
+  if (cardMatchesForcedRace && strategicallyStickyCards.includes(cardTitle)) cost += 30;
+  if (!observation.forcedRacePath && strategicallyStickyCards.includes(cardTitle)
+    && candidateHand.includes('cookieJar')
+    && candidateHand.filter(card => cookieNames.includes(card)).length <= 1
+    && candidateHand.every(card => ['boost', 'neutral'].some(race => cardHasRace(card, race, observation.cardDetails)))) cost += 30;
   if (cardTitle === 'neutralize' && (observation.boostsBlocked || observation.trapsBlocked)) cost += 10;
   if ((!observation.forcedRacePath || observation.forcedRacePath === 'goblins') && cardTitle === 'goblinLordsMark' && candidateHand.some(card => cardHasRace(card, 'goblin', observation.cardDetails))) cost += 12;
   if ((!observation.forcedRacePath || observation.forcedRacePath === 'spirits') && ['redSpirit', 'blueSpirit'].includes(cardTitle) && candidateHand.filter(card => card === cardTitle).length >= 2) cost += 8;

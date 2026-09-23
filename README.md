@@ -32,6 +32,12 @@ The CPU follows the normal draw, discard, card-effect, and Gobbledegook rules. I
 
 Singleplayer does not open a Socket.IO connection and does not require `server.js`; it can be played directly through the Vite development or preview server.
 
+Singleplayer does not retain wins, losses, draws, or ELO.
+
+## Multiplayer records
+
+Completed multiplayer games save one row per player name in `data/player-records.csv` on the server computer. The file is created after the first completed game and can be committed and pushed to GitHub for use on another computer; the game does not push it automatically. Names are matched case-insensitively, so changing a name loads that name's existing record. Each name begins at 1000 ELO; a win adds 10, a loss subtracts 10, and a draw changes nothing. If both players use the same name, both outcomes are recorded against that name and the ELO changes cancel. The current player's ELO appears at the top left during a multiplayer round, and both players' saved records appear on the results screen.
+
 ## Factions and card types
 
 The card catalogue currently includes:
@@ -66,7 +72,7 @@ For the singleplayer opponent's knowledge rules, strategy, debug controls, and t
 - Hidden hands and temporary reveal effects
 - Card library, discard pile, and remaining-card views
 - End-of-round histories showing starting hands, draws, discards, and final hands
-- Per-session win, loss, and draw tracking
+- Saved multiplayer win/loss/draw records and ELO; singleplayer keeps no record
 - Connection status for both players
 
 ## Screenshots

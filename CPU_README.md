@@ -39,9 +39,21 @@ After drawing, the strategy tries every card as the possible discard. For every 
 3. Adds modest future value for cards that can still be drawn and for a hand already concentrated in one race.
 4. Protects leaders and high-value setup cards from casual discards.
 5. Uses rarity only as a tiny tie-breaker between scoring-race cards. Boost, trap, and neutral rarity gives no automatic retention value; those cards are judged by useful effects and paths instead.
-6. Chooses the highest combined immediate score and future path value.
+6. Chooses the highest combined immediate score, main path value, and a small share of the second-best path value.
 
-The strategy has explicit awareness of Emperor flexibility, the Goblin Lord/Warchief/Mark route, Elf King, forced Dwarf draws, matching Red/Blue Spirit lottery hands, Cookie Jar hands, and the effect of Neutralize. Active Infect modestly lowers non-Spirit paths as its penalty grows; Spirits remain immune. An unblocked Charge modestly improves the future Human and Bot paths. The real scorer still determines today's points.
+The backup path is recomputed for every possible post-discard hand. Its utility has a 12% weight, so the CPU can preserve a promising second route without abandoning a clearly stronger main route. Race leaders receive meaningful retention value, including Night Terror. A Jar with zero or one Cookie-compatible card is only a weak lottery setup; the CPU resists discarding a race leader just to make a bare-Jar bonus-only hand. The previous primary and backup labels are remembered for debug purposes, not locked in. A race-name testing cheat still forces its named primary path; the backup is logged but does not influence that forced choice.
+
+The strategy has explicit awareness of Emperor flexibility, the Goblin Lord/Warchief/Mark route, Elf King, forced Dwarf draws, matching Red/Blue Spirit lottery hands, Cookie Jar hands, and the effect of Neutralize. Red/Blue Djinn lottery potential only starts with three matching cards and depends on a matching card still being drawable. Active Infect modestly lowers non-Spirit paths as its penalty grows; Spirits remain immune. An unblocked Charge modestly improves the future Human and Bot paths. The real scorer still determines today's points.
+
+### Longbeard's discarded Dwarves
+
+When considering a discard, the CPU scores a cloned player with that proposed card added to its discard pile. Longbeard therefore receives the same +5 from a discarded Dwarf that the real game awards after the discard. A Dwarf printed at 5 points breaks even or improves the Dwarf total when recycled, while one below 5 improves it; the CPU also avoids treating such a recycled card as lost Dwarf-path progress. This is a preference, not an unconditional rule: another race path, a card's ability, or a stronger immediate hand can still justify keeping the Dwarf. The simulation does not alter the real discard pile before the CPU acts.
+
+### Cookie Jar path
+
+The Cookie path distinguishes a Boost/Neutral-only hand with a Jar (+40, or +80 to Bots) from the exact one-Jar-and-four-Cookie-compatible-cards hand (+100, or +200 to Bots). Leon can stand in for a Cookie, while Cookie Crumbs and other Boosts or Neutrals can qualify for the +40 hand but not the +100 hand. Any Trap still in hand prevents both bonuses; previously discarded Traps do not. A bare Jar or a single Cookie-compatible card adds no speculative setup value; two or more make the path worth considering, and three with a Jar create the strongest near-complete incentive. A blocked Jar has no current bonus.
+
+The CPU estimates the chance of drawing a needed Cookie or Leon from their respective active decks. With a Jar and three Cookie-compatible cards, it values the fourth-card possibility and modestly raises its declaration threshold while one remains drawable. This encourages waiting but does not forbid a declaration when the present hand is already convincingly ahead. These estimates guide decisions; the authoritative game scorer still supplies the actual points.
 
 Discarding Switcharoo at five cards is evaluated as a hand trade, not as keeping the CPU's old hand. If the human hand is revealed, the CPU scores those exact received cards. Otherwise it samples plausible hidden hands and includes a small uncertainty cost. The simulation gives the human the CPU's old five cards, so opposing A.I. and other hand-dependent effects are recalculated; evolving Xeno card values follow the transferred cards. A Switcharoo discard that leaves six cards does not trigger this hand-swap evaluation because the game will not swap yet.
 
@@ -73,7 +85,7 @@ Human Echo behavior remains unchanged. Humans may choose whether to discard Echo
 
 The CPU does not use a fixed rule such as “45 points is always enough.” Once declaration is unlocked at turn 15, it samples possible hidden human hands using current reveals, public cards such as Brite, aging Spirit King/Vision/Exposed/Gaze memory, and a modest human-synergy assumption. Some plausible hands include a matching legendary when one remains unseen. Each sampled human gets a final draw and is allowed to keep its best five, approximating the human's final turn after the CPU declares.
 
-The base confidence threshold starts at 80% on turn 15 and gradually returns to 72% by turn 23. Scores at 20 or below require near-certainty (or strong current-hand knowledge); 21–34 points require extra caution; 35–69 points are treated as ordinary; 100+ points can declare at a somewhat lower confidence threshold. Active, unblocked Infect slightly lowers the threshold for a reasonable hand because its score will decay. Unblocked Charge slightly raises the threshold for a growing Human/Bot route under 100 points. These are small decision adjustments, not changes to game scoring. A 500,000-point special hand still declares immediately. The default 240 samples are intentionally small enough to calculate immediately during the normal thinking delay.
+The base confidence threshold starts at 80% on turn 15 and gradually returns to 72% by turn 23. Scores at 20 or below require near-certainty (or strong current-hand knowledge); 21–34 points require extra caution; 35–69 points are treated as ordinary; 100+ points can declare at a somewhat lower confidence threshold. Active, unblocked Infect slightly lowers the threshold for a reasonable hand because its score will decay. Unblocked Charge slightly raises the threshold for a growing Human/Bot route under 100 points. A Jar with three Cookie-compatible cards also modestly raises the threshold while a fourth remains drawable. These are small decision adjustments, not changes to game scoring. A 500,000-point special hand still declares immediately. The default 240 samples are intentionally small enough to calculate immediately during the normal thinking delay.
 
 ## Timing and debug output
 
@@ -82,6 +94,7 @@ The CPU waits a random 650–2,199 ms before drawing and another 1,100–2,399 m
 `cpuStrategyDebugEnabled` near the top of `Game.svelte` is the testing toggle. Set it to `false` to silence detailed console explanations. With it enabled, each turn logs:
 
 - The current path.
+- The secondary backup path, its utility, and its reasoning; it is informational only when a race-name cheat forces the primary path.
 - The chosen discard and its calculated value.
 - A snapshot of the CPU's current hand.
 - The CPU's complete discard array for the round.
@@ -123,6 +136,9 @@ The tests use Node's built-in test runner. No test framework or server is requir
 - Scores a Switcharoo discard using the hand received from the human, with either exact or sampled knowledge.
 - Uses rarity only for close discard choices.
 - Makes low-score declarations cautious and accounts for active Infect and Charge growth.
+- Preserves a viable backup route in balanced discard decisions without weakening forced race-name testing.
+- Distinguishes Cookie Jar's +40 bonus, exact +100 hand, Cookie Crumbs, and the chance of drawing a fourth Cookie before declaring.
+- Scores each proposed discard in a cloned discard pile so Longbeard can bank +5 for a weak Dwarf.
 
 For deterministic future tests, pass a fixed random function to the strategy functions, as the current tests do. Add a focused test whenever a new card changes which discard, path, or declaration should be preferred.
 
@@ -132,6 +148,6 @@ There is one normal balanced personality. Difficulty settings are intentionally 
 
 ## Future refinements
 
-- Monitor whether the CPU sufficiently values paired Elf Twins and retains a useful backup race path.
+- Monitor whether the new backup weighting is enough to preserve paired Elf Twins in real games.
 - Consider growing Xenos alongside Charge in future timing decisions.
 - Continue tuning unusual card abilities (such as Rhino and Xeno Guard) after real-game testing.

@@ -1,7 +1,7 @@
 // @ts-ignore
 import { writable } from 'svelte/store';
 
-// 19 total (+ giraffe deck)
+// 22 total (+ giraffe deck)
 const beastDeck = writable([
   'dreamDestroyer',
   'rhino',
@@ -16,11 +16,14 @@ const beastDeck = writable([
   'lion',
   'lion',
   'lion',
-  'panther',
-  'panther',
-  'panther',
-  'fox',
-  'fox',
+  'vulture',
+  'vulture',
+  'duck',
+  'duck',
+  'dumboRat',
+  'dumboRat2',
+  'whiteRat',
+  'brownRat',
   'eggGiraffe'
 ]);
 

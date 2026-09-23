@@ -1,11 +1,19 @@
-import { dirname } from 'path';
+import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
+import { createRecordStore, normalizeName } from './playerRecords.js';
 
 const users = {};
 const readyPlayers = { p1: false, p2: false };
+// ai generated: Only multiplayer connects here; the server owns names, records, and one result per round.
+const playerNames = { p1: 'Player 1', p2: 'Player 2' };
+const recordStore = createRecordStore(join(dirname(fileURLToPath(import.meta.url)), 'data', 'player-records.csv'));
+let roundActive = false;
+let roundEnding = false;
+let roundRecorded = false;
+let resultReporterId = '';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const port = 6912;
@@ -62,11 +70,13 @@ io.on('connection', socket => {
   const players = Object.entries(users).filter(([key, val]) => ['p1', 'p2'].includes(key));
   if (['p1', 'p2'].includes(username)) {
     io.emit('set-users', players);
+    io.emit('player-names', playerNames);
     // ai generated: A client returning from singleplayer receives readiness that was set before it connected.
     socket.emit('player-readied-up', {
       player1: { isReady: readyPlayers.p1 },
       player2: { isReady: readyPlayers.p2 }
     });
+    socket.emit('player-records', { p1: recordStore.get(playerNames.p1), p2: recordStore.get(playerNames.p2) });
   }
 
   // Remove users from list of users.
@@ -75,6 +85,11 @@ io.on('connection', socket => {
     delete users[username];
     if (username === 'p1' || username === 'p2') {
       readyPlayers[username] = false;
+      // ai generated: A disconnected human invalidates any unfinished multiplayer round.
+      if (!roundRecorded) roundActive = false;
+      playerNames[username] = username === 'p1' ? 'Player 1' : 'Player 2';
+      io.emit('player-names', playerNames);
+      io.emit('player-records', { p1: recordStore.get(playerNames.p1), p2: recordStore.get(playerNames.p2) });
       // ai generated: Remaining clients immediately stop displaying a disconnected player as ready.
       io.emit('player-readied-up', {
         player1: { isReady: readyPlayers.p1 },
@@ -89,6 +104,12 @@ io.on('connection', socket => {
 
   // Start game
   socket.on('start-game', data => {
+    // ai generated: A second start event must not reset the one-result guard for an active round.
+    if (!['p1', 'p2'].includes(username) || roundActive) return;
+    roundActive = true;
+    roundEnding = false;
+    roundRecorded = false;
+    resultReporterId = '';
     readyPlayers.p1 = false;
     readyPlayers.p2 = false;
     socket.broadcast.emit('game-started', data);
@@ -106,7 +127,16 @@ io.on('connection', socket => {
   });
 
   // Change username / player title
-  socket.on('username-changed', data => socket.broadcast.emit('update-username', data));
+  socket.on('username-changed', data => {
+    if (!['p1', 'p2'].includes(username)) return;
+    const name = normalizeName(data);
+    if (!name) return;
+    playerNames[username] = name;
+    socket.broadcast.emit('update-username', name);
+    io.emit('player-names', playerNames);
+    // ai generated: Reading a name does not create a save; the first completed multiplayer game does.
+    io.emit('player-records', { p1: recordStore.get(playerNames.p1), p2: recordStore.get(playerNames.p2) });
+  });
 
   // Count turns
   socket.on('new-turn', () => socket.broadcast.emit('add-turn-count'));
@@ -154,7 +184,26 @@ io.on('connection', socket => {
   socket.on('gdg-declared', () => io.emit('gdg-declared'));
 
   // Game ended
-  socket.on('end-game', data => io.emit('game-ended', data));
+  socket.on('end-game', () => {
+    if (!roundActive || roundEnding || !['p1', 'p2'].includes(username)) return;
+    roundEnding = true;
+    resultReporterId = socket.id;
+    io.emit('game-ended', { reporterId: resultReporterId });
+  });
+
+  // ai generated: The declaring client reports final calculated scores once; duplicate end events cannot double-save.
+  socket.on('record-game-result', scores => {
+    if (!roundActive || !roundEnding || roundRecorded || socket.id !== resultReporterId) return;
+    try {
+      const records = recordStore.recordMatch(playerNames.p1, playerNames.p2, scores?.p1, scores?.p2);
+      roundRecorded = true;
+      roundActive = false;
+      io.emit('player-records', records);
+    } catch (error) {
+      console.error('Could not save multiplayer record:', error);
+      socket.emit('record-save-error');
+    }
+  });
 
   // Start updating xeno points, like 3 way handshake part 1
   socket.on('start-xeno-sync', data => socket.broadcast.emit('xeno-sync-started', data));
