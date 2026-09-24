@@ -67,7 +67,7 @@
   <div on:contextmenu|preventDefault on:click={cardClickHandler} class="card bg-{race}{rarity === 'legendary' ? '-rare' : ''}" in:fly={{x: 100}} out:fade>
     <img class="card-img" src={img} alt="img of card">
     <!-- ai generated: This compact rarity badge mirrors the point badge on the opposite top corner. -->
-    <p class="rarity {race}-race-transparent height-24" aria-label="{capitalize($cardDetails[title].rarity)} rarity">
+    <p class="rarity {race}-race-transparent height-28" aria-label="{capitalize($cardDetails[title].rarity)} rarity">
       <span class="rarity-stars" aria-hidden="true">
         {#each displayRarityStars($cardDetails[title].rarity) as position}
           <span class="rarity-star" style={`grid-area: ${Math.ceil(position / 3)} / ${((position - 1) % 3) + 1}`}>★</span>
@@ -569,8 +569,8 @@
     height: 8%;
   }
 
-  .height-24 {
-    height: 24px;
+  .height-28 {
+    height: 28px;
   }
 
   /* race title color */
