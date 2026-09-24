@@ -23,6 +23,7 @@ const details = {
   lightSpirit: { race: 'spirit', otherRaces: [] },
   neutralize: { race: 'neutral', otherRaces: [] },
   switcharoo: { race: 'neutral', otherRaces: [], rarity: 'epic' },
+  shuffle: { race: 'neutral', otherRaces: [], rarity: 'epic' },
   rareKnight: { race: 'human', otherRaces: [], rarity: 'legendary' },
   commonKnight: { race: 'human', otherRaces: [], rarity: 'poor' },
   rareBoost: { race: 'boost', otherRaces: [], rarity: 'legendary' },
@@ -81,6 +82,22 @@ test('keeps a concentrated goblin route and discards the weaker off-race card', 
   const decision = chooseCpuDiscard(observation(), score, () => 0.5);
   assert.equal(decision.cardTitle, 'knight');
   assert.equal(decision.path.race, 'goblins');
+});
+
+test('treats Shuffler as a risky full replacement only when the discard leaves five cards', () => {
+  const strongHand = ['goblinLord', 'troll', 'shaman', 'hobgoblin', 'knight', 'shuffle'];
+  const strongDecision = chooseCpuDiscard(observation({ hand: strongHand, unseenCards: ['villager', 'villager', 'villager', 'villager', 'villager'] }), score, () => 0.5);
+  assert.notEqual(strongDecision.cardTitle, 'shuffle');
+
+  const weakHand = ['villager', 'lightSpirit', 'neutralize', 'plainBoost', 'plainTrap', 'shuffle'];
+  const weakDecision = chooseCpuDiscard(observation({ hand: weakHand, unseenCards: ['troll', 'shaman', 'hobgoblin', 'goblinLord', 'troll'] }), score, () => 0.5);
+  assert.equal(weakDecision.cardTitle, 'shuffle');
+  assert.match(weakDecision.explanation, /sampled five-card replacements/);
+
+  const sevenCardHand = [...strongHand, 'villager'];
+  const safeDecision = chooseCpuDiscard(observation({ hand: sevenCardHand, unseenCards: ['villager', 'villager', 'villager', 'villager', 'villager'] }), score, () => 0.5);
+  assert.equal(safeDecision.cardTitle, 'shuffle');
+  assert.doesNotMatch(safeDecision.explanation, /sampled five-card replacements/);
 });
 
 test('a live secondary path can preserve useful backup cards without overriding a forced race', () => {

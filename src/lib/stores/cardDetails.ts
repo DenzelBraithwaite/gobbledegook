@@ -1235,7 +1235,7 @@ const cardDetails = writable({
     amount: 2,
     rarity: 'amazing',
     traitTitle: 'No Cookie For You',
-    trait: 'Gain +100 points with exactly 1 Cookie Jar and 4 Cookies (Leon can stand in for a Cookie), or +40 per Jar with only Boosts and Neutrals in hand. A Trap in hand prevents either bonus. Bots double this effect; Spirits cannot use Cookies. Can be blocked!',
+    trait: 'Gain +100 points with exactly 1 Cookie Jar and 4 Cookies (Leon can stand in for a Cookie), or +40 per Jar with only Boosts and Neutrals in hand. A Trap in hand prevents either bonus. The Jar is not doubled for Bots; Spirits cannot use Cookies. Can be blocked!',
     description: 'This notorius cookie jar gained sentience after being desecrated repeatedly. It vows to figure out once and for all who stole the cookie from the cookie jar.',
     race: 'boost',
     otherRaces: [],
@@ -1478,6 +1478,19 @@ const cardDetails = writable({
     race: 'neutral',
     otherRaces: [],
     image: '/neutrals/switcharoo.png'
+  },
+  shuffle: {
+    title: 'shuffle',
+    displayTitle: 'Shuffler',
+    points: 0,
+    amount: 1,
+    rarity: 'epic',
+    traitTitle: 'Shuffle',
+    trait: "When discarded, player will discard hand and draw 5 new cards. Discarded cards and drawn cards do not trigger their effects. Discard from 7 cards to remove only Shuffler without activating it.",
+    description: 'A gambling spirit who enjoys testing people\'s luck.',
+    race: 'neutral',
+    otherRaces: [],
+    image: '/neutrals/shuffle.png'
   },
   vision: {
     title: 'vision',

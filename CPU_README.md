@@ -51,11 +51,13 @@ When considering a discard, the CPU scores a cloned player with that proposed ca
 
 ### Cookie Jar path
 
-The Cookie path distinguishes a Boost/Neutral-only hand with a Jar (+40, or +80 to Bots) from the exact one-Jar-and-four-Cookie-compatible-cards hand (+100, or +200 to Bots). Leon can stand in for a Cookie, while Cookie Crumbs and other Boosts or Neutrals can qualify for the +40 hand but not the +100 hand. Any Trap still in hand prevents both bonuses; previously discarded Traps do not. A bare Jar or a single Cookie-compatible card adds no speculative setup value; two or more make the path worth considering, and three with a Jar create the strongest near-complete incentive. A blocked Jar has no current bonus.
+The Cookie path distinguishes a Boost/Neutral-only hand with a Jar (+40, including Bots) from the exact one-Jar-and-four-Cookie-compatible-cards hand (+100, including Bots). Leon can stand in for a Cookie, while Cookie Crumbs and other Boosts or Neutrals can qualify for the +40 hand but not the +100 hand. Any Trap still in hand prevents both bonuses; previously discarded Traps do not. A bare Jar or a single Cookie-compatible card adds no speculative setup value; two or more make the path worth considering, and three with a Jar create the strongest near-complete incentive. A blocked Jar has no current bonus.
 
 The CPU estimates the chance of drawing a needed Cookie or Leon from their respective active decks. With a Jar and three Cookie-compatible cards, it values the fourth-card possibility and modestly raises its declaration threshold while one remains drawable. This encourages waiting but does not forbid a declaration when the present hand is already convincingly ahead. These estimates guide decisions; the authoritative game scorer still supplies the actual points.
 
 Discarding Switcharoo at five cards is evaluated as a hand trade, not as keeping the CPU's old hand. If the human hand is revealed, the CPU scores those exact received cards. Otherwise it samples plausible hidden hands and includes a small uncertainty cost. The simulation gives the human the CPU's old five cards, so opposing A.I. and other hand-dependent effects are recalculated; evolving Xeno card values follow the transferred cards. A Switcharoo discard that leaves six cards does not trigger this hand-swap evaluation because the game will not swap yet.
+
+Discarding Shuffler from six cards is evaluated as a full replacement, not as keeping the CPU's other five cards. The CPU samples five-card hands from cards it has not seen and applies a modest uncertainty cost, so it prefers a known strong hand over a speculative redraw. At seven cards, Shuffler is a safe ordinary discard. The actual replacement uses all remaining card types and has no immediate draw effects, except eggs still set up later hatching.
 
 ### Race-name testing cheat
 
@@ -104,6 +106,7 @@ The CPU waits a random 650–2,199 ms before drawing and another 1,100–2,399 m
 - The A.I. theft penalty when the Bot path is active.
 - Infect and Charge growth considerations in the path and declaration explanations.
 - Whether a Switcharoo trade used an exact revealed hand or sampled hidden hands.
+- Whether Shuffler's replacement was compared with sampled unseen hands.
 - Gobbledegook declaration win estimates.
 - Currently revealed, publicly visible, or remembered opponent cards, along with their information source and age.
 - The complete remembered opponent-hand array in every ordinary decision and Echo status log, even when that array is empty.
@@ -134,6 +137,7 @@ The tests use Node's built-in test runner. No test framework or server is requir
 - Uses the forced race score, rather than a stronger off-race score, for Gobbledegook decisions.
 - Prevents Gobbledegook declarations only when the CPU is named exactly `test`, case-insensitively.
 - Scores a Switcharoo discard using the hand received from the human, with either exact or sampled knowledge.
+- Evaluates Shuffler as a full redraw rather than pretending the old hand survives.
 - Uses rarity only for close discard choices.
 - Makes low-score declarations cautious and accounts for active Infect and Charge growth.
 - Preserves a viable backup route in balanced discard decisions without weakening forced race-name testing.

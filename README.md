@@ -36,7 +36,9 @@ Singleplayer does not retain wins, losses, draws, or ELO.
 
 ## Multiplayer records
 
-Completed multiplayer games save one row per player name in `data/player-records.csv` on the server computer. The file is created after the first completed game and can be committed and pushed to GitHub for use on another computer; the game does not push it automatically. Names are matched case-insensitively, so changing a name loads that name's existing record. Each name begins at 1000 ELO; a win adds 10, a loss subtracts 10, and a draw changes nothing. If both players use the same name, both outcomes are recorded against that name and the ELO changes cancel. The current player's ELO appears at the top left during a multiplayer round, and both players' saved records appear on the results screen.
+Completed multiplayer games save one row per player name in `data/player-records.csv` on the server computer. The file is created after the first completed game and can be committed and pushed to GitHub for use on another computer; the game does not push it automatically. Names are matched case-insensitively, so changing a name loads that name's existing record. Each name begins at 1000 ELO; a win adds 10, a loss subtracts 10, and a draw changes nothing. If both players use the same name, both outcomes are recorded against that name and the ELO changes cancel. During a multiplayer round, your rating and badge appear beneath your name; the opponent's appear inline as `Name | 1000` followed by their badge. Both saved records appear on the results screen.
+
+The badge beside each in-game ELO uses art from `server/serve/badges/` (copied to `public/badges/` by the build): Loser for 699 or less, Wood for 700–899, Silver for 900–1099, Gold for 1100–1299, and Goblin for 1300 or more. Click either player's badge to see all five ranks and their thresholds in a larger view.
 
 ## Factions and card types
 

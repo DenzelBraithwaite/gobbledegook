@@ -335,6 +335,32 @@ export function chooseCpuDiscard(
         explanation: `Discard switcharoo: ${exactHand ? 'known' : `${sampleCount} sampled`} opponent hand${exactHand ? '' : 's'} become the CPU hand; expected post-swap value ${expectedValue.toFixed(1)}${uncertaintyCost ? ` less ${uncertaintyCost} uncertainty points` : ''}; representative backup ${representative.backupPath.race}.`
       };
     }
+    // ai generated: Shuffle replaces the entire kept hand; compare sampled replacement hands with keeping known cards.
+    if (cardTitle === 'shuffle' && candidateHand.length === 5) {
+      const sampleCount = 24;
+      const outcomes = Array.from({ length: sampleCount }, () => {
+        const replacementHand = sampleWithoutReplacement(observation.unseenCards, 5, random);
+        const replacementEvaluator: CpuScoreEvaluator = hand => evaluateAfterDiscard
+          ? evaluateAfterDiscard(hand, 'shuffle')
+          : evaluate(hand);
+        const { path, backupPath } = selectCpuPaths({ ...observation, hand: replacementHand }, replacementEvaluator);
+        const scored = replacementEvaluator(replacementHand);
+        const authoritativeScore = observation.forcedRacePath
+          ? scored.points[scoreKeys[observation.forcedRacePath]] ?? 0
+          : scored.highestPoints;
+        return { path, backupPath, value: authoritativeScore + path.utility + backupValue(backupPath, observation) };
+      });
+      const expectedValue = outcomes.reduce((total, outcome) => total + outcome.value, 0) / sampleCount;
+      const representative = [...outcomes].sort((a, b) => a.value - b.value)[Math.floor(sampleCount / 2)];
+      const uncertaintyCost = 8;
+      return {
+        cardTitle,
+        path: representative.path,
+        backupPath: representative.backupPath,
+        candidateScore: expectedValue - uncertaintyCost + random() * 0.001,
+        explanation: `Discard shuffle: ${sampleCount} sampled five-card replacements average ${expectedValue.toFixed(1)} value, less ${uncertaintyCost} points for giving up a known hand; representative backup ${representative.backupPath.race}.`
+      };
+    }
     const candidateObservation = { ...observation, hand: candidateHand };
     // ai generated: Score the discard pile after this exact card leaves the hand, so Longbeard's +5 is not missed.
     const candidateEvaluator: CpuScoreEvaluator = evaluateAfterDiscard

@@ -102,7 +102,7 @@ Beasts thrive on synergy. Their leaders normalize every Beast to a high value, L
 
 ## Bots
 
-Bots combine strong base cards with dangerous Viruses. Protectron turns Viruses into assets, while A.I. strengthens all Bots and steals opposing Bot value at the end of the game. Cookie bonuses are doubled when applied to the Bot score.
+Bots combine strong base cards with dangerous Viruses. Protectron turns Viruses into assets, while A.I. strengthens all Bots and steals opposing Bot value at the end of the game. Cookies and Cookie Crumbs are doubled when applied to the Bot score, but Cookie Jar is not.
 
 **Weaknesses:** Viruses are worth −2 without support, and an opposing A.I. can steal the card-derived value of a Bot hand before normal boost and trap adjustments.
 
@@ -174,7 +174,7 @@ Boosts remain in a player's effect log after being discarded unless another effe
 - **Feast.** Permanently adds +10 Beast points.
 - **Oreo, Chocolate Chip, Thumbprint, and Oatmeal Cookie.** Each permanently adds +5 points to every race except Spirits and +10 points to Bots.
 - **Cookie Crumbs.** Each copy permanently adds +3 points to every race except Spirits and +6 points to Bots.
-- **Cookie Jar.** Gives +100 with exactly one Jar and four Cookies or Cookie-mimicking Leons; otherwise gives +40 per Jar in a hand containing only Boosts and Neutrals. A Trap in hand prevents either bonus. Bots double these amounts. Leon does not create a Cookie's separate draw boost.
+- **Cookie Jar.** Gives +100 with exactly one Jar and four Cookies or Cookie-mimicking Leons; otherwise gives +40 per Jar in a hand containing only Boosts and Neutrals. A Trap in hand prevents either bonus. Bots receive the same Jar bonus as other races; only Cookies and Cookie Crumbs are doubled for Bots. Leon does not create a Cookie's separate draw boost.
 
 ## Traps
 
@@ -195,6 +195,7 @@ Neutral cards create events and unusual interactions instead of contributing an 
 
 - **Neutralize.** Removes active boost, trap, and neutral effects, including accumulated counters, Chastity, and Corruption.
 - **Switcharoo.** When discarded from a normal six-card hand before Gobbledegook is declared, swaps the five remaining cards between players.
+- **Shuffler (Shuffle).** One copy. Discarding it from a six-card hand sends the other five cards to the discard pile without their discard abilities, deals five unrestricted replacement cards without immediate draw abilities, and ends the turn. Eggs still set up their later hatch draws. It can activate during the final turn after Gobbledegook is declared. Discarding it from seven cards removes only Shuffler, leaving six cards and no Shuffle effect.
 - **Vision.** Reveals the opponent's hand for the current turn unless they are protected.
 - **Echo.** Grants another draw, allows a hand of up to seven cards, and keeps the turn active until the hand returns to five.
 - **Leon.** Has zero base points and belongs to all eight races. He counts toward other cards' requirements—including Dog, Bear, Elf Twins, Bards, Wolves, Lions, Jinn hands, and Cookie Jar—but does not receive those cards' personal bonuses or Bear's zero-point penalty. Race-wide effects such as Emperor/Commander, Beast leaders, Elf King, A.I., and Nebulite can still affect him. He triggers Protectron's +1 as a Virus would but does not receive the Virus-specific +8.

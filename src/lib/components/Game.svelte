@@ -12,7 +12,7 @@
   import { type Player, player1, player1Reset, player2, player2Reset, cardDetails, beastDeck, botDeck, dwarfDeck, elfDeck, goblinDeck, humanDeck, xenoDeck, spiritDeck, boostDeck,  trapDeck, neutralDeck } from '../stores';
 
   // Custom components
-  import { Button, Discards, RemainingCardsModal, Library, Spinner, RacePoints } from './index';
+  import { Button, Discards, RemainingCardsModal, Library, RankingsModal, Spinner, RacePoints } from './index';
   import GGCard from './Card.svelte';
 
   // ai generated: The decision engine stays independent from Svelte and receives only the information a real player could know.
@@ -25,7 +25,7 @@
   type Race = 'human' | 'goblin' | 'elf' | 'dwarf' | 'beast' | 'bot' | 'xeno' | 'spirit' | 'boost' | 'trap' | 'neutral' | '';
   const bardCards = ['bardLute', 'bardFlute', 'bardHorn', 'bardDrum', 'bardSinger'];
   const aiBotCardBonus = 4;
-  let socket = io('http://192.168.2.14:6912', { autoConnect: false });
+  let socket = io('http://127.0.0.1:6912', { autoConnect: false });
   let gameMode: 'singleplayer' | 'multiplayer' = 'singleplayer';
   // ai generated: These are server-owned multiplayer records; singleplayer never loads or saves them.
   type MultiplayerRecord = { name: string; wins: number; losses: number; draws: number; elo: number };
@@ -33,6 +33,33 @@
     p1: { name: 'Player 1', wins: 0, losses: 0, draws: 0, elo: 1000 },
     p2: { name: 'Player 2', wins: 0, losses: 0, draws: 0, elo: 1000 }
   };
+  // ai generated: Badge tiers only affect the multiplayer display; ELO changes still come from the server.
+  type EloBadge = 'loser' | 'wood' | 'silver' | 'gold' | 'goblin';
+  // ai generated: One descending list drives both the live badge and the explanatory rankings modal.
+  const eloRanks: { badge: EloBadge; label: string; threshold: string; minElo: number }[] = [
+    { badge: 'goblin', label: 'Goblin', threshold: '1300+', minElo: 1300 },
+    { badge: 'gold', label: 'Gold', threshold: '1100–1299', minElo: 1100 },
+    { badge: 'silver', label: 'Silver', threshold: '900–1099', minElo: 900 },
+    { badge: 'wood', label: 'Wood', threshold: '700–899', minElo: 700 },
+    { badge: 'loser', label: 'Loser', threshold: '699 or less', minElo: Number.NEGATIVE_INFINITY }
+  ];
+  function getEloBadge(elo: number): EloBadge {
+    return eloRanks.find(rank => elo >= rank.minElo)?.badge ?? 'loser';
+  }
+  $: p1EloBadge = getEloBadge(multiplayerRecords.p1.elo);
+  $: p2EloBadge = getEloBadge(multiplayerRecords.p2.elo);
+  let rankingsVisible = false;
+  // ai generated: The rankings list takes focus visually without leaving another card-info modal underneath it.
+  function openRankings(): void {
+    gameState.libraryVisible = false;
+    gameState.discardsVisible = false;
+    gameState.remainingCardsVisible = false;
+    rankingsVisible = true;
+  }
+  // ai generated: Before a build copies badge art into public, keep its space without a broken-image icon.
+  function setBadgeImageVisibility(event: Event, visible: boolean): void {
+    (event.currentTarget as HTMLImageElement).style.visibility = visible ? 'visible' : 'hidden';
+  }
   // ai generated: Toggle this value while testing to show or hide detailed CPU path explanations in the browser console.
   let cpuStrategyDebugEnabled = true;
   const cpuNames = ['Gruntilda', 'KazBot', 'TinkBot', 'CPU', 'AI', 'Guest#445', 'LawjokerBot', 'DefinitelyNotABot', 'Player 2', 'Challenger', 'Mr Quack', 'Mrs Quack', 'A Duck', 'Bot', 'Benny'];
@@ -489,6 +516,8 @@
   // Ends current round
   function endGame() {
     if (cpuTurnTimeout) clearTimeout(cpuTurnTimeout);
+    // ai generated: A remote end-of-round event should not leave the rankings guide over the result screen.
+    rankingsVisible = false;
     gameState.gameOver = true;
     gameState.startBtnDisabled = false;
     gameState.gobbledegookDisabled = true;
@@ -891,6 +920,13 @@
     // Check if card discarded is switcharoo, if so, swap hands, but don't swap if they have echo in effect (too many cards)
     if (cardTitle === 'switcharoo' && player.hand.length === 5 && !gameState.gobbledegookDeclared) await swapHands();
 
+    // ai generated: Like Switcharoo, Shuffle only fires after a normal six-card hand becomes five; seven to six safely discards it.
+    // ai generated: Unlike Switcharoo, a declared GDG does not block Shuffle because it changes only this player's final hand.
+    if (cardTitle === 'shuffle' && player.hand.length === 5) {
+      const replacedFullHand = await shuffleHand(player);
+      if (!replacedFullHand) return;
+    }
+
     // If player is playing twice, let them draw again.
     if (player.playingTwice && cardTitle !== 'echo') player.playingTwice = false;
 
@@ -925,6 +961,54 @@
       changeTurns();
     }
   };
+
+  // ai generated: Shuffle is a fresh five-card deal, not five ordinary draws: cleared cards have no discard effects and replacements have no draw effects.
+  async function shuffleHand(player: Player): Promise<boolean> {
+    const discardedHand = [...player.hand];
+    const replacementHand: string[] = [];
+
+    for (let count = 0; count < 5; count++) {
+      // ai generated: Unlike the opening deal, every remaining card is eligible, including eggs and bonus cards.
+      const availableDecks = deckTypes.filter(deck => fullDeck[deck]?.length > 0);
+      if (availableDecks.length === 0) break;
+
+      const chosenDeck = availableDecks[Math.floor(Math.random() * availableDecks.length)];
+      const cardDrawn = fullDeck[chosenDeck][Math.floor(Math.random() * fullDeck[chosenDeck].length)];
+      fullDeck[chosenDeck].splice(fullDeck[chosenDeck].indexOf(cardDrawn), 1);
+      if (fullDeck[chosenDeck].length === 0) removeRaceDeck(chosenDeck as DeckRace);
+      replacementHand.push(cardDrawn);
+
+      // ai generated: Eggs are the exception to the no-draw-effects rule: their counters still hatch on later normal draws.
+      if (cardDrawn === 'eggGiraffe') player.giraffeCounter = 1;
+      if (cardDrawn === 'xenoEgg') player.xenoEggCounter = 1;
+
+      const exemptLegendaries = ['nightTerror', 'chastity', 'corruption', 'neutralize'];
+      if ($cardDetails[cardDrawn].rarity === 'legendary' && !exemptLegendaries.includes(cardDrawn)) emitGameEvent('remove-remaining-legendary', cardDrawn);
+    }
+
+    const playerStore = player.id === $player1.id ? player1 : player2;
+    playerStore.update(current => ({
+      ...current,
+      hand: replacementHand,
+      discards: [...current.discards, ...discardedHand],
+      cardsDrawn: [...current.cardsDrawn, ...replacementHand],
+      playingTwice: false
+    }));
+
+    // ai generated: Clearing a held Spirit King ends its reveal even though Shuffle skips the King's ordinary discard handler.
+    if (discardedHand.includes('spiritKing') && !$player1.hand.includes('spiritKing') && !$player2.hand.includes('spiritKing')) await concealPlayers();
+    refreshCpuOpponentMemory();
+    calculateCurrentPlayerPoints(player.id === $player1.id ? $player1 : $player2);
+    emitGameEvent('draw-card', {player1: $player1, player2: $player2, deckTypes, fullDeck});
+    emitGameEvent('display-event', 'shuffle');
+
+    // ai generated: If the entire draw pile runs out mid-refill, score the partial hand instead of leaving an unplayable turn.
+    if (replacementHand.length < 5) {
+      emitGameEvent('end-game');
+      return false;
+    }
+    return true;
+  }
 
   async function eradicateTraps(): Promise<void> {
     gameState.showSpinner = true;
@@ -2042,7 +2126,8 @@
     if (isCookieJarActive(player)) {
       const numOfCookieJars = player.hand.filter(card => card === 'cookieJar').length;
       const fullCookieJar = isFullCookieJarHand(player, cookies);
-      fullCookieJar ? player.points.bots += 200 : player.points.bots += (numOfCookieJars * 80);
+      // ai generated: Unlike Cookie and Cookie Crumbs, the Jar's +40/+100 bonus is not doubled for Bots.
+      fullCookieJar ? player.points.bots += 100 : player.points.bots += (numOfCookieJars * 40);
     }
   }
 
@@ -2571,7 +2656,7 @@
   }
 
   // Show visual feedback for certain events
-  async function showEvent(trigger: 'neutralize' | 'switcharoo' | 'xenoBloom' | 'xenoBlossom' | 'ticktock' | 'tocktick' | 'exposed' | 'revealed' |'vision' | 'echo' | 'eradicate' | 'gaze' | 'turn-change') {
+  async function showEvent(trigger: 'neutralize' | 'switcharoo' | 'shuffle' | 'xenoBloom' | 'xenoBlossom' | 'ticktock' | 'tocktick' | 'exposed' | 'revealed' |'vision' | 'echo' | 'eradicate' | 'gaze' | 'turn-change') {
     while (gameState.showEventMessage) await wait(100);
     let timer = 1500;
     gameState.showEventMessage = true;
@@ -2598,6 +2683,9 @@
       case 'switcharoo':
           gameState.eventMessage = "Switcharoo 🔃!";
           break;
+      case 'shuffle':
+        gameState.eventMessage = "Shuffle 🔀!";
+        break;
       case 'xenoBloom':
         gameState.eventMessage = "Xeno Bloom 👽!";
         break;
@@ -2799,11 +2887,6 @@
     </div>
   {/if}
 
-  <!-- ai generated: Show only the human's saved multiplayer ELO while the board is in play. -->
-  {#if gameMode === 'multiplayer' && !gameState.gameOver}
-    <div class="multiplayer-elo">ELO: {gameState.playingAs === 'p1' ? multiplayerRecords.p1.elo : multiplayerRecords.p2.elo}</div>
-  {/if}
-
     <!-- Discards -->
      <svg on:click={toggleDiscardVisibility} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="card-discards-btn">
       <path d="M15 12h-5"/>
@@ -2833,6 +2916,11 @@
     </svg>
     {#if gameState.libraryVisible}
       <Library />
+    {/if}
+
+    <!-- ai generated: Either player's badge opens the same ordered guide; closing it does not affect the game. -->
+    {#if rankingsVisible}
+      <RankingsModal ranks={eloRanks} on:close={() => rankingsVisible = false}/>
     {/if}
 
     <!-- Eng game view -->
@@ -3189,11 +3277,26 @@
               </div>
             {/if}
 
-            {#if gameState.p1NameChangeVisible}
-              <input bind:value={gameState.newPlayerTitle} on:blur={() => updateUsernameForOtherClient('p1')} type="text" maxlength="20"/>
-            {:else}
-              <p on:click={toggleP1NameChangeVisibility} class="p1-name {$player1.turn ? "turn-active" : ""}">{$player1.title}</p>
-            {/if}
+            <!-- ai generated: Own ELO sits below the editable name; the opponent's rating stays beside their name. -->
+            <div class="player-nameplate" class:player-nameplate__own={gameState.playingAs === 'p1'}>
+              {#if gameState.p1NameChangeVisible}
+                <input bind:value={gameState.newPlayerTitle} on:blur={() => updateUsernameForOtherClient('p1')} type="text" maxlength="20"/>
+              {:else}
+                <p on:click={toggleP1NameChangeVisibility} class="p1-name {$player1.turn ? "turn-active" : ""}">{$player1.title}</p>
+              {/if}
+              {#if gameMode === 'multiplayer'}
+                <span class="player-elo" class:player-elo__opponent={gameState.playingAs !== 'p1'}>
+                  <!-- ai generated: The badge identifies this number as ELO; a pipe separates the opponent's inline rating from their name. -->
+                  {gameState.playingAs === 'p1' ? '' : '| '}{multiplayerRecords.p1.elo}
+                  {#if p1EloBadge}
+                    <!-- ai generated: Only the badge is clickable, so rating text and editable player names keep their own actions. -->
+                    <button class="elo-badge-button" type="button" aria-label="View rank badges and thresholds" title="View rankings" on:click={openRankings}>
+                      <img class="elo-badge" src="/badges/{p1EloBadge}_badge.png" alt="" on:load={event => setBadgeImageVisibility(event, true)} on:error={event => setBadgeImageVisibility(event, false)}/>
+                    </button>
+                  {/if}
+                </span>
+              {/if}
+            </div>
           </div>
 
           {#each $player1.hand as card}
@@ -3253,11 +3356,24 @@
               </div>
             {/if}
 
-            {#if gameState.p2NameChangeVisible}
-              <input bind:value={gameState.newPlayerTitle} on:blur={() => updateUsernameForOtherClient('p2')} type="text" maxlength="20"/>
-            {:else}
-              <p on:click={toggleP2NameChangeVisibility} class="p2-name {$player2.turn ? "turn-active" : ""}">{$player2.title}</p>
-            {/if}
+            <!-- ai generated: The same nameplate works when multiplayer assigns either side to the local player. -->
+            <div class="player-nameplate" class:player-nameplate__own={gameState.playingAs === 'p2'}>
+              {#if gameState.p2NameChangeVisible}
+                <input bind:value={gameState.newPlayerTitle} on:blur={() => updateUsernameForOtherClient('p2')} type="text" maxlength="20"/>
+              {:else}
+                <p on:click={toggleP2NameChangeVisibility} class="p2-name {$player2.turn ? "turn-active" : ""}">{$player2.title}</p>
+              {/if}
+              {#if gameMode === 'multiplayer'}
+                <span class="player-elo" class:player-elo__opponent={gameState.playingAs !== 'p2'}>
+                  {gameState.playingAs === 'p2' ? '' : '| '}{multiplayerRecords.p2.elo}
+                  {#if p2EloBadge}
+                    <button class="elo-badge-button" type="button" aria-label="View rank badges and thresholds" title="View rankings" on:click={openRankings}>
+                      <img class="elo-badge" src="/badges/{p2EloBadge}_badge.png" alt="" on:load={event => setBadgeImageVisibility(event, true)} on:error={event => setBadgeImageVisibility(event, false)}/>
+                    </button>
+                  {/if}
+                </span>
+              {/if}
+            </div>
           </div>
           {#each $player2.hand as card}
             <GGCard
@@ -3307,19 +3423,6 @@
 
 
 <style lang="scss">
-  // ai generated: The in-game rating sits top left while the between-round name panel is hidden.
-  .multiplayer-elo {
-    position: absolute;
-    top: 2px;
-    left: 8px;
-    z-index: 3;
-    padding: 0.25rem 0.6rem;
-    border: 1px solid #d44215;
-    border-radius: 0.5rem;
-    color: #fff0d2;
-    background: #0c0c0cd3;
-  }
-
   .main-content {
     position: relative;
     overflow-y: hidden;
@@ -3724,6 +3827,58 @@
     font-weight: bold;
     color: #b77a5e;
     text-wrap: nowrap;
+  }
+
+  // ai generated: Keep the local rating beneath its name, but keep the other player's rating on one line.
+  .player-nameplate {
+    display: flex;
+    align-items: baseline;
+    gap: 0.35rem;
+    white-space: nowrap;
+  }
+
+  .player-nameplate__own {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0;
+  }
+
+  .player-elo {
+    color: #fff0d2;
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  // ai generated: A fixed-size art slot keeps each badge aligned with the number without moving card-score rows.
+  .elo-badge {
+    width: 1.35rem;
+    height: 1.35rem;
+    object-fit: contain;
+    flex: none;
+  }
+
+  // ai generated: Leave the badge's small rank art unframed while making it keyboard- and mouse-clickable.
+  .elo-badge-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: 2px solid #fff0d2;
+      outline-offset: 2px;
+      border-radius: 0.25rem;
+    }
+  }
+
+  .player-elo__opponent {
+    color: #d9c4a5;
   }
 
   .turn-active {
