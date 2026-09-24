@@ -65,7 +65,7 @@ Rename the CPU to the exact plural name of a scoring race to force that strategy
 
 Rename the CPU to exactly `test`, case-insensitively, to prevent it from declaring Gobbledegook. This is intended for manually testing longer games; every other CPU behavior remains active.
 
-Rename the CPU to exactly `gdg` or `gobbledegook`, case-insensitively, to make it declare at its first legal start-of-turn opportunity (turn 15 or later, with five cards and no declaration already active). This bypasses its usual win-odds calculation and is only a testing cheat.
+Rename the CPU to exactly `gdg` or `gobbledegook`, case-insensitively, to make it declare at its first legal start-of-turn opportunity (turn 15 or later, with five cards and no declaration already active). This bypasses its usual win-odds calculation and is only a testing cheat. On the human's final turn, they can press GDG immediately to keep their five-card hand or draw and discard as usual.
 
 ## A.I. card risk
 

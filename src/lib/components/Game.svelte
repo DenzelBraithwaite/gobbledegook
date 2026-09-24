@@ -433,8 +433,9 @@
 
     calculateCurrentPlayerPoints(activePlayer);
     const localPlayer = gameState.playingAs === 'p1' ? $player1 : $player2;
-    const gdgButtonAvailable = !gameState.gameOver && !gameState.gobbledegookDeclared && gameState.turnCount >= 15;
-    if (gdgButtonAvailable && isPlayerTurn(localPlayer)) gameState.gobbledegookDisabled = false;
+    // ai generated: The final player may press GDG immediately to score their current five cards instead of risking a draw.
+    const gdgButtonAvailable = !gameState.gameOver && (gameState.gobbledegookDeclared || gameState.turnCount >= 15);
+    if (gdgButtonAvailable && isPlayerTurn(localPlayer) && localPlayer.hand.length === 5) gameState.gobbledegookDisabled = false;
     if (isPlayerTurn(localPlayer)) void showEvent('turn-change');
     if (gameMode === 'singleplayer' && $player2.turn) scheduleCpuTurn();
   }
@@ -3426,7 +3427,7 @@
                 0/2
               {/if}
             </Button>
-          {:else if gameState.gobbledegookDisabled || gameState.turnCount < 15}
+          {:else if gameState.gobbledegookDisabled || (!gameState.gobbledegookDeclared && gameState.turnCount < 15)}
             <Button round={true} customClasses="btn__orange_disabled">GDG</Button>
           {:else}
             <Button on:click={async () => clickOnGobbledegook()} round={true} customClasses="btn__orange">GDG</Button>

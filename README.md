@@ -19,7 +19,7 @@ This is a personal project intended for private play over a local network. It is
 3. On a turn, the active player draws a card and discards back down to five.
 4. Card effects can alter scores, reveal or exchange hands, affect future draws, or remain active after a card is discarded.
 5. Once the **GDG** button becomes available, a player can declare Gobbledegook instead of drawing.
-6. The opponent receives one final turn before the round ends.
+6. The opponent receives one final turn before the round ends. They can press GDG immediately to keep their current hand or draw and discard once.
 7. Each faction is scored independently. A player's final score is their highest faction total after all card effects are resolved.
 
 A round also ends if the draw pile is exhausted.
