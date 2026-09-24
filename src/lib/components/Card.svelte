@@ -1,6 +1,9 @@
-<script>
+<script lang="ts">
   // hooks
   import { createEventDispatcher } from 'svelte';
+
+  // stores
+  import { cardDetails } from '../stores';
 
   // Transitions
   import { fly, fade } from 'svelte/transition';
@@ -13,7 +16,7 @@
   export let points = 0;
   export let modifiedPoints = 0;
   export let race = 'none';
-  export let rarity = 'common';
+  export let rarity: 'legendary' | 'epic' | 'amazing' | 'great' | 'poor' = 'poor';
   export let description = '';
   export let trait = '';
   export let traitTitle = '';
@@ -23,6 +26,14 @@
   $: if (race === 'goblin-ish') race = 'goblin';
 
   const createEvent = createEventDispatcher();
+  // ai generated: These 3×3 positions mirror dice pips: corners, diagonals, and a center star for odd rarities.
+  const rarityStarPositions = {
+    legendary: [1, 3, 5, 7, 9],
+    epic: [1, 3, 7, 9],
+    amazing: [1, 5, 9],
+    great: [1, 9],
+    poor: [5]
+  };
 
   function cardClickHandler(event) {    
     createEvent('cardClick', {
@@ -38,10 +49,16 @@
     const secondHalf = string.slice(1);
     return firstHalf + secondHalf;
   };
+
+  // ai generated: Text stars can inherit soft race colors and sit at fixed dice positions.
+  function displayRarityStars(rarity: 'legendary' | 'epic' | 'amazing' | 'great' | 'poor'): number[] {
+    return rarityStarPositions[rarity];
+  }
 </script>
 
 {#if !faceUp}
   <!-- svelte-ignore a11y-click-events-have-key-events -->
+  <!-- svelte-ignore a11y-no-static-element-interactions -->
   <div on:click class="card facedown bottom-deck" in:fly={{x: 100}} out:fade></div>
 {:else}
   <!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -49,7 +66,15 @@
   <!-- If card is legendary, shows special race colors, otherwise matches race color -->
   <div on:contextmenu|preventDefault on:click={cardClickHandler} class="card bg-{race}{rarity === 'legendary' ? '-rare' : ''}" in:fly={{x: 100}} out:fade>
     <img class="card-img" src={img} alt="img of card">
-    <p class="race {race}-race">{capitalize(race)}</p>
+    <!-- ai generated: This compact rarity badge mirrors the point badge on the opposite top corner. -->
+    <p class="rarity {race}-race-transparent height-24" aria-label="{capitalize($cardDetails[title].rarity)} rarity">
+      <span class="rarity-stars" aria-hidden="true">
+        {#each displayRarityStars($cardDetails[title].rarity) as position}
+          <span class="rarity-star" style={`grid-area: ${Math.ceil(position / 3)} / ${((position - 1) % 3) + 1}`}>★</span>
+        {/each}
+      </span>
+    </p>
+    <p class="race {race}-race-transparent">{capitalize(race)}</p>
     <p class="points {race}-race" class:line-through={buffed || reduced}>{points}</p>
     {#if buffed || reduced}
       <p class="points__modified {race}-race" class:points__modified--reduced={reduced}>{modifiedPoints}</p>
@@ -76,8 +101,8 @@
     position: relative;
     width: 9.5rem;
     height: 14rem;
-    border-radius: 0.25rem;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3882352941);
+    border-radius: 6px 6px 0 0;
     transition: all 0.3s ease-out;
 
     display: flex;
@@ -98,7 +123,6 @@
     height: 100%;
     background-color: #ffffff3b;
     overflow-y: scroll;
-    border-radius: 0.25rem;
     text-align: center;
     line-height: 1.125;
 
@@ -147,7 +171,8 @@
     overflow-y: scroll;
   }
 
-  .race {
+  .race,
+  .rarity {
     color: #eee;
     z-index: 10;
     text-align: center;
@@ -156,19 +181,62 @@
     letter-spacing: 1px;
     height: 1.5rem;
     max-height: 100%;
-    border-radius: 1rem;
-    padding: 0.25rem;
-    width: 3.75rem;
-    box-shadow: inset -2px -2px 8px #0000004d;
-
+    padding: 0.125rem;
     position: absolute;
-    bottom: 0;
-    left: 50%;
-    transform: translate(-25px, 10px);
+    width: 105%;
+
     display: flex;
     align-items: center;
     justify-content: center;
   }
+
+  .race {
+    border-radius: 0 0 6px 6px;
+    // width: 3.75rem;
+
+    bottom: -18px;
+    right: 50%;
+    transform: translate(50%, 0);
+  }
+
+  .rarity {
+    /* ai generated: Match the point badge's footprint, mirrored into the top-right corner. */
+    border-radius: 0 0 0 0.75rem;
+    box-shadow: inset -2px -2px 8px #0000004d;
+    width: 1.75rem;
+    height: 1.75rem;
+    padding: 0;
+    top: 0;
+    right: 0;
+  }
+
+  /* ai generated: A fixed grid gives each rarity the same centered dice geometry. */
+  .rarity-stars {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    place-items: center;
+    width: 100%;
+    height: 100%;
+  }
+
+  .rarity-star {
+    font-size: 0.45rem;
+    line-height: 1;
+    text-shadow: 0 1px 2px #00000045;
+  }
+
+  .rarity.human-race-transparent { color: #afd3cd; }
+  .rarity.goblin-race-transparent { color: #b9d6af; }
+  .rarity.elf-race-transparent { color: #dfcdec; }
+  .rarity.dwarf-race-transparent { color: #d8b3a2; }
+  .rarity.beast-race-transparent { color: #d2b889; }
+  .rarity.bot-race-transparent { color: #ced1d2; }
+  .rarity.xeno-race-transparent { color: #d5ca92; }
+  .rarity.spirit-race-transparent { color: #dfb9d7; }
+  .rarity.boost-race-transparent { color: #c5dbe2; }
+  .rarity.trap-race-transparent { color: #b9b9c2; }
+  .rarity.neutral-race-transparent { color: #d2c0dc; }
 
   .points {
     color: #eee;
@@ -362,15 +430,39 @@
     background-color: #324277;
     border: 2px solid #324277;
   }
+
+  .human-race-transparent {
+    background-color: #3242777d;
+    border: 2px solid #324277;
+    border-top: none;
+    font-size: 0.85rem;
+    height: 8%;
+  }
   
   .goblin-race {
     background-color: #327738;
     border: 2px solid #327738;
   }
 
+  .goblin-race-transparent {
+    background-color: #3277387d;
+    border: 2px solid #327738;
+    border-top: none;
+    font-size: 0.85rem;
+    height: 8%;
+  }
+
   .elf-race {
     background-color: #726b7a;
     border: 2px solid #726b7a;
+  }
+
+  .elf-race-transparent {
+    background-color: #726b7a7d;
+    border: 2px solid #726b7a;
+    border-top: none;
+    font-size: 0.85rem;
+    height: 8%;
   }
   
   .dwarf-race {
@@ -378,14 +470,38 @@
     border: 2px solid #774b32;
   }
 
+  .dwarf-race-transparent {
+    background-color: #774b327d;
+    border: 2px solid #774b32;
+    border-top: none;
+    font-size: 0.85rem;
+    height: 8%;
+  }
+
   .beast-race {
     background-color: #55431e;
     border: 2px solid #55431e;
+  }
+
+  .beast-race-transparent {
+    background-color: #55431e7d;
+    border: 2px solid #55431e;
+    border-top: none;
+    font-size: 0.85rem;
+    height: 8%;
   }
   
   .bot-race {
     background-color: #424242;
     border: 2px solid #424242;
+  }
+
+  .bot-race-transparent {
+    background-color: #4242427d;
+    border: 2px solid #424242;
+    border-top: none;
+    font-size: 0.85rem;
+    height: 8%;
   }
   
   .xeno-race {
@@ -393,9 +509,25 @@
     border: 2px solid #8e7419;
   }
 
+  .xeno-race-transparent {
+    background-color: #8e74197d;
+    border: 2px solid #8e7419;
+    border-top: none;
+    font-size: 0.85rem;
+    height: 8%;
+  }
+
   .spirit-race {
     background-color: #b63bac;
     border: 2px solid #b63bac;
+  }
+
+  .spirit-race-transparent {
+    background-color: #b63bac7d;
+    border: 2px solid #b63bac;
+    border-top: none;
+    font-size: 0.85rem;
+    height: 8%;
   }
 
   .boost-race {
@@ -403,14 +535,42 @@
     border: 2px solid #a0aec8;
   }
 
+  .boost-race-transparent {
+    background-color: #a0aec87d;
+    border: 2px solid #a0aec8;
+    border-top: none;
+    font-size: 0.85rem;
+    height: 8%;
+  }
+
   .trap-race {
     background-color: #111;
     border: 2px solid #3e3e3e12;
   }
 
+  .trap-race-transparent {
+    background-color: #1111117d;
+    border: 2px solid #3e3e3e12;
+    border-top: none;
+    font-size: 0.85rem;
+    height: 8%;
+  }
+
   .neutral-race {
     background-color: #462e59;
-    border: 2px solid rgb(59 59 59 / 7%);
+    border: 2px solid #3b3b3b12;
+  }
+
+  .neutral-race-transparent {
+    background-color: #462e597d;
+    border: 2px solid #3b3b3b12;
+    border-top: none;
+    font-size: 0.85rem;
+    height: 8%;
+  }
+
+  .height-24 {
+    height: 24px;
   }
 
   /* race title color */
@@ -460,6 +620,13 @@
 
   // Utility
   @media only screen and (max-width: 1100px) {
+    .rarity {
+      width: 0.9rem;
+      height: 0.9rem;
+    }
+
+    .rarity-star { font-size: 0.22rem; }
+
     .card {
       width: 6.5rem;
       min-width: 6.5rem;
@@ -469,7 +636,7 @@
 
     .card-title {
       height: 1.25rem;
-      font-size: 0.75rem;
+      font-size: 0.85rem;
     }
 
   .bottom-section-wrapper::-webkit-scrollbar,
@@ -516,6 +683,8 @@
   }
 
   @media only screen and (max-width: 800px) {
+    .rarity-star { font-size: 0.2rem; }
+
     .card {
       width: 3.5rem;
       min-width: 3.5rem;

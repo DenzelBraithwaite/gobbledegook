@@ -1203,7 +1203,7 @@ const cardDetails = writable({
     image: '/boosts/chester.png'
   },
   gaze: {
-    title: 'Gaze',
+    title: 'gaze',
     displayTitle: 'Gaze',
     points: 0,
     amount: 1,

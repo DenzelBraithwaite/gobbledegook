@@ -65,6 +65,8 @@ Rename the CPU to the exact plural name of a scoring race to force that strategy
 
 Rename the CPU to exactly `test`, case-insensitively, to prevent it from declaring Gobbledegook. This is intended for manually testing longer games; every other CPU behavior remains active.
 
+Rename the CPU to exactly `gdg` or `gobbledegook`, case-insensitively, to make it declare at its first legal start-of-turn opportunity (turn 15 or later, with five cards and no declaration already active). This bypasses its usual win-odds calculation and is only a testing cheat.
+
 ## A.I. card risk
 
 When considering a Bot-race path, the CPU estimates the chance that the human holds the `ai` card. A visibly held A.I. means 100% risk. When the hand is hidden, risk is estimated from the number of A.I. cards still possible and the number of unknown opponent slots. The path loses utility in proportion to the Bot points that A.I. could steal.
@@ -136,6 +138,7 @@ The tests use Node's built-in test runner. No test framework or server is requir
 - Recognizes every case-insensitive plural race-name path override and rejects singular or extended names.
 - Uses the forced race score, rather than a stronger off-race score, for Gobbledegook decisions.
 - Prevents Gobbledegook declarations only when the CPU is named exactly `test`, case-insensitively.
+- Recognizes exactly `gdg` and `gobbledegook` as case-insensitive forced-declaration testing names.
 - Scores a Switcharoo discard using the hand received from the human, with either exact or sampled knowledge.
 - Evaluates Shuffler as a full redraw rather than pretending the old hand survives.
 - Uses rarity only for close discard choices.

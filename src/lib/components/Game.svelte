@@ -16,7 +16,7 @@
   import GGCard from './Card.svelte';
 
   // ai generated: The decision engine stays independent from Svelte and receives only the information a real player could know.
-  import { ageOpponentHandMemory, chooseCpuDiscard, createCpuMemory, decideCpuDeclaration, getCpuEchoAction, getForcedCpuRacePath, isCpuDeclarationDisabledByName, rememberCpuDecision, rememberOpponentHand, type CpuObservation, type CpuOpponentInsightSource } from '../game/cpuStrategy';
+  import { ageOpponentHandMemory, chooseCpuDiscard, createCpuMemory, decideCpuDeclaration, getCpuEchoAction, getForcedCpuRacePath, isCpuDeclarationDisabledByName, isCpuDeclarationForcedByName, rememberCpuDecision, rememberOpponentHand, type CpuObservation, type CpuOpponentInsightSource } from '../game/cpuStrategy';
 
   // Websocket
   import { io } from 'socket.io-client';
@@ -25,7 +25,7 @@
   type Race = 'human' | 'goblin' | 'elf' | 'dwarf' | 'beast' | 'bot' | 'xeno' | 'spirit' | 'boost' | 'trap' | 'neutral' | '';
   const bardCards = ['bardLute', 'bardFlute', 'bardHorn', 'bardDrum', 'bardSinger'];
   const aiBotCardBonus = 4;
-  let socket = io('http://127.0.0.1:6912', { autoConnect: false });
+  let socket = io('http://192.168.2.14:6912', { autoConnect: false });
   let gameMode: 'singleplayer' | 'multiplayer' = 'singleplayer';
   // ai generated: These are server-owned multiplayer records; singleplayer never loads or saves them.
   type MultiplayerRecord = { name: string; wins: number; losses: number; draws: number; elo: number };
@@ -1000,7 +1000,9 @@
     refreshCpuOpponentMemory();
     calculateCurrentPlayerPoints(player.id === $player1.id ? $player1 : $player2);
     emitGameEvent('draw-card', {player1: $player1, player2: $player2, deckTypes, fullDeck});
-    emitGameEvent('display-event', 'shuffle');
+    // ai generated: Shuffle is private feedback for the player whose discard actually replaced their hand.
+    const localPlayer = gameState.playingAs === 'p1' ? $player1 : $player2;
+    if (player.id === localPlayer.id) void showEvent('shuffle');
 
     // ai generated: If the entire draw pile runs out mid-refill, score the partial hand instead of leaving an unplayable turn.
     if (replacementHand.length < 5) {
@@ -1332,6 +1334,15 @@
 
     let observation = buildCpuObservation();
     const declarationDisabledForTesting = isCpuDeclarationDisabledByName($player2.title);
+
+    // ai generated: The visible GDG button belongs to the human, so the name cheat checks the CPU's own legal start-of-turn state.
+    const cpuCanDeclare = !gameState.gobbledegookDeclared && gameState.turnCount >= 15 && $player2.hand.length === 5;
+    if (cpuCanDeclare && isCpuDeclarationForcedByName($player2.title)) {
+      if (cpuStrategyDebugEnabled) console.info(`[Gobbledegook CPU] ${$player2.title} declares GDG because its name forces the first legal opportunity.`);
+      await clickOnGobbledegook($player2);
+      return;
+    }
+
     if (!gameState.gobbledegookDeclared && gameState.turnCount >= 15 && !declarationDisabledForTesting) {
       const declaration = decideCpuDeclaration(observation, scoreCpuHand, scoreHumanHand, Math.random, 240, scoreMatchAgainstHumanHand);
       if (cpuStrategyDebugEnabled) {
@@ -2424,7 +2435,9 @@
     if (cardTitle === 'chastity') player.hasChastity = true;
     if (cardTitle === 'charge') player.numOfCharges += 1;
     if (cardTitle === 'growth') player.numOfGrowths += 1;
-    if (cardTitle === 'gaze') showEvent('gaze');
+    // ai generated: Gaze reveals private information, so only the player who drew it sees its event.
+    const localPlayer = gameState.playingAs === 'p1' ? $player1 : $player2;
+    if (cardTitle === 'gaze' && player.id === localPlayer.id) void showEvent('gaze');
   }
 
   // Adds trap card to players traps array
@@ -2582,7 +2595,7 @@
   }
 
   // Converts race card bg to legendary if player is holding the leader of that race.
-  function determineRarity(player: Player, cardTitle: string): '' |  'common' | 'uncommon' | 'rare' | 'amazing' | 'epic' | 'legendary' {
+  function determineRarity(player: Player, cardTitle: string): 'legendary' | 'epic' | 'amazing' | 'great' | 'poor' {
     if (player.hand.includes('emperor') && getRaces(cardTitle).includes('human')) return 'legendary';
     if (player.hand.includes('goblinLord') && getRaces(cardTitle).includes('goblin')) return 'legendary';
     if (player.hand.includes('elfKing') && getRaces(cardTitle).includes('elf')) return 'legendary';
@@ -2590,7 +2603,10 @@
     if (player.hand.includes('ai') && getRaces(cardTitle).includes('bot')) return 'legendary';
     if (player.hand.some(card => ['dreamDestroyer', 'nightTerror'].includes(card)) && getRaces(cardTitle).includes('beast')) return 'legendary';
     if (player.hand.includes('spiritKing') && getRaces(cardTitle).includes('spirit')) return 'legendary';
-    return $cardDetails[cardTitle].rarity;
+    // ai generated: Card stars use the current five rarity labels; old/empty labels fall back to one star.
+    const rarity = $cardDetails[cardTitle].rarity;
+    if (rarity === 'legendary' || rarity === 'epic' || rarity === 'amazing' || rarity === 'great' || rarity === 'poor') return rarity;
+    return 'poor';
   }
 
   // ai generated: Bear and Drainite use their printed values as the neutral color baseline, while other cards retain the existing buff comparison.
@@ -2684,7 +2700,7 @@
           gameState.eventMessage = "Switcharoo 🔃!";
           break;
       case 'shuffle':
-        gameState.eventMessage = "Shuffle 🔀!";
+        gameState.eventMessage = "Shuffle!";
         break;
       case 'xenoBloom':
         gameState.eventMessage = "Xeno Bloom 👽!";

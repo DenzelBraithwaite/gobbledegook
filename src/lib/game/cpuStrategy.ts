@@ -117,6 +117,11 @@ export function isCpuDeclarationDisabledByName(cpuName: string): boolean {
   return cpuName.toLowerCase() === 'test';
 }
 
+// ai generated: These two testing names make the CPU declare on its first legal opportunity, regardless of estimated odds.
+export function isCpuDeclarationForcedByName(cpuName: string): boolean {
+  return ['gdg', 'gobbledegook'].includes(cpuName.toLowerCase());
+}
+
 // ai generated: The memory records only information the CPU was legitimately allowed to observe.
 export function createCpuMemory(): CpuMemory {
   return {

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ageOpponentHandMemory, chooseCpuDiscard, createCpuMemory, decideCpuDeclaration, evaluateCpuPaths, getCpuEchoAction, getForcedCpuRacePath, isCpuDeclarationDisabledByName, rememberCpuDecision, rememberOpponentHand } from './cpuStrategy.ts';
+import { ageOpponentHandMemory, chooseCpuDiscard, createCpuMemory, decideCpuDeclaration, evaluateCpuPaths, getCpuEchoAction, getForcedCpuRacePath, isCpuDeclarationDisabledByName, isCpuDeclarationForcedByName, rememberCpuDecision, rememberOpponentHand } from './cpuStrategy.ts';
 
 const details = {
   goblinLord: { race: 'goblin', otherRaces: [], rarity: 'legendary' },
@@ -156,6 +156,15 @@ test('only the exact case-insensitive name test disables CPU declarations', () =
   assert.equal(isCpuDeclarationDisabledByName('TeSt'), true);
   assert.equal(isCpuDeclarationDisabledByName('tester'), false);
   assert.equal(isCpuDeclarationDisabledByName('test cpu'), false);
+});
+
+test('only gdg and gobbledegook force declarations by CPU name', () => {
+  assert.equal(isCpuDeclarationForcedByName('gdg'), true);
+  assert.equal(isCpuDeclarationForcedByName('GDG'), true);
+  assert.equal(isCpuDeclarationForcedByName('gObBlEdEgOoK'), true);
+  assert.equal(isCpuDeclarationForcedByName('gdg cpu'), false);
+  assert.equal(isCpuDeclarationForcedByName('gobbledegook!'), false);
+  assert.equal(isCpuDeclarationForcedByName('test'), false);
 });
 
 test('lowers the Bot-race path when the opposing A.I. is known', () => {
