@@ -9,6 +9,7 @@
   import wait from '../helpers/wait';
 
   // Stores
+  import { derived } from 'svelte/store';
   import { type Player, player1, player1Reset, player2, player2Reset, cardDetails, beastDeck, botDeck, dwarfDeck, elfDeck, goblinDeck, humanDeck, xenoDeck, spiritDeck, boostDeck,  trapDeck, neutralDeck } from '../stores';
 
   // Custom components
@@ -17,6 +18,7 @@
 
   // ai generated: The decision engine stays independent from Svelte and receives only the information a real player could know.
   import { ageOpponentHandMemory, chooseCpuDiscard, createCpuMemory, decideCpuDeclaration, getCpuEchoAction, getForcedCpuRacePath, isCpuDeclarationDisabledByName, isCpuDeclarationForcedByName, rememberCpuDecision, rememberOpponentHand, type CpuObservation, type CpuOpponentInsightSource } from '../game/cpuStrategy';
+  import { findDiscardIndex, reconcileVisualHand, type VisualCard } from '../game/visualHand';
 
   // Websocket
   import { io } from 'socket.io-client';
@@ -25,16 +27,19 @@
   type Race = 'human' | 'goblin' | 'elf' | 'dwarf' | 'beast' | 'bot' | 'xeno' | 'spirit' | 'boost' | 'trap' | 'neutral' | '';
   const bardCards = ['bardLute', 'bardFlute', 'bardHorn', 'bardDrum', 'bardSinger'];
   const aiBotCardBonus = 4;
-  let socket = io('http://192.168.2.14:6912', { autoConnect: false });
+  let socket = io('http://127.0.0.1:6912', { autoConnect: false });
   let gameMode: 'singleplayer' | 'multiplayer' = 'singleplayer';
+
   // ai generated: These are server-owned multiplayer records; singleplayer never loads or saves them.
   type MultiplayerRecord = { name: string; wins: number; losses: number; draws: number; elo: number };
   let multiplayerRecords: { p1: MultiplayerRecord; p2: MultiplayerRecord } = {
     p1: { name: 'Player 1', wins: 0, losses: 0, draws: 0, elo: 1000 },
     p2: { name: 'Player 2', wins: 0, losses: 0, draws: 0, elo: 1000 }
   };
+
   // ai generated: Badge tiers only affect the multiplayer display; ELO changes still come from the server.
   type EloBadge = 'loser' | 'wood' | 'silver' | 'gold' | 'goblin';
+
   // ai generated: One descending list drives both the live badge and the explanatory rankings modal.
   const eloRanks: { badge: EloBadge; label: string; threshold: string; minElo: number }[] = [
     { badge: 'goblin', label: 'Goblin', threshold: '1300+', minElo: 1300 },
@@ -43,12 +48,15 @@
     { badge: 'wood', label: 'Wood', threshold: '700–899', minElo: 700 },
     { badge: 'loser', label: 'Loser', threshold: '699 or less', minElo: Number.NEGATIVE_INFINITY }
   ];
+
   function getEloBadge(elo: number): EloBadge {
     return eloRanks.find(rank => elo >= rank.minElo)?.badge ?? 'loser';
   }
+
   $: p1EloBadge = getEloBadge(multiplayerRecords.p1.elo);
   $: p2EloBadge = getEloBadge(multiplayerRecords.p2.elo);
   let rankingsVisible = false;
+
   // ai generated: The rankings list takes focus visually without leaving another card-info modal underneath it.
   function openRankings(): void {
     gameState.libraryVisible = false;
@@ -56,10 +64,12 @@
     gameState.remainingCardsVisible = false;
     rankingsVisible = true;
   }
+
   // ai generated: Before a build copies badge art into public, keep its space without a broken-image icon.
   function setBadgeImageVisibility(event: Event, visible: boolean): void {
     (event.currentTarget as HTMLImageElement).style.visibility = visible ? 'visible' : 'hidden';
   }
+
   // ai generated: Toggle this value while testing to show or hide detailed CPU path explanations in the browser console.
   let cpuStrategyDebugEnabled = true;
   const cpuNames = ['Gruntilda', 'KazBot', 'TinkBot', 'CPU', 'AI', 'Guest#445', 'LawjokerBot', 'DefinitelyNotABot', 'Player 2', 'Challenger', 'Mr Quack', 'Mrs Quack', 'A Duck', 'Bot', 'Benny'];
@@ -88,9 +98,11 @@
   };
   let remainingLegendaries = [];
   let remainingXenoEggs = ['drainite', 'xerandium', 'sporax'];
+
   // Deep clone nested card objects so runtime point changes cannot alter the defaults used for rematches.
   let controlCopyOfCardDetails = structuredClone($cardDetails);
   let remoteCardDetails = structuredClone($cardDetails);
+
   // For checking if user is connected
   let p1Connected = false;
   let p2Connected = false;
@@ -98,6 +110,7 @@
   let timeoutId;
   const heartBeatInterval = 500;
   const heartBeatTimeout = 1000;
+
   // Deck players draw from, includes all race decks
   let fullDeck = {
     humans: [...$humanDeck],
@@ -112,8 +125,28 @@
     traps: [...$trapDeck],
     neutrals: [...$neutralDeck]
   };
+
   // array for each deck, humans, goblins, elves and dwarves
   let deckTypes: DeckRace[] | string[] = Object.keys(fullDeck);
+
+  // ai generated: These keys exist only in this browser's card view; Player.hand and socket messages remain arrays of card names.
+  let nextVisualCardKey = 0;
+  let clickedVisualDiscard: { side: 'p1' | 'p2'; key: number } | null = null;
+
+  // ai generated: Preserve each rendered copy across draws and hand swaps, and remove the clicked copy when duplicate names shrink.
+  function createVisualHandStore(playerStore: typeof player1, side: 'p1' | 'p2') {
+    let previous: VisualCard[] = [];
+    return derived(playerStore, player => {
+      const clickedKey = clickedVisualDiscard?.side === side ? clickedVisualDiscard.key : null;
+      const result = reconcileVisualHand(previous, player.hand, clickedKey, nextVisualCardKey);
+      nextVisualCardKey = result.lastKey;
+      previous = result.cards;
+      return result.cards;
+    });
+  }
+
+  const p1VisualHand = createVisualHandStore(player1, 'p1');
+  const p2VisualHand = createVisualHandStore(player2, 'p2');
 
   onMount(() => {
     // Respons to connection 
@@ -865,7 +898,7 @@
   }
 
   // Removes card from hand if player hand has over 6 cards
-  async function discard(cardTitle: string, player: Player) {
+  async function discard(cardTitle: string, player: Player, clickedHandIndex?: number) {
     if (!isPlayerTurn(player)) return;
 
     // So player doesn't get free hand of beasts as giraffe grows.
@@ -890,7 +923,8 @@
 
     // Using store update methods instead of player var ^
     if (player.id === $player1.id) {
-      const index = $player1.hand.indexOf(cardTitle);
+      // ai generated: A human click removes that exact duplicate's hand slot; forced-card effects still fall back to the matching title.
+      const index = findDiscardIndex($player1.hand, cardTitle, clickedHandIndex);
       if (index === -1) return;
       player1.update($player1 => {
         $player1.hand.splice(index, 1);
@@ -898,7 +932,7 @@
         return $player1;
       });
     } else if (player.id === $player2.id) {
-      const index = $player2.hand.indexOf(cardTitle);
+      const index = findDiscardIndex($player2.hand, cardTitle, clickedHandIndex);
       if (index === -1) return;
       player2.update($player2 => {
         $player2.hand.splice(index, 1);
@@ -1193,7 +1227,7 @@
     calculateHumanPoints(player);
     calculateGoblinPoints(player, otherPlayer, forEndGameCalculation);
     calculateElfPoints(player, otherPlayer, forEndGameCalculation);
-    calculateDwarfPoints(player, forEndGameCalculation);
+    calculateDwarfPoints(player, otherPlayer, forEndGameCalculation);
     calculateBeastPoints(player);
     calculateBotPoints(player, otherPlayer, forEndGameCalculation);
     calculateXenoPoints(player, otherPlayer);
@@ -1800,12 +1834,12 @@
 
   // --------------------- DWARF CALCULATIONS ----------------------- \\
 
-  function calculateDwarfPoints(player: Player, forEndGameCalculation = false): void {
+  function calculateDwarfPoints(player: Player, otherPlayer: Player, forEndGameCalculation = false): void {
     const dwarfCards = player.hand.filter(card => getRaces(card).includes('dwarf'));
     dwarfCards.forEach(card => player.points.dwarves += $cardDetails[card].points);
 
     // Calculates +5 dwarf points per discarded dwarf by any player.
-    if (player.hand.includes('longbeardLeader')) calculateLongbeard(player, forEndGameCalculation);
+    if (player.hand.includes('longbeardLeader')) calculateLongbeard(player, otherPlayer, forEndGameCalculation);
     
     // Currently no neutrals that affect dwarf points
     calculateDwarfBoosts(player);
@@ -1873,23 +1907,11 @@
   }
 
   // Player gains +5 points per discarded dwarf.
-  function calculateLongbeard(player: Player, calculateOtherPlayerDiscards = false) {  
-    let numOfDiscardedDwarves = 0;
-
-    if (!calculateOtherPlayerDiscards) {
-      player.discards.forEach(card => {
-        if (getRaces(card).includes('dwarf')) numOfDiscardedDwarves += 1;
-      });
-    } else {
-      $player1.discards.forEach(card => {
-        if (getRaces(card).includes('dwarf')) numOfDiscardedDwarves += 1;
-      });
-      $player2.discards.forEach(card => {
-        if (getRaces(card).includes('dwarf')) numOfDiscardedDwarves += 1;
-      });
-    }
-
-    player.points.dwarves += (numOfDiscardedDwarves * 5);
+  function calculateLongbeard(player: Player, otherPlayer: Player, calculateOtherPlayerDiscards = false) {
+    // ai generated: Read the players being scored, including the CPU's cloned prospective discard, rather than the live store piles.
+    const discards = calculateOtherPlayerDiscards ? [...player.discards, ...otherPlayer.discards] : player.discards;
+    const numOfDiscardedDwarves = discards.filter(card => getRaces(card).includes('dwarf')).length;
+    player.points.dwarves += numOfDiscardedDwarves * 5;
   }
 
   function displayDwarfPoints(player: Player): number {
@@ -2806,9 +2828,17 @@
   }
   
   // Handles player click on card (player is the player whos side ur clicking not playingAs)
-  async function clickOnCard(player: Player, cardTitle: string) {
+  async function clickOnCard(player: Player, cardTitle: string, visualKey?: number, visualIndex?: number) {
     const currentPlayer = gameState.playingAs === 'p1' ? $player1 : $player2;
-    if (player.hand.length > 5) await discard(cardTitle, player);
+    if (player.hand.length > 5) {
+      // ai generated: The pending key only guides this browser's exit transition; discard still sends the original card name.
+      if (visualKey !== undefined) clickedVisualDiscard = { side: player.id === $player1.id ? 'p1' : 'p2', key: visualKey };
+      try {
+        await discard(cardTitle, player, visualIndex);
+      } finally {
+        clickedVisualDiscard = null;
+      }
+    }
     // Want to make sure other player can't click on it when they have vision
     if (player.hand.length === 5 && cardTitle === 'gaze' && currentPlayer.hand.includes('gaze') && !areBoostsBlocked(player)) toggleRemainingCardsModal();
   }
@@ -3316,9 +3346,10 @@
             </div>
           </div>
 
-          {#each $player1.hand as card}
+          {#each $p1VisualHand as visualCard, visualIndex (visualCard.key)}
+            {@const card = visualCard.title}
             <GGCard
-              on:cardClick={async () => await clickOnCard($player1, card)}
+              on:cardClick={async () => await clickOnCard($player1, card, visualCard.key, visualIndex)}
               on:contextmenu={() => openLibraryToCard($cardDetails[card].race)}        
               faceUp={isCardVisible('p1', card, $player2.hasVision, gameState.playersRevealed)}
               displayTitle={$cardDetails[card].displayTitle}
@@ -3392,9 +3423,10 @@
               {/if}
             </div>
           </div>
-          {#each $player2.hand as card}
+          {#each $p2VisualHand as visualCard, visualIndex (visualCard.key)}
+            {@const card = visualCard.title}
             <GGCard
-              on:cardClick={async () => await clickOnCard($player2, card)}
+              on:cardClick={async () => await clickOnCard($player2, card, visualCard.key, visualIndex)}
               on:contextmenu={() => openLibraryToCard($cardDetails[card].race)}
               faceUp={isCardVisible('p2', card, $player1.hasVision, gameState.playersRevealed)}
               displayTitle={$cardDetails[card].displayTitle}

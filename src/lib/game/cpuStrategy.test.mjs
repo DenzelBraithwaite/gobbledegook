@@ -12,6 +12,7 @@ const details = {
   ai: { race: 'bot', otherRaces: [] },
   nightTerror: { race: 'beast', otherRaces: [], rarity: 'legendary' },
   longbeardLeader: { race: 'dwarf', otherRaces: [], rarity: 'legendary', points: 15 },
+  abyssolarian: { race: 'xeno', otherRaces: [], rarity: 'great', points: 10 },
   miner: { race: 'dwarf', otherRaces: [], rarity: 'poor', points: 3 },
   traveller: { race: 'dwarf', otherRaces: [], rarity: 'poor', points: 4 },
   dwarfWarrior: { race: 'dwarf', otherRaces: [], rarity: 'great', points: 6 },
@@ -384,6 +385,36 @@ test('Longbeard banks a weak discarded Dwarf instead of holding it for its print
   assert.equal(withDiscardSimulation.cardTitle, 'miner');
   assert.match(withDiscardSimulation.explanation, /Longbeard banks \+5/);
   assert.deepEqual(seen.hand, hand);
+});
+
+test('four Longbeard Leaders recycle Miner before discarding an off-race Xeno', () => {
+  // ai generated: Match the reported six-card test hand, including duplicate leaders and the simulated discard bonus.
+  const hand = ['longbeardLeader', 'abyssolarian', 'longbeardLeader', 'miner', 'longbeardLeader', 'longbeardLeader'];
+  const dwarfScore = (keptHand, discarded = '') => {
+    const dwarves = keptHand.reduce((total, card) => total + (details[card]?.race === 'dwarf' ? details[card].points : 0), 0)
+      + (keptHand.includes('longbeardLeader') && details[discarded]?.race === 'dwarf' ? 5 : 0);
+    const xenos = keptHand.includes('abyssolarian') ? 10 : 0;
+    return { highestPoints: Math.max(dwarves, xenos), points: { humans: 0, goblins: 0, elves: 0, dwarves, beasts: 0, bots: 0, xenos, spirits: 0 } };
+  };
+  const seen = observation({ hand, activeDecks: ['dwarves', 'xenos'], unseenCards: ['miner', 'abyssolarian'] });
+  assert.equal(chooseCpuDiscard(seen, dwarfScore, () => 0.5, undefined, dwarfScore).cardTitle, 'miner');
+});
+
+test('declaration draws weigh active decks equally even when one test deck has many leaders', () => {
+  // ai generated: Real draws select one of the two decks first; 45 Dwarf leaders should not imply a 45/46 draw chance.
+  const cpuSixty = () => ({ highestPoints: 60, points: { humans: 0, goblins: 0, elves: 0, dwarves: 60, beasts: 0, bots: 0, xenos: 0, spirits: 0 } });
+  const seen = observation({
+    hand: ['longbeardLeader', 'longbeardLeader', 'longbeardLeader', 'longbeardLeader', 'miner'],
+    turnCount: 15,
+    knownOpponentCards: ['knight', 'knight', 'knight', 'knight', 'knight'],
+    activeDecks: ['dwarves', 'humans'],
+    unseenCards: [...Array(45).fill('longbeardLeader'), 'villager']
+  });
+  let seed = 1;
+  const random = () => (seed = seed * 16807 % 2147483647) / 2147483647;
+  const decision = decideCpuDeclaration(seen, cpuSixty, score, random, 1000,
+    hand => ({ cpuScore: 60, opponentScore: hand.includes('longbeardLeader') ? 70 : 50 }));
+  assert.ok(decision.estimatedWinChance > 0.4 && decision.estimatedWinChance < 0.6);
 });
 
 test('one Cookie or two matching Djinns do not receive lottery setup value', () => {

@@ -88,6 +88,13 @@ const raceCards: Record<CpuForcedRace, string> = {
   spirits: 'spirit'
 };
 
+// ai generated: Normal draws select a deck first, then a card; these names match the deck keys used by Game.svelte.
+const drawDeckByRace: Record<string, string> = {
+  human: 'humans', goblin: 'goblins', elf: 'elves', dwarf: 'dwarves',
+  beast: 'beasts', bot: 'bots', xeno: 'xenos', spirit: 'spirits',
+  boost: 'boosts', trap: 'traps', neutral: 'neutrals'
+};
+
 const scoreKeys: Record<CpuForcedRace, string> = {
   humans: 'humans',
   goblins: 'goblins',
@@ -614,7 +621,17 @@ function sampleOpponentTurnHand(observation: CpuObservation, cards: string[], ra
       if (index !== -1) remaining.splice(index, 1);
     });
   }
-  return [...hand, ...sampleWithoutReplacement(remaining, 1, random)];
+  const drawnCard = sampleNormalDraw(observation, remaining, random);
+  return drawnCard ? [...hand, drawnCard] : hand;
+}
+
+// ai generated: A test deck full of duplicate leaders must not make its race far likelier to be drawn than other active decks.
+function sampleNormalDraw(observation: CpuObservation, cards: string[], random: () => number): string {
+  const availableDecks = observation.activeDecks.filter(deck => cards.some(card => drawDeckByRace[observation.cardDetails[card]?.race] === deck));
+  if (availableDecks.length === 0) return cards[Math.floor(random() * cards.length)] ?? '';
+  const chosenDeck = availableDecks[Math.floor(random() * availableDecks.length)];
+  const deckCards = cards.filter(card => drawDeckByRace[observation.cardDetails[card]?.race] === chosenDeck);
+  return deckCards[Math.floor(random() * deckCards.length)];
 }
 
 // ai generated: Hidden hands reflect cards the human has deliberately kept, including occasional available leaders and matching race cards.

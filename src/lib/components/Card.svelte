@@ -257,7 +257,7 @@
   }
 
   .rarity.spirit-rarity-star {
-    background-color: #b390b7;
+    background-color: #b63bac;
     color: #dfb9d7;
   }
 

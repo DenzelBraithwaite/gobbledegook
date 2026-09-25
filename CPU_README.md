@@ -47,7 +47,7 @@ The strategy has explicit awareness of Emperor flexibility, the Goblin Lord/Warc
 
 ### Longbeard's discarded Dwarves
 
-When considering a discard, the CPU scores a cloned player with that proposed card added to its discard pile. Longbeard therefore receives the same +5 from a discarded Dwarf that the real game awards after the discard. A Dwarf printed at 5 points breaks even or improves the Dwarf total when recycled, while one below 5 improves it; the CPU also avoids treating such a recycled card as lost Dwarf-path progress. This is a preference, not an unconditional rule: another race path, a card's ability, or a stronger immediate hand can still justify keeping the Dwarf. The simulation does not alter the real discard pile before the CPU acts.
+When considering a discard, the CPU scores a cloned player with that proposed card added to its discard pile. Longbeard's scorer reads those cloned players' discard piles, not the live piles, so it includes the prospective +5. A Dwarf printed at 5 points breaks even or improves the Dwarf total when recycled, while one below 5 improves it; the CPU also avoids treating such a recycled card as lost Dwarf-path progress. This is a preference, not an unconditional rule: another race path, a card's ability, or a stronger immediate hand can still justify keeping the Dwarf. The simulation does not alter the real discard pile before the CPU acts.
 
 ### Cookie Jar path
 
@@ -87,7 +87,7 @@ Human Echo behavior remains unchanged. Humans may choose whether to discard Echo
 
 ## Declaring Gobbledegook
 
-The CPU does not use a fixed rule such as “45 points is always enough.” Once declaration is unlocked at turn 15, it samples possible hidden human hands using current reveals, public cards such as Brite, aging Spirit King/Vision/Exposed/Gaze memory, and a modest human-synergy assumption. Some plausible hands include a matching legendary when one remains unseen. Each sampled human gets a final draw and is allowed to keep its best five, approximating the human's final turn after the CPU declares.
+The CPU does not use a fixed rule such as “45 points is always enough.” Once declaration is unlocked at turn 15, it samples possible hidden human hands using current reveals, public cards such as Brite, aging Spirit King/Vision/Exposed/Gaze memory, and a modest human-synergy assumption. Some plausible hands include a matching legendary when one remains unseen. Each sampled human gets a final draw and is allowed to keep its best five, approximating the human's final turn after the CPU declares. That final draw now follows the real game's normal deck-first, card-second selection, so adding many duplicate leaders to one testing deck does not artificially make that race dominate every draw. If the hand was only seen earlier, its log is memory rather than exact current knowledge.
 
 The base confidence threshold starts at 80% on turn 15 and gradually returns to 72% by turn 23. Scores at 20 or below require near-certainty (or strong current-hand knowledge); 21–34 points require extra caution; 35–69 points are treated as ordinary; 100+ points can declare at a somewhat lower confidence threshold. Active, unblocked Infect slightly lowers the threshold for a reasonable hand because its score will decay. Unblocked Charge slightly raises the threshold for a growing Human/Bot route under 100 points. A Jar with three Cookie-compatible cards also modestly raises the threshold while a fourth remains drawable. These are small decision adjustments, not changes to game scoring. A 500,000-point special hand still declares immediately. The default 240 samples are intentionally small enough to calculate immediately during the normal thinking delay.
 
@@ -146,6 +146,7 @@ The tests use Node's built-in test runner. No test framework or server is requir
 - Preserves a viable backup route in balanced discard decisions without weakening forced race-name testing.
 - Distinguishes Cookie Jar's +40 bonus, exact +100 hand, Cookie Crumbs, and the chance of drawing a fourth Cookie before declaring.
 - Scores each proposed discard in a cloned discard pile so Longbeard can bank +5 for a weak Dwarf.
+- Recycles Miner from a four-Longbeard test hand and samples final draws by deck even if one test deck has many duplicate leaders.
 
 For deterministic future tests, pass a fixed random function to the strategy functions, as the current tests do. Add a focused test whenever a new card changes which discard, path, or declaration should be preferred.
 
