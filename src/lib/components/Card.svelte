@@ -67,8 +67,8 @@
   <div on:contextmenu|preventDefault on:click={cardClickHandler} class="card bg-{race}{rarity === 'legendary' ? '-rare' : ''}" in:fly={{x: 100}} out:fade>
     <img class="card-img" src={img} alt="img of card">
     <!-- ai generated: This compact rarity badge mirrors the point badge on the opposite top corner. -->
-    <p class="rarity {race}-race-transparent height-28" aria-label="{capitalize($cardDetails[title].rarity)} rarity">
-      <span class="rarity-stars" aria-hidden="true">
+    <p class="rarity {race}-rarity-star" aria-label="{capitalize($cardDetails[title].rarity)} rarity">
+      <span aria-hidden="true">
         {#each displayRarityStars($cardDetails[title].rarity) as position}
           <span class="rarity-star" style={`grid-area: ${Math.ceil(position / 3)} / ${((position - 1) % 3) + 1}`}>★</span>
         {/each}
@@ -102,7 +102,6 @@
     width: 9.5rem;
     height: 14rem;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3882352941);
-    border-radius: 6px 6px 0 0;
     transition: all 0.3s ease-out;
 
     display: flex;
@@ -163,7 +162,7 @@
 
   .bottom-section-wrapper {
     width: 90%;
-    padding-bottom: 0.9rem;
+    padding-bottom: 2rem;
     font-size: 0.85rem;
     color: #ebebeb;
     text-shadow: 0 1px 3px #0000008f;
@@ -171,53 +170,49 @@
     overflow-y: scroll;
   }
 
-  .race,
-  .rarity {
-    color: #eee;
+  .points,
+  .points__modified,
+  .rarity,
+  .race {
     z-index: 10;
     text-align: center;
-    font-weight: 500;
-    font-size: 0.8rem;
+    font-weight: normal;
+    font-size: 0.9rem;
     letter-spacing: 1px;
-    height: 1.5rem;
-    max-height: 100%;
-    padding: 0.125rem;
+    height: 1.75rem;
+    width: 1.75rem;
+    box-shadow: inset -2px -2px 8px #0000004d;
     position: absolute;
-    width: 105%;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
   }
 
   .race {
-    border-radius: 0 0 6px 6px;
-    // width: 3.75rem;
-
-    bottom: -18px;
+    color: #eee;
+    font-size: 0.8rem;
+    height: 1.6rem;
+    width: 105%;
+    padding: 0.125rem;
+    box-shadow: none;
+    border-radius: 25% 25% 0 0;
+    
+    bottom: 0px;
     right: 50%;
-    transform: translate(50%, 0);
+    transform: translate(50%, 4px);
   }
 
   .rarity {
     /* ai generated: Match the point badge's footprint, mirrored into the top-right corner. */
-    border-radius: 0 0 0 0.75rem;
+    border-radius: 0 0 0 6px;
+    background-color: #00000060;
     box-shadow: inset -2px -2px 8px #0000004d;
-    width: 1.75rem;
-    height: 1.75rem;
+    width: 10%;
+    height: 48px;
+    height: 22%;
+    font-size: 0.75rem;
     padding: 0;
+    writing-mode: vertical-lr;
+
     top: 0;
     right: 0;
-  }
-
-  /* ai generated: A fixed grid gives each rarity the same centered dice geometry. */
-  .rarity-stars {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: repeat(3, 1fr);
-    place-items: center;
-    width: 100%;
-    height: 100%;
   }
 
   .rarity-star {
@@ -226,31 +221,66 @@
     text-shadow: 0 1px 2px #00000045;
   }
 
-  .rarity.human-race-transparent { color: #afd3cd; }
-  .rarity.goblin-race-transparent { color: #b9d6af; }
-  .rarity.elf-race-transparent { color: #dfcdec; }
-  .rarity.dwarf-race-transparent { color: #d8b3a2; }
-  .rarity.beast-race-transparent { color: #d2b889; }
-  .rarity.bot-race-transparent { color: #ced1d2; }
-  .rarity.xeno-race-transparent { color: #d5ca92; }
-  .rarity.spirit-race-transparent { color: #dfb9d7; }
-  .rarity.boost-race-transparent { color: #c5dbe2; }
-  .rarity.trap-race-transparent { color: #b9b9c2; }
-  .rarity.neutral-race-transparent { color: #d2c0dc; }
+  .rarity.human-rarity-star {
+    background-color: #324277;
+    color: #afd3cd;
+  }
+
+  .rarity.goblin-rarity-star {
+    background-color: #327738;
+    color: #b9d6af;
+  }
+
+  .rarity.elf-rarity-star {
+    background-color: #726b7a;
+    color: #dfcdec;
+  }
+
+  .rarity.dwarf-rarity-star {
+    background-color: #774b32;
+    color: #d8b3a2;
+  }
+
+  .rarity.beast-rarity-star {
+    background-color: #55431e;
+    color: #d2b889;
+  }
+
+  .rarity.bot-rarity-star {
+    background-color: #424242;
+    color: #ced1d2;
+  }
+
+  .rarity.xeno-rarity-star {
+    background-color: #776832;
+    color: #d5ca92;
+  }
+
+  .rarity.spirit-rarity-star {
+    background-color: #b390b7;
+    color: #dfb9d7;
+  }
+
+  .rarity.boost-rarity-star {
+    background-color: #90beff;
+    color: #c5dbe2;
+  }
+
+  .rarity.trap-rarity-star {
+    background-color: #000000;
+    color: #b9b9c2;
+  }
+
+  .rarity.neutral-rarity-star {
+    background-color: #31273e;
+    color: #d2c0dc;
+  }
 
   .points {
     color: #eee;
-    z-index: 10;
-    text-align: center;
-    font-weight: 500;
-    font-size: 0.9rem;
     letter-spacing: 1px;
-    height: 1.75rem;
-    width: 1.75rem;
     border-radius: 0 0 0.75rem 0;
-    box-shadow: inset -2px -2px 8px #0000004d;
 
-    position: absolute;
     top: 0;
     left: 0;
     display: flex;
@@ -261,16 +291,8 @@
   .points__modified {
     color: #2fdb2f;
     font-weight: bold;
-    font-size: 0.9rem;
-    z-index: 10;
-    text-align: center;
-    letter-spacing: 1px;
-    height: 1.75rem;
-    width: 1.75rem;
     border-radius: 0 0.75rem 0.75rem 0;
-    box-shadow: inset -2px -2px 8px #0000004d;
 
-    position: absolute;
     top: 30px;
     left: 0;
     display: flex;
@@ -416,7 +438,7 @@
   }
 
   .bg-neutral {
-    background: linear-gradient(353deg,#31273e,#933ce929 50%);
+    background: linear-gradient(353deg, #31273e, #933ce929 50%);
     outline: 4px solid #3d1f5a;
   }
   
@@ -432,9 +454,7 @@
   }
 
   .human-race-transparent {
-    background-color: #3242777d;
-    border: 2px solid #324277;
-    border-top: none;
+    background-color: #324277;
     font-size: 0.85rem;
     height: 8%;
   }
@@ -445,9 +465,7 @@
   }
 
   .goblin-race-transparent {
-    background-color: #3277387d;
-    border: 2px solid #327738;
-    border-top: none;
+    background-color: #327738;
     font-size: 0.85rem;
     height: 8%;
   }
@@ -458,9 +476,7 @@
   }
 
   .elf-race-transparent {
-    background-color: #726b7a7d;
-    border: 2px solid #726b7a;
-    border-top: none;
+    background-color: #726b7a;
     font-size: 0.85rem;
     height: 8%;
   }
@@ -471,9 +487,7 @@
   }
 
   .dwarf-race-transparent {
-    background-color: #774b327d;
-    border: 2px solid #774b32;
-    border-top: none;
+    background-color: #774b32;
     font-size: 0.85rem;
     height: 8%;
   }
@@ -484,9 +498,7 @@
   }
 
   .beast-race-transparent {
-    background-color: #55431e7d;
-    border: 2px solid #55431e;
-    border-top: none;
+    background-color: #55431e;
     font-size: 0.85rem;
     height: 8%;
   }
@@ -497,9 +509,7 @@
   }
 
   .bot-race-transparent {
-    background-color: #4242427d;
-    border: 2px solid #424242;
-    border-top: none;
+    background-color: #424242;
     font-size: 0.85rem;
     height: 8%;
   }
@@ -510,9 +520,7 @@
   }
 
   .xeno-race-transparent {
-    background-color: #8e74197d;
-    border: 2px solid #8e7419;
-    border-top: none;
+    background-color: #8e7419;
     font-size: 0.85rem;
     height: 8%;
   }
@@ -523,9 +531,7 @@
   }
 
   .spirit-race-transparent {
-    background-color: #b63bac7d;
-    border: 2px solid #b63bac;
-    border-top: none;
+    background-color: #b63bac;
     font-size: 0.85rem;
     height: 8%;
   }
@@ -536,9 +542,7 @@
   }
 
   .boost-race-transparent {
-    background-color: #a0aec87d;
-    border: 2px solid #a0aec8;
-    border-top: none;
+    background-color: #a0aec8;
     font-size: 0.85rem;
     height: 8%;
   }
@@ -549,9 +553,7 @@
   }
 
   .trap-race-transparent {
-    background-color: #1111117d;
-    border: 2px solid #3e3e3e12;
-    border-top: none;
+    background-color: #111111;
     font-size: 0.85rem;
     height: 8%;
   }
@@ -562,15 +564,9 @@
   }
 
   .neutral-race-transparent {
-    background-color: #462e597d;
-    border: 2px solid #3b3b3b12;
-    border-top: none;
+    background-color: #462e59;
     font-size: 0.85rem;
     height: 8%;
-  }
-
-  .height-28 {
-    height: 28px;
   }
 
   /* race title color */
@@ -621,8 +617,7 @@
   // Utility
   @media only screen and (max-width: 1100px) {
     .rarity {
-      width: 0.9rem;
-      height: 0.9rem;
+      width: 10px;
     }
 
     .rarity-star { font-size: 0.22rem; }
@@ -651,28 +646,17 @@
       padding-top: 0.125rem;
     }
 
-    .race {
-      font-size: 0.4rem;
-      height: 1rem;
-      padding: 0.125rem;
-      width: 2rem;
-
-      bottom: -0.5rem;
-      left: 50%;
-      transform: translateX(-50%);
-    }
-
     .points {
-      font-size: 0.4rem;
-      height: 0.9rem;
-      width: 0.9rem;
+      font-size: 0.6rem;
+      height: 1rem;
+      width: 1rem;
       border-radius: 0 0 0.4rem 0;
     }
-
+    
     .points__modified {
-      font-size: 0.4rem;
-      height: 0.9rem;
-      width: 0.9rem;
+      font-size: 0.6rem;
+      height: 1rem;
+      width: 1rem;
       border-radius: 0 0.4rem 0.4rem 0;
       top: 16px;
     }
@@ -711,12 +695,6 @@
 
     .race {
       font-size: 0.4rem;
-      height: 1rem;
-      padding: 0.125rem;
-
-      bottom: -0.5rem;
-      left: 50%;
-      transform: translateX(-50%);
     }
 
     .points {
