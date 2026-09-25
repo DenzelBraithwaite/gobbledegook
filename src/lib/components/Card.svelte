@@ -135,7 +135,7 @@
     color: #ddd;
     width: 100%;
     height: 3rem;
-    text-shadow: 0 2px 8px #000000a8;
+    text-shadow: 0 2px 8px #00000096;
     font-size: 1.25rem;
     font-weight: bold;
     text-align: center;
@@ -454,6 +454,8 @@
   }
 
   .human-race-transparent {
+    border: 4px solid #324277a8;
+    border-top: none;
     background-color: #324277;
     font-size: 0.85rem;
     height: 8%;
@@ -465,6 +467,8 @@
   }
 
   .goblin-race-transparent {
+    border: 4px solid #327738a8;
+    border-top: none;
     background-color: #327738;
     font-size: 0.85rem;
     height: 8%;
@@ -476,6 +480,8 @@
   }
 
   .elf-race-transparent {
+    border: 4px solid #726b7a;
+    border-top: none;
     background-color: #726b7a;
     font-size: 0.85rem;
     height: 8%;
@@ -487,6 +493,8 @@
   }
 
   .dwarf-race-transparent {
+    border: 4px solid #774b32a8;
+    border-top: none;
     background-color: #774b32;
     font-size: 0.85rem;
     height: 8%;
@@ -498,6 +506,8 @@
   }
 
   .beast-race-transparent {
+    border: 4px solid #55431e;
+    border-top: none;
     background-color: #55431e;
     font-size: 0.85rem;
     height: 8%;
@@ -509,6 +519,8 @@
   }
 
   .bot-race-transparent {
+    border: 4px solid #424242;
+    border-top: none;
     background-color: #424242;
     font-size: 0.85rem;
     height: 8%;
@@ -520,6 +532,8 @@
   }
 
   .xeno-race-transparent {
+    border: 4px solid #957c1e;
+    border-top: none;
     background-color: #8e7419;
     font-size: 0.85rem;
     height: 8%;
@@ -531,6 +545,8 @@
   }
 
   .spirit-race-transparent {
+    border: 4px solid #c173baa8;
+    border-top: none;
     background-color: #b63bac;
     font-size: 0.85rem;
     height: 8%;
@@ -542,6 +558,8 @@
   }
 
   .boost-race-transparent {
+    border: 4px solid #eeeeeed4;
+    border-top: none;
     background-color: #a0aec8;
     font-size: 0.85rem;
     height: 8%;
@@ -553,6 +571,8 @@
   }
 
   .trap-race-transparent {
+    border: 4px solid #111111;
+    border-top: none;
     background-color: #111111;
     font-size: 0.85rem;
     height: 8%;
@@ -564,6 +584,8 @@
   }
 
   .neutral-race-transparent {
+    border: 4px solid #3d1f5a;
+    border-top: none;
     background-color: #462e59;
     font-size: 0.85rem;
     height: 8%;
