@@ -21,6 +21,7 @@
   import { findDiscardIndex, reconcileVisualHand, type VisualCard } from '../game/visualHand';
   import { advanceOngoingEffects } from '../game/ongoingEffects';
   import { selectNonBeastDraw } from '../game/vultureDraw';
+  import { chooseMusicAfterHandChange, concertMusicTrack, getUnlockedMusicTracks, leaderMusicTracks, mainMusicTracks, nextMainMusicTrack, type MusicTrack } from '../game/music';
 
   // Websocket
   import { io } from 'socket.io-client';
@@ -31,14 +32,14 @@
   const aiBotCardBonus = 4;
   let socket = io('http://192.168.2.14:6912', { autoConnect: false });
   let gameMode: 'singleplayer' | 'multiplayer' = 'singleplayer';
-  // ai generated: Add each finished race theme here; only real files appear in the music panel.
-  const musicTracks = [{ title: 'Goblin Theme', src: '/music/goblin_theme.mp3' }];
-  let selectedMusicTrack = musicTracks[0].src;
+  // ai generated: Main songs alternate automatically; only themes unlocked by the local hand can be skipped between.
+  const musicTracks: MusicTrack[] = [...mainMusicTracks, ...Object.values(leaderMusicTracks), concertMusicTrack];
+  let selectedMusicTrack = mainMusicTracks[0].src;
+  let availableSpecialMusicTracks: MusicTrack[] = [];
   let musicAudio: HTMLAudioElement | null = null;
   let musicPlaying = false;
   let musicPanelVisible = false;
   let musicVolume = 0.2;
-  let musicLoopEnabled = true;
   let musicPlayRequest = 0;
 
   // ai generated: These are server-owned multiplayer records; singleplayer never loads or saves them.
@@ -159,13 +160,22 @@
   const p1VisualHand = createVisualHandStore(player1, 'p1');
   const p2VisualHand = createVisualHandStore(player2, 'p2');
 
+  // ai generated: React to only this browser's hand, including deals, draws, discards, and hand swaps.
+  $: localMusicHand = gameState.playingAs === 'p1' ? $player1.hand : gameState.playingAs === 'p2' ? $player2.hand : [];
+  // ai generated: The opponent unlocks Serenade only while the existing card-visibility rules show them Spirit King.
+  $: visibleOpponentSpiritKing = gameState.playingAs === 'p1'
+    ? $player2.hand.includes('spiritKing') && isCardVisible('p2', 'spiritKing', $player1.hasVision, gameState.playersRevealed)
+    : gameState.playingAs === 'p2'
+      ? $player1.hand.includes('spiritKing') && isCardVisible('p1', 'spiritKing', $player2.hasVision, gameState.playersRevealed)
+      : false;
+  $: syncMusicForHand(localMusicHand, visibleOpponentSpiritKing);
+
   onMount(() => {
-    // ai generated: Music is local to this browser and waits for the panel's Play button before playing.
+    // ai generated: All audio remains local and starts only after the player's Play click.
     musicAudio = new Audio(selectedMusicTrack);
-    musicAudio.loop = musicLoopEnabled;
     musicAudio.volume = musicVolume;
     musicAudio.preload = 'none';
-    musicAudio.onended = () => musicPlaying = false;
+    musicAudio.onended = handleMusicEnded;
 
     // Respons to connection 
     socket.on('check-connected-users-response', () => {
@@ -2742,16 +2752,17 @@
     musicPanelVisible = !musicPanelVisible;
   }
 
-  // ai generated: A rejected browser play request restores the paused state without affecting either player's game.
-  function toggleMusicPlayback(): void {
-    if (!musicAudio) return;
-    if (musicPlaying) {
-      musicPlayRequest++;
-      musicAudio.pause();
-      musicPlaying = false;
-      return;
-    }
+  // ai generated: A newly unlocked leader or five-Bard concert takes over without restarting an unchanged theme.
+  function syncMusicForHand(hand: string[], opponentSpiritKingVisible: boolean): void {
+    const unlocked = getUnlockedMusicTracks(hand, opponentSpiritKingVisible);
+    const nextTrack = chooseMusicAfterHandChange(availableSpecialMusicTracks, unlocked, selectedMusicTrack);
+    availableSpecialMusicTracks = unlocked;
+    if (nextTrack) selectMusicTrack(nextTrack);
+  }
 
+  // ai generated: A rejected browser play request restores the paused state without affecting either player's game.
+  function startMusicPlayback(): void {
+    if (!musicAudio) return;
     const request = ++musicPlayRequest;
     musicPlaying = true;
     void musicAudio.play().catch(error => {
@@ -2760,7 +2771,18 @@
     });
   }
 
-  // ai generated: Switching tracks keeps playback going if it was already on, but never plays a paused track automatically.
+  function toggleMusicPlayback(): void {
+    if (!musicAudio) return;
+    if (musicPlaying) {
+      musicPlayRequest++;
+      musicAudio.pause();
+      musicPlaying = false;
+      return;
+    }
+    startMusicPlayback();
+  }
+
+  // ai generated: Changing themes preserves the user's play/pause choice, even during a card-triggered switch.
   function selectMusicTrack(src: string): void {
     if (selectedMusicTrack === src) return;
     const wasPlaying = musicPlaying;
@@ -2771,20 +2793,38 @@
     if (!musicAudio) return;
     musicAudio.src = src;
     musicAudio.load();
-    if (wasPlaying) toggleMusicPlayback();
+    if (wasPlaying) startMusicPlayback();
   }
 
-  // ai generated: A finished non-looping track restores the Play button; Loop can be changed during playback.
-  function toggleMusicLoop(): void {
-    musicLoopEnabled = !musicLoopEnabled;
-    if (musicAudio) musicAudio.loop = musicLoopEnabled;
+  // ai generated: Main-A/Main-B cannot be skipped; only distinct themes unlocked by this hand can be selected.
+  function stepMusicTrack(direction: -1 | 1): void {
+    if (availableSpecialMusicTracks.length < 2) return;
+    const currentIndex = availableSpecialMusicTracks.findIndex(track => track.src === selectedMusicTrack);
+    const nextIndex = (currentIndex + direction + availableSpecialMusicTracks.length) % availableSpecialMusicTracks.length;
+    selectMusicTrack(availableSpecialMusicTracks[nextIndex].src);
   }
 
-  // ai generated: Restart begins the loop from the start, including when it was previously paused.
+  // ai generated: Main tracks alternate forever; a leader or Concert repeats until no longer eligible.
+  function handleMusicEnded(): void {
+    if (!musicAudio || !musicPlaying) return;
+    if (availableSpecialMusicTracks.length) {
+      if (!availableSpecialMusicTracks.some(track => track.src === selectedMusicTrack)) {
+        selectMusicTrack(availableSpecialMusicTracks[0].src);
+      } else {
+        musicAudio.currentTime = 0;
+        startMusicPlayback();
+      }
+      return;
+    }
+    selectMusicTrack(nextMainMusicTrack(selectedMusicTrack).src);
+  }
+
+  // ai generated: Restart returns ordinary playback to Main-A; an active special theme must stay special.
   function restartMusic(): void {
     if (!musicAudio) return;
+    if (!availableSpecialMusicTracks.length) selectMusicTrack(mainMusicTracks[0].src);
     musicAudio.currentTime = 0;
-    if (!musicPlaying) toggleMusicPlayback();
+    if (!musicPlaying) startMusicPlayback();
   }
 
   // ai generated: Volume is local to this browser and changes the current audio element immediately.
@@ -3076,7 +3116,7 @@
       <Library />
     {/if}
 
-    <!-- ai generated: The themed speaker opens local controls without starting or stopping the music itself. -->
+    <!-- ai generated: Keep the speaker and modal available while replacement songs are being chosen. -->
     <button class="music-toggle-btn" class:music-toggle-btn--playing={musicPlaying} type="button" on:click={toggleMusicPanel} aria-label="Music controls" aria-expanded={musicPanelVisible} aria-controls="music-controls" title="Music controls">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
         <path stroke-linejoin="round" d="M11 5 6 9H3v6h3l5 4V5Z" />
@@ -3088,22 +3128,20 @@
       </svg>
     </button>
     {#if musicPanelVisible}
-      <!-- ai generated: Small orange controls stay independent of both player hands and the multiplayer server. -->
+      <!-- ai generated: Main themes advance automatically; Prev and Skip appear only for multiple held special themes. -->
       <div id="music-controls" class="music-controls-panel" role="group" aria-label="Music controls">
         <div class="music-controls-header">
           <span>Music</span>
           <button class="music-close-btn" type="button" on:click={() => musicPanelVisible = false} aria-label="Close music controls">×</button>
         </div>
-        <!-- ai generated: This list has one real race theme today and expands as new race tracks are added. -->
-        <div class="music-track-list" aria-label="Music tracks">
-          {#each musicTracks as track}
-            <button class="music-track-btn" class:music-track-btn--selected={selectedMusicTrack === track.src} type="button" on:click={() => selectMusicTrack(track.src)} aria-pressed={selectedMusicTrack === track.src}>{track.title}</button>
-          {/each}
+        <div class="music-track-switcher" aria-label="Music tracks">
+          <button class="music-track-step" type="button" on:click={() => stepMusicTrack(-1)} aria-label="Previous track" disabled={availableSpecialMusicTracks.length < 2}>Prev</button>
+          <span class="music-current-track" aria-live="polite">{musicTracks.find(track => track.src === selectedMusicTrack)?.title ?? 'No music selected'}</span>
+          <button class="music-track-step" type="button" on:click={() => stepMusicTrack(1)} aria-label="Next track" disabled={availableSpecialMusicTracks.length < 2}>Skip</button>
         </div>
         <div class="music-action-buttons">
           <button class="music-play-btn" type="button" on:click={toggleMusicPlayback}>{musicPlaying ? 'Pause' : 'Play'}</button>
           <button class="music-restart-btn" type="button" on:click={restartMusic}>Restart</button>
-          <button class="music-loop-btn" class:music-loop-btn--enabled={musicLoopEnabled} type="button" on:click={toggleMusicLoop} aria-pressed={musicLoopEnabled}>Loop {musicLoopEnabled ? 'On' : 'Off'}</button>
         </div>
         <label class="music-volume-label" for="music-volume">Volume <span>{Math.round(musicVolume * 100)}%</span></label>
         <input id="music-volume" class="music-volume-slider" type="range" min="0" max="1" step="0.01" value={musicVolume} on:input={setMusicVolume} />
@@ -3735,7 +3773,7 @@
     }
   }
 
-  // ai generated: The speaker follows the same 40px side-icon layout; brown and green mark inactive/active music.
+  // ai generated: The speaker keeps its original side-icon layout for the local music player.
   .music-toggle-btn {
     top: 120px;
     height: 40px;
@@ -3789,28 +3827,33 @@
     cursor: pointer;
   }
 
-  .music-track-list {
-    display: flex;
-    flex-direction: column;
+  .music-track-switcher {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
     gap: 0.35rem;
     margin-bottom: 0.75rem;
   }
 
-  .music-track-btn {
-    width: 100%;
-    padding: 0.4rem 0.5rem;
+  .music-track-step {
+    padding: 0.4rem;
     border: 1px solid #745f58;
     border-radius: 0.3rem;
     background: #745f5833;
     color: #e4cdc0;
-    text-align: left;
     cursor: pointer;
 
-    &.music-track-btn--selected {
-      border-color: #d44215;
-      background: #d442154d;
-      color: #ffd0ac;
+    &:hover:not(:disabled) {
+      background: #745f588a;
     }
+  }
+
+  .music-current-track {
+    overflow: hidden;
+    color: #ffd0ac;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .music-action-buttons {
@@ -3831,7 +3874,7 @@
       background: #3277384d;
       color: #b8dfb8;
 
-      &:hover {
+      &:hover:not(:disabled) {
         background: #3277388a;
       }
     }
@@ -3841,22 +3884,18 @@
       background: #745f584d;
       color: #e4cdc0;
 
-      &:hover {
+      &:hover:not(:disabled) {
         background: #745f588a;
       }
     }
 
-    .music-loop-btn {
-      border-color: #745f58;
-      background: #745f584d;
-      color: #e4cdc0;
+  }
 
-      &.music-loop-btn--enabled {
-        border-color: #327738;
-        background: #3277384d;
-        color: #b8dfb8;
-      }
-    }
+  // ai generated: Prev and Skip are disabled when fewer than two special themes are unlocked.
+  .music-controls-panel button:disabled,
+  .music-volume-slider:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
   }
 
   .music-volume-label {

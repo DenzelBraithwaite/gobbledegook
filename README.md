@@ -36,7 +36,11 @@ Singleplayer does not retain wins, losses, draws, or ELO.
 
 ## Music
 
-The speaker button beneath Library and Discards opens a small music panel with a track list, Play/Pause, Restart, Loop, and Volume controls. Music starts off; Loop starts on; playback affects only your browser in either game mode. The first track, **Goblin Theme**, is `server/serve/music/goblin_theme.mp3`, copied to `public/music/` for local Vite use and by the normal build for the served game. Add future race themes to the `musicTracks` list in `Game.svelte` once their files exist.
+The speaker opens local music controls. Music stays off until you press Play; Pause and Volume affect only your browser. With no special card in your hand, **Main-A** (`main.mp3`) plays into **Main-B** (`main_2.mp3`) and repeats. You cannot skip between these two songs; Restart begins Main-A again.
+
+Holding a race leader switches to its theme while music is playing, or selects that theme for the next Play if paused. The eligible themes are Emperor → Humanity, Goblin Lord → Conquest, Longbeard Leader → Tavern, Elf King → Gifted, Dream Destroyer or Night Terror → Prowl, Spirit King → Serenade, A.I. → Warning, and Sporax → Spaceship. Both players may hear Serenade while they can actually see Spirit King in the holder's hand; Darqnos masking prevents that for the other player. Other Xeno eggs and bonus-card legendaries do not unlock music. Holding at least five Bard cards, counting Leon, unlocks Concert. These themes repeat while eligible, and Main-A/Main-B are unavailable until no special theme remains in your hand. Drawing a newly eligible special card selects its theme; if you hold multiple distinct themes, Prev and Skip choose among them. Drawing another Bard while Concert is already available does not restart it. Once the last special theme leaves your hand, ordinary music returns at Main-A. Restart restarts your selected special theme while any special theme is held.
+
+Music files live in `server/serve/music/`; the production build copies them to `public/music/`. For Vite development, keep matching copies in `public/music/`. `intruder_sound.mp3` is not used yet.
 
 ## Multiplayer records
 
