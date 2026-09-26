@@ -2777,6 +2777,12 @@
       && !areTrapsBlocked(player) && !player.hand.includes('darkSpirit');
   }
 
+  // ai generated: Darqnos masks only an opponent hand that Vision, Spirit King, or an active Exposed would otherwise reveal.
+  function showDarqnosMask(playerSide: 'p1' | 'p2', player: Player, viewerHasVision: boolean): boolean {
+    return gameState.playingAs !== playerSide && player.hand.includes('darkSpirit')
+      && (viewerHasVision || gameState.playersRevealed || (player.isExposed && !areTrapsBlocked(player)));
+  }
+
   function isCardVisible(playerSide: 'p1' | 'p2', card: string, viewerHasVision: boolean, playersRevealed: boolean) {
     const isLookingAtOwnSide = (gameState.playingAs === 'p1' && playerSide === 'p1') || (gameState.playingAs === 'p2' && playerSide === 'p2');
     const isExposed = (gameState.playingAs === 'p1' && $player2.isExposed && playerSide === 'p2') || (gameState.playingAs === 'p2' && $player1.isExposed && playerSide === 'p1');
@@ -3377,23 +3383,25 @@
 
           {#each $p1VisualHand as visualCard, visualIndex (visualCard.key)}
             {@const card = visualCard.title}
+            {@const darqnosMask = showDarqnosMask('p1', $player1, $player2.hasVision)}
+            {@const displayCard = darqnosMask ? 'darkSpirit' : card}
             <GGCard
               on:cardClick={async () => await clickOnCard($player1, card, visualCard.key, visualIndex)}
-              on:contextmenu={() => openLibraryToCard($cardDetails[card].race)}        
-              faceUp={isCardVisible('p1', card, $player2.hasVision, gameState.playersRevealed)}
+              on:contextmenu={() => openLibraryToCard($cardDetails[displayCard].race)}
+              faceUp={darqnosMask || isCardVisible('p1', card, $player2.hasVision, gameState.playersRevealed)}
               exposed={showLocalExposedStyle('p1', $player1)}
-              displayTitle={$cardDetails[card].displayTitle}
-              title={$cardDetails[card].title}
-              img={$cardDetails[card].image}
-              trait={$cardDetails[card].trait}
-              traitTitle={$cardDetails[card].traitTitle}
-              description={$cardDetails[card].description}
-              race={$cardDetails[card].race}
-              rarity={determineRarity($player1, card)}
-              points={getCardPointsForDisplay($player1, card)}
-              modifiedPoints={displayCardPoints($player1, card)}
-              buffed={determineIfPointColorGreen($player1, card)}
-              reduced={determineIfPointColorRed($player1, card)}
+              displayTitle={$cardDetails[displayCard].displayTitle}
+              title={$cardDetails[displayCard].title}
+              img={$cardDetails[displayCard].image}
+              trait={$cardDetails[displayCard].trait}
+              traitTitle={$cardDetails[displayCard].traitTitle}
+              description={$cardDetails[displayCard].description}
+              race={$cardDetails[displayCard].race}
+              rarity={darqnosMask ? 'epic' : determineRarity($player1, card)}
+              points={darqnosMask ? $cardDetails['darkSpirit'].points : getCardPointsForDisplay($player1, card)}
+              modifiedPoints={darqnosMask ? $cardDetails['darkSpirit'].points : displayCardPoints($player1, card)}
+              buffed={!darqnosMask && determineIfPointColorGreen($player1, card)}
+              reduced={!darqnosMask && determineIfPointColorRed($player1, card)}
             />
           {/each}
         </div>
@@ -3455,23 +3463,25 @@
           </div>
           {#each $p2VisualHand as visualCard, visualIndex (visualCard.key)}
             {@const card = visualCard.title}
+            {@const darqnosMask = showDarqnosMask('p2', $player2, $player1.hasVision)}
+            {@const displayCard = darqnosMask ? 'darkSpirit' : card}
             <GGCard
               on:cardClick={async () => await clickOnCard($player2, card, visualCard.key, visualIndex)}
-              on:contextmenu={() => openLibraryToCard($cardDetails[card].race)}
-              faceUp={isCardVisible('p2', card, $player1.hasVision, gameState.playersRevealed)}
+              on:contextmenu={() => openLibraryToCard($cardDetails[displayCard].race)}
+              faceUp={darqnosMask || isCardVisible('p2', card, $player1.hasVision, gameState.playersRevealed)}
               exposed={showLocalExposedStyle('p2', $player2)}
-              displayTitle={$cardDetails[card].displayTitle}
-              title={$cardDetails[card].title}
-              img={$cardDetails[card].image}
-              trait={$cardDetails[card].trait}
-              traitTitle={$cardDetails[card].traitTitle}
-              description={$cardDetails[card].description}
-              race={$cardDetails[card].race}
-              rarity={determineRarity($player2, card)}
-              points={getCardPointsForDisplay($player2, card)}
-              modifiedPoints={displayCardPoints($player2, card)}
-              buffed={determineIfPointColorGreen($player2, card)}
-              reduced={determineIfPointColorRed($player2, card)}
+              displayTitle={$cardDetails[displayCard].displayTitle}
+              title={$cardDetails[displayCard].title}
+              img={$cardDetails[displayCard].image}
+              trait={$cardDetails[displayCard].trait}
+              traitTitle={$cardDetails[displayCard].traitTitle}
+              description={$cardDetails[displayCard].description}
+              race={$cardDetails[displayCard].race}
+              rarity={darqnosMask ? 'epic' : determineRarity($player2, card)}
+              points={darqnosMask ? $cardDetails['darkSpirit'].points : getCardPointsForDisplay($player2, card)}
+              modifiedPoints={darqnosMask ? $cardDetails['darkSpirit'].points : displayCardPoints($player2, card)}
+              buffed={!darqnosMask && determineIfPointColorGreen($player2, card)}
+              reduced={!darqnosMask && determineIfPointColorRed($player2, card)}
             />
           {/each}
         </div>
