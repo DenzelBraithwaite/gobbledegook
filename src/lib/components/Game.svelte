@@ -19,6 +19,7 @@
   // ai generated: The decision engine stays independent from Svelte and receives only the information a real player could know.
   import { ageOpponentHandMemory, chooseCpuDiscard, createCpuMemory, decideCpuDeclaration, getCpuEchoAction, getForcedCpuRacePath, isCpuDeclarationDisabledByName, isCpuDeclarationForcedByName, rememberCpuDecision, rememberOpponentHand, type CpuObservation, type CpuOpponentInsightSource } from '../game/cpuStrategy';
   import { findDiscardIndex, reconcileVisualHand, type VisualCard } from '../game/visualHand';
+  import { advanceOngoingEffects } from '../game/ongoingEffects';
 
   // Websocket
   import { io } from 'socket.io-client';
@@ -941,8 +942,12 @@
       });
    }
 
-    // Emits to server that a card was discarded
-    emitGameEvent('discard-card', {player1: $player1, player2: $player2});
+    // ai generated: A temporary blocker leaving the hand immediately restores earned points without adding another turn of growth.
+    calculateCurrentPlayerPoints(player);
+
+    // ai generated: Chester sends one completed hand update after awarding its replacement, not an intermediate five-card hand.
+    const chesterWillAwardLegendary = cardTitle === 'chester' && remainingLegendaries.length > 0;
+    if (!chesterWillAwardLegendary) emitGameEvent('discard-card', {player1: $player1, player2: $player2});
     // ai generated: If the hand is currently visible, remember its post-discard five-card state before Spirit King or another reveal ends.
     refreshCpuOpponentMemory();
 
@@ -969,16 +974,24 @@
     if (cardTitle === 'alchemist') player.dwarfNextTurn = Math.random() < 0.5 ? true : false;
 
     // If chester, swap for a legendary and don't end turn.
-    if (cardTitle === 'chester' && remainingLegendaries.length > 0) {
+    if (chesterWillAwardLegendary) {
       const randomIndex = Math.floor(Math.random() * remainingLegendaries.length);
       const legendaryObj = remainingLegendaries[randomIndex];
-      player.hand = [...player.hand, legendaryObj[0]];
+      // ai generated: Notify the player store so Chester's replacement appears in the keyed hand immediately.
+      const playerStore = player.id === $player1.id ? player1 : player2;
+      playerStore.update(current => {
+        current.hand = [...current.hand, legendaryObj[0]];
+        return current;
+      });
+      calculateCurrentPlayerPoints(player);
       
       // If it's the spirit king, expose both hands.
       if (legendaryObj[0] === 'spiritKing') await revealPlayers();
       
       // Then remove from gamestate remaining legendaries
       emitGameEvent('remove-remaining-legendary', legendaryObj[0]);
+      // ai generated: Send the awarded six-card hand to the other client after the local store has notified its display.
+      emitGameEvent('discard-card', {player1: $player1, player2: $player2});
 
       return;
     }
@@ -1187,7 +1200,7 @@
   function calculateCurrentPlayerPoints(player: Player, isNewTurn = false) {
     const otherPlayer = player.id === $player1.id ? $player2 : $player1;
 
-    // If chastity/corruption, wipe the bonus points, otherwise temporarily stop accumulating.
+    // ai generated: Advance persistent effects once per full turn; blockers pause them and Neutralize is the only reset.
     if (isNewTurn) {
       calculateAccumulatingBonusCards($player1);
       calculateAccumulatingBonusCards($player2);
@@ -1197,21 +1210,9 @@
     calculatePlayerPointsAgainst(player, otherPlayer);
   }
 
-  // If chastity/corruption, wipe the bonus points, otherwise temporarily stop accumulating.
+  // ai generated: This uses the same blocking rules as scoring, including held-only Rhino and Xeno Guard.
   function calculateAccumulatingBonusCards(player: Player) : void {
-    if (player.hasCorruption) {
-      player.chargePoints = 0;
-      player.growthPoints = 0;
-    } else if (!player.hand.includes('xenoGuard')) {
-      player.chargePoints += player.numOfCharges;
-      player.growthPoints += player.numOfGrowths;
-    }
-
-    if (player.hasChastity) {
-      player.infectPoints = 0;
-    } else if (!player.hand.includes('rhino')) {
-      player.infectPoints += player.numOfInfects;
-    }
+    advanceOngoingEffects(player, areBoostsBlocked(player), areTrapsBlocked(player));
   }
 
   // Calculates all player race points, used to determine the winner.
@@ -2748,6 +2749,12 @@
   }
 
   // Determines if card should be visible or not
+  // ai generated: Only the exposed player sees this cue on their own cards; Rhino, Chastity, and Darqnos block actual exposure.
+  function showLocalExposedStyle(playerSide: 'p1' | 'p2', player: Player): boolean {
+    return gameState.playingAs === playerSide && player.isExposed
+      && !areTrapsBlocked(player) && !player.hand.includes('darkSpirit');
+  }
+
   function isCardVisible(playerSide: 'p1' | 'p2', card: string, viewerHasVision: boolean, playersRevealed: boolean) {
     const isLookingAtOwnSide = (gameState.playingAs === 'p1' && playerSide === 'p1') || (gameState.playingAs === 'p2' && playerSide === 'p2');
     const isExposed = (gameState.playingAs === 'p1' && $player2.isExposed && playerSide === 'p2') || (gameState.playingAs === 'p2' && $player1.isExposed && playerSide === 'p1');
@@ -3352,6 +3359,7 @@
               on:cardClick={async () => await clickOnCard($player1, card, visualCard.key, visualIndex)}
               on:contextmenu={() => openLibraryToCard($cardDetails[card].race)}        
               faceUp={isCardVisible('p1', card, $player2.hasVision, gameState.playersRevealed)}
+              exposed={showLocalExposedStyle('p1', $player1)}
               displayTitle={$cardDetails[card].displayTitle}
               title={$cardDetails[card].title}
               img={$cardDetails[card].image}
@@ -3429,6 +3437,7 @@
               on:cardClick={async () => await clickOnCard($player2, card, visualCard.key, visualIndex)}
               on:contextmenu={() => openLibraryToCard($cardDetails[card].race)}
               faceUp={isCardVisible('p2', card, $player1.hasVision, gameState.playersRevealed)}
+              exposed={showLocalExposedStyle('p2', $player2)}
               displayTitle={$cardDetails[card].displayTitle}
               title={$cardDetails[card].title}
               img={$cardDetails[card].image}

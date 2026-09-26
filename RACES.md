@@ -127,7 +127,7 @@ Xenos have strong ordinary cards and the most dynamic point values in the game. 
 
 ### Xeno cards
 
-- **Xeno Guard — 15 points.** Blocks all of its owner's boosts while held.
+- **Xeno Guard — 20 points.** Blocks all of its owner's boosts while held.
 - **Warpstalker — 10–20 points when drawn.** Every Warpstalker in the hand uses the resulting value.
 - **Abyssolarian — 10 points.**
 - **Celenial — 8 points.**
@@ -162,15 +162,15 @@ Spirits are a high-ceiling information and control race. Their unique cards have
 
 ## Boosts
 
-Boosts remain in a player's effect log after being discarded unless another effect blocks or neutralizes them.
+Boosts remain in a player's effect log after being discarded. A blocker suppresses their points only while active; Neutralize removes them. Charge and Growth pause, keep their earned totals, and resume gaining points on the next unblocked turn.
 
-- **Chastity.** Blocks traps, clears accumulated Infect, and remains active after discard. When acquired through Switcharoo, it works only while held. Corruption can still take effect.
+- **Chastity.** Blocks traps and pauses Infect without deleting its accumulated penalty. The block remains active after discard; when acquired through Switcharoo, it works only while held. Neutralize clears both the mark and Infect. Corruption can still take effect.
 - **Eradicate.** When discarded, removes the Trap deck from future draws.
 - **Chester.** When discarded, transforms into a random available racial legendary.
 - **Gaze.** While held and unblocked, opens the remaining-card viewer.
-- **Rejuvenate.** Permanently adds +10 points to every race.
-- **Charge.** Each copy accumulates +1 Human and Bot point per complete turn.
-- **Growth.** Each copy accumulates +1 Goblin, Elf, and Dwarf point per complete turn.
+- **Rejuvenate.** Adds +10 points to every race if boosts are unblocked when scored, even after the card is discarded.
+- **Charge.** Each copy accumulates +1 Human and Bot point per unblocked complete turn. Blocking hides but does not erase earned points.
+- **Growth.** Each copy accumulates +1 Goblin, Elf, and Dwarf point per unblocked complete turn. Blocking hides but does not erase earned points.
 - **Feast.** Permanently adds +10 Beast points.
 - **Oreo, Chocolate Chip, Thumbprint, and Oatmeal Cookie.** Each permanently adds +5 points to every race except Spirits and +10 points to Bots.
 - **Cookie Crumbs.** Each copy permanently adds +3 points to every race except Spirits and +6 points to Bots.
@@ -178,13 +178,13 @@ Boosts remain in a player's effect log after being discarded unless another effe
 
 ## Traps
 
-Traps remain in a player's effect log after being discarded unless they are blocked or neutralized.
+Traps remain in a player's effect log after being discarded. A blocker suppresses their penalties only while active; Neutralize removes them. Infect pauses, keeps its accumulated penalty, and resumes worsening on the next unblocked turn.
 
-- **Corruption.** Blocks boosts, clears accumulating Charge and Growth value, and remains active after discard. Chastity can still take effect.
+- **Corruption.** Blocks boosts and pauses Charge and Growth without deleting earned totals. The block remains active after discard; Neutralize clears both the mark and boosts. Chastity can still take effect.
 - **Chjester.** Attempting to discard it discards a randomly selected racial legendary instead if one is held.
 - **Exposed.** Reveals the player's hand until their next normal turn.
-- **Sap.** Permanently subtracts 10 points from every race.
-- **Infect.** Accumulates a −1 penalty per complete turn for each copy, affecting every race except Spirits.
+- **Sap.** Subtracts 10 points from every race if traps are unblocked when scored, even after the card is discarded.
+- **Infect.** Accumulates a −1 penalty per unblocked complete turn for each copy, affecting every race except Spirits. Blocking hides but does not erase the existing penalty.
 - **Rotten Cookie Crumbs.** Each copy permanently subtracts 3 points from Humans, Goblins, Elves, Dwarves, Beasts, and Xenos. Bots and Spirits are immune.
 - **Xenophobia.** Permanently subtracts 10 Xeno points.
 - **Lost.** Consumes the draw and turn; players protected from traps draw again instead.

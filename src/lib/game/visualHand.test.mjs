@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { derived, writable } from 'svelte/store';
 import { findDiscardIndex, reconcileVisualHand } from './visualHand.ts';
 
 test('discarding the later duplicate removes that hand slot and rendered copy', () => {
@@ -24,4 +25,23 @@ test('discarding the earlier duplicate removes its own rendered copy', () => {
 test('a forced discard or CPU choice still finds the named card', () => {
   assert.equal(findDiscardIndex(['miner', 'xenoEgg', 'miner'], 'xenoEgg', 2), 1);
   assert.equal(findDiscardIndex(['miner', 'knight', 'miner'], 'miner'), 0);
+});
+
+test('a Chester replacement appears immediately when its award updates the player store', () => {
+  // ai generated: The keyed display subscribes to the store, so both the discard and legendary award must notify it.
+  const player = writable({ hand: ['chester', 'miner', 'knight', 'wolf', 'lion', 'duck'] });
+  let previous = [];
+  let lastKey = 0;
+  const visualHand = derived(player, current => {
+    const result = reconcileVisualHand(previous, current.hand, null, lastKey);
+    previous = result.cards;
+    lastKey = result.lastKey;
+    return result.cards;
+  });
+  let visible = [];
+  const unsubscribe = visualHand.subscribe(cards => visible = cards.map(card => card.title));
+  player.update(current => ({ ...current, hand: current.hand.filter(card => card !== 'chester') }));
+  player.update(current => ({ ...current, hand: [...current.hand, 'emperor'] }));
+  assert.deepEqual(visible, ['miner', 'knight', 'wolf', 'lion', 'duck', 'emperor']);
+  unsubscribe();
 });

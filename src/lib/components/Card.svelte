@@ -22,6 +22,8 @@
   export let traitTitle = '';
   export let buffed = false;
   export let reduced = false;
+  // ai generated: Exposed styling is a local display cue; it does not affect whether another player can see the card.
+  export let exposed = false;
 
   $: if (race === 'goblin-ish') race = 'goblin';
 
@@ -64,7 +66,7 @@
   <!-- svelte-ignore a11y-click-events-have-key-events -->
   <!-- svelte-ignore a11y-no-static-element-interactions -->
   <!-- If card is legendary, shows special race colors, otherwise matches race color -->
-  <div on:contextmenu|preventDefault on:click={cardClickHandler} class="card bg-{race}{rarity === 'legendary' ? '-rare' : ''}" in:fly={{x: 100}} out:fade>
+  <div on:contextmenu|preventDefault on:click={cardClickHandler} class="card bg-{race}{rarity === 'legendary' ? '-rare' : ''}" class:card--exposed={exposed} in:fly={{x: 100}} out:fade>
     <img class="card-img" src={img} alt="img of card">
     <!-- ai generated: This compact rarity badge mirrors the point badge on the opposite top corner. -->
     <p class="rarity {race}-rarity-star" aria-label="{capitalize($cardDetails[title].rarity)} rarity">
@@ -113,6 +115,12 @@
       scale: 1.4;
       z-index: 2;
       box-shadow: 0 4px 12px #000000a8;
+    }
+
+    // ai generated: This wins over race backgrounds only for the local player's genuinely exposed cards.
+    &.card--exposed {
+      background: #00000082;
+      outline: 4px dotted #000000f5;
     }
   }
 

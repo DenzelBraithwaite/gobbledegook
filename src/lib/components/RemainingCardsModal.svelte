@@ -270,6 +270,7 @@
 
     display: grid;
     grid-template-columns: repeat(5, 1fr);
+    row-gap: 12px;
   }
 
   .x-icon {

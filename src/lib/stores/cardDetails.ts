@@ -141,7 +141,7 @@ const cardDetails = writable({
     description: 'The leader of the goblins.',
     race: 'goblin',
     otherRaces: [],
-    image: '/goblins/goblin-lord.gif'
+    image: '/goblins/goblin_lord.png'
   },
   warchief: {
     title: 'warchief',
@@ -161,7 +161,7 @@ const cardDetails = writable({
     displayTitle: "Goblin Lord's Mark",
     points: 0,
     amount: 1,
-    rarity: 'epic',
+    rarity: 'amazing',
     traitTitle: "Death's Mark",
     trait: 'When drawn, draw the goblin lord next turn. If no goblin lord, draw a goblin. If no goblin, draw a random card.',
     description: 'A sign that the goblin lord is near.',
@@ -540,7 +540,6 @@ const cardDetails = writable({
     image: '/dwarves/hobbit.png'
   },
 
-
   // Bots
   ai: {
     title: 'ai',
@@ -760,7 +759,7 @@ const cardDetails = writable({
     rarity: 'poor',
     traitTitle: '',
     trait: '',
-    description: 'A cute rat based off of a past pet.',
+    description: 'A cute rat inspired by a past pet.',
     race: 'beast',
     otherRaces: [],
     image: '/beasts/dumbo_rat_1.png'
@@ -773,7 +772,7 @@ const cardDetails = writable({
     rarity: 'poor',
     traitTitle: '',
     trait: '',
-    description: 'A cute rat based off of a past pet.',
+    description: 'A cute rat inspired by a past pet.',
     race: 'beast',
     otherRaces: [],
     image: '/beasts/dumbo_rat_2.png'
@@ -786,7 +785,7 @@ const cardDetails = writable({
     rarity: 'poor',
     traitTitle: '',
     trait: '',
-    description: 'A cute rat based off of a past pet.',
+    description: 'A cute rat inspired by a past pet.',
     race: 'beast',
     otherRaces: [],
     image: '/beasts/white_rat.png'
@@ -799,7 +798,7 @@ const cardDetails = writable({
     rarity: 'poor',
     traitTitle: '',
     trait: '',
-    description: 'A cute rat based off of a past pet.',
+    description: 'A cute rat inspired by a past pet.',
     race: 'beast',
     otherRaces: [],
     image: '/beasts/brown_rat.png'
@@ -875,7 +874,7 @@ const cardDetails = writable({
   xenoGuard: {
     title: 'xenoGuard',
     displayTitle: 'Xeno Guard',
-    points: 15,
+    points: 20,
     amount: 3,
     rarity: 'amazing',
     traitTitle: 'Antibodies',
@@ -1170,7 +1169,7 @@ const cardDetails = writable({
     amount: 1,
     rarity: 'legendary',
     traitTitle: 'Purity',
-    trait: 'Gain chastity immediately, remains even if discarded. Blocks all trap cards except Corruption. If acquired by switcharoo, only active while in hand. Wipes infect, can be neutralized.',
+    trait: 'Gain chastity immediately, remains even if discarded. Blocks all trap cards except Corruption and pauses Infect without erasing its accumulated penalty. If acquired by Switcharoo, only active while in hand. Can be neutralized.',
     description: 'An intriguing artifact said to repel all evil.',
     race: 'boost',
     otherRaces: [],
@@ -1222,7 +1221,7 @@ const cardDetails = writable({
     amount: 2,
     rarity: 'amazing',
     traitTitle: 'Rejuvenation',
-    trait: 'When drawn player gains +10 points at the end of the game even after this card is discarded.',
+    trait: 'When drawn, gain +10 points at the end of the game even after this card is discarded, unless boosts are blocked then.',
     description: 'An artifact that is believed to strengthen all being.',
     race: 'boost',
     otherRaces: [],
@@ -1248,7 +1247,7 @@ const cardDetails = writable({
     amount: 2,
     rarity: 'great',
     traitTitle: 'Recharge',
-    trait: 'When drawn player gains +1 bot & human point each turn (stacks) at the end of the game even after this card is discarded.',
+    trait: 'When drawn, gain +1 Bot and Human point per unblocked turn (stacks), even after discard. Blocking pauses growth and hides earned points without erasing them.',
     description: 'This curious electrified liquid seems to only benefit electronics and the human anatomy.',
     race: 'boost',
     otherRaces: [],
@@ -1261,7 +1260,7 @@ const cardDetails = writable({
     amount: 2,
     rarity: 'great',
     traitTitle: 'Stimulate',
-    trait: 'When drawn player gains +1 goblin, elf & dwarf point each turn (stacks) at the end of the game even after this card is discarded.',
+    trait: 'When drawn, gain +1 Goblin, Elf and Dwarf point per unblocked turn (stacks), even after discard. Blocking pauses growth and hides earned points without erasing them.',
     description: 'This curious furry creature seems to promote growth in certain creatues.',
     race: 'boost',
     otherRaces: [],
@@ -1354,7 +1353,7 @@ const cardDetails = writable({
     amount: 1,
     rarity: 'legendary',
     traitTitle: 'Impurity',
-    trait: 'Gain courruption immediately, remains even if discarded. Blocks all boost cards except Chastity. If acquired by switcharoo, only active while in hand. Can be neutralized.',
+    trait: 'Gain corruption immediately, remains even if discarded. Blocks all boost cards except Chastity and pauses Charge and Growth without erasing earned points. If acquired by Switcharoo, only active while in hand. Can be neutralized.',
     description: 'An ominous artifact feared for it\'s ability to prevent all that is good.',
     race: 'trap',
     otherRaces: [],
@@ -1393,7 +1392,7 @@ const cardDetails = writable({
     amount: 2,
     rarity: 'amazing',
     traitTitle: 'Sapped',
-    trait: 'When drawn player receives -10 point penalty towards all races at the end of the game even after this card is discarded.',
+    trait: 'When drawn, receive a -10 point penalty to all races at the end of the game even after discard, unless traps are blocked then.',
     description: 'A burning sticky substance that harms all who have the misfortune of touching it.',
     race: 'trap',
     otherRaces: [],
@@ -1406,7 +1405,7 @@ const cardDetails = writable({
     amount: 2,
     rarity: 'amazing',
     traitTitle: 'Infection',
-    trait: 'When drawn player receives -1 point penalty per turn towards all races except spirits (stacks) even after this card is discarded.',
+    trait: 'When drawn, receive a -1 point penalty per unblocked turn to all races except Spirits (stacks), even after discard. Blocking pauses and hides the penalty without erasing it.',
     description: 'A contagious metastasizing virus that targets living hosts.',
     race: 'trap',
     otherRaces: [],

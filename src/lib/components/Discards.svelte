@@ -88,7 +88,8 @@
     height: 90dvh;
     width: 80dvw;
     padding: 1rem;
-    background: linear-gradient(to bottom, #324277a1, #327738a1, #ddceeea1, #c07369a1, #7e7e7ea1, #855a2aa1, #c2a84ca1, #b63baca1);
+    // background: linear-gradient(to bottom, #324277a1, #327738a1, #ddceeea1, #c07369a1, #7e7e7ea1, #855a2aa1, #c2a84ca1, #b63baca1);
+    background-color: #000000c2;
     overflow-y: auto;
     border-radius: 0.5rem;
     box-shadow: 0 0.5rem 2rem #00000080;
@@ -107,7 +108,7 @@
   .effect-summary {
     padding: 0.75rem 1rem;
     color: #fff0d2;
-    background-color: #00000059;
+    background-color: #000000c2;
     border-radius: 0.5rem;
 
     h2 {
@@ -124,6 +125,7 @@
   }
 
   .card-lists {
+    border-radius: 0.5rem;
     display: flex;
     justify-content: space-around;
     gap: 1rem;
