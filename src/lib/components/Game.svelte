@@ -29,7 +29,7 @@
   type Race = 'human' | 'goblin' | 'elf' | 'dwarf' | 'beast' | 'bot' | 'xeno' | 'spirit' | 'boost' | 'trap' | 'neutral' | '';
   const bardCards = ['bardLute', 'bardFlute', 'bardHorn', 'bardDrum', 'bardSinger'];
   const aiBotCardBonus = 4;
-  let socket = io('http://127.0.0.1:6912', { autoConnect: false });
+  let socket = io('http://192.168.2.14:6912', { autoConnect: false });
   let gameMode: 'singleplayer' | 'multiplayer' = 'singleplayer';
 
   // ai generated: These are server-owned multiplayer records; singleplayer never loads or saves them.
@@ -2491,13 +2491,14 @@
 
     if (cardTitle === 'corruption') player.hasCorruption = true;
     if (cardTitle === 'infect') player.numOfInfects += 1;
-    // ai generated: Only announce Exposed when no card is currently preventing the hand from being revealed.
-    if (cardTitle === 'exposed' && !areTrapsBlocked(player) && !player.hand.includes('darkSpirit')) {
+    // ai generated: Rhino and Chastity cancel Exposed; Darqnos keeps its marker so the opponent sees the Darqnos mask instead.
+    if (cardTitle === 'exposed' && !areTrapsBlocked(player)) {
       // Puts spinner while game while updating xenos, every .5s checks if done before continuing.
       player.id === $player1.id ? player1.set({...$player1, isExposed: true}) : player2.set({...$player2, isExposed: true});
       updateClientsToShareState();
       while (gameState.showSpinner) await wait(500);
-      emitGameEvent('display-event', 'exposed');
+      // ai generated: A Darqnos-protected hand does not show the normal Exposed event or owner-side exposure styling.
+      if (!player.hand.includes('darkSpirit')) emitGameEvent('display-event', 'exposed');
     }
   }
 
