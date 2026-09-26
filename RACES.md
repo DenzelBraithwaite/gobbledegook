@@ -91,7 +91,7 @@ Beasts thrive on synergy. Their leaders normalize every Beast to a high value, L
 - **Theo Thunderpaw/Bear — 9 points.** Bears become worth zero if another Bear, or a Bear-mimicking Leon, is present.
 - **Goldenmane/Lion — 8 points.** Each real Lion gains +3 for every Lion or Leon in hand; Leon contributes to the pride but does not receive this bonus.
 - **Alpha Wolfbane/Wolf — 6 points.** Each real Wolf gains +2 per Wolf, Leon, or Lupin in the pack; Leon contributes but does not receive the Wolf-specific bonus.
-- **Vultoor/Vulture — 7 points.**
+- **Vultoor/Vulture — 7 points.** Scraps: when drawn normally, prevents the next ordinary draw from being a Beast. Reroll until a non-Beast is drawn, then clear the restriction. Forced egg evolution is unaffected, and if only Beasts remain, a Beast can be drawn.
 - **Duck/Waddles — 3 points.**
 - **Rat/Goliath — 1 point.**
 - **Rat/Eeyore — 1 point.**

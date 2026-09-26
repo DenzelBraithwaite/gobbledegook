@@ -20,6 +20,7 @@
   import { ageOpponentHandMemory, chooseCpuDiscard, createCpuMemory, decideCpuDeclaration, getCpuEchoAction, getForcedCpuRacePath, isCpuDeclarationDisabledByName, isCpuDeclarationForcedByName, rememberCpuDecision, rememberOpponentHand, type CpuObservation, type CpuOpponentInsightSource } from '../game/cpuStrategy';
   import { findDiscardIndex, reconcileVisualHand, type VisualCard } from '../game/visualHand';
   import { advanceOngoingEffects } from '../game/ongoingEffects';
+  import { selectNonBeastDraw } from '../game/vultureDraw';
 
   // Websocket
   import { io } from 'socket.io-client';
@@ -771,6 +772,14 @@
         randomNum = Math.floor(Math.random() * fullDeck[currentDeck].length);
         cardDrawn = fullDeck[currentDeck][randomNum];
       };
+      // ai generated: If the forced Goblin draw falls back to another deck, Scraps still rejects a Beast there.
+      if (player.vultureNextDraw && getRaces(cardDrawn).includes('beast')) {
+        const replacement = selectNonBeastDraw(deckTypes, fullDeck, card => getRaces(card).includes('beast'));
+        if (replacement) {
+          currentDeck = replacement.deck as DeckRace;
+          cardDrawn = replacement.card;
+        }
+      }
     } else {
       // Grab random card from that deck, if elf deck, look for elf champion.
       if (currentDeck === 'elves' && fullDeck['elves'].includes('elfChampion')) {
@@ -800,6 +809,15 @@
         // Grab a random card
         randomNum = Math.floor(Math.random() * fullDeck[currentDeck].length);
         cardDrawn = fullDeck[currentDeck][randomNum];
+      }
+
+      // ai generated: Scraps only rerolls ordinary Beast draws; a forced Giraffe or Xeno egg evolution still happens.
+      if (player.vultureNextDraw && currentDeck !== 'giraffe' && currentDeck !== 'xenoEgg' && getRaces(cardDrawn).includes('beast')) {
+        const replacement = selectNonBeastDraw(deckTypes, fullDeck, card => getRaces(card).includes('beast'));
+        if (replacement) {
+          currentDeck = replacement.deck as DeckRace;
+          cardDrawn = replacement.card;
+        }
       }
 
       // other client getting update? if a legendary is drawn must also remove it from gamestate so no duplicates
@@ -863,6 +881,9 @@
       // If the card is a neutral, handle it.
       if (getRaces(cardDrawn).includes('neutral')) await addneutralCard(player, cardDrawn);
     }
+
+    // ai generated: Only a completed draw uses Scraps; Echo's extra draw counts, while blocked redraws above do not.
+    player.vultureNextDraw = cardDrawn === 'vulture';
 
     // Remove card from deck unless special giraffe/xeno egg deck
     if (!['giraffe', 'xenoEgg'].includes(currentDeck)) {
@@ -2470,7 +2491,8 @@
 
     if (cardTitle === 'corruption') player.hasCorruption = true;
     if (cardTitle === 'infect') player.numOfInfects += 1;
-    if (cardTitle === 'exposed' && !player.hasChastity && !player.hand.includes('chastity')) {
+    // ai generated: Only announce Exposed when no card is currently preventing the hand from being revealed.
+    if (cardTitle === 'exposed' && !areTrapsBlocked(player) && !player.hand.includes('darkSpirit')) {
       // Puts spinner while game while updating xenos, every .5s checks if done before continuing.
       player.id === $player1.id ? player1.set({...$player1, isExposed: true}) : player2.set({...$player2, isExposed: true});
       updateClientsToShareState();

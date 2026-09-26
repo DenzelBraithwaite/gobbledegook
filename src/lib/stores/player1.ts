@@ -23,6 +23,7 @@ export const player1 = writable<Player>({
   giraffeCounter: 0,
   xenoEggCounter: 0,
   dwarfNextTurn: false,
+  vultureNextDraw: false,
   redSpiritNextTurn: false,
   blueSpiritNextTurn: false,
   drewWarchief: false,
@@ -71,6 +72,7 @@ export const player1Reset = writable<Player>({
   giraffeCounter: 0,
   xenoEggCounter: 0,
   dwarfNextTurn: false,
+  vultureNextDraw: false,
   redSpiritNextTurn: false,
   blueSpiritNextTurn: false,
   drewWarchief: false,
@@ -119,6 +121,7 @@ export type Player = {
   giraffeCounter: number; // Counts how many giraffes player has picked up.
   xenoEggCounter: number; // Counts how many xenos player has picked up.
   dwarfNextTurn: boolean; // Determines if player's next card will be a dwarf.
+  vultureNextDraw: boolean; // ai generated: Scraps prevents the next ordinary draw from being a Beast.
   redSpiritNextTurn: boolean; // Determines if player's next card will be a red djinn.
   blueSpiritNextTurn: boolean; // Determines if player's next card will be a blue djinn.
   drewWarchief: boolean; // Player next card will be goblin mark if available.
