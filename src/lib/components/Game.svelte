@@ -30,7 +30,7 @@
   type Race = 'human' | 'goblin' | 'elf' | 'dwarf' | 'beast' | 'bot' | 'xeno' | 'spirit' | 'boost' | 'trap' | 'neutral' | '';
   const bardCards = ['bardLute', 'bardFlute', 'bardHorn', 'bardDrum', 'bardSinger'];
   const aiBotCardBonus = 4;
-  let socket = io('http://192.168.2.14:6912', { autoConnect: false });
+  let socket = io('http://192.168.2.10:6912', { autoConnect: false });
   let gameMode: 'singleplayer' | 'multiplayer' = 'singleplayer';
   // ai generated: Main songs alternate automatically; only themes unlocked by the local hand can be skipped between.
   const musicTracks: MusicTrack[] = [...mainMusicTracks, ...Object.values(leaderMusicTracks), concertMusicTrack];
@@ -162,7 +162,7 @@
 
   // ai generated: React to only this browser's hand, including deals, draws, discards, and hand swaps.
   $: localMusicHand = gameState.playingAs === 'p1' ? $player1.hand : gameState.playingAs === 'p2' ? $player2.hand : [];
-  // ai generated: The opponent unlocks Serenade only while the existing card-visibility rules show them Spirit King.
+  // ai generated: The opponent unlocks Serenity only while the existing card-visibility rules show them Spirit King.
   $: visibleOpponentSpiritKing = gameState.playingAs === 'p1'
     ? $player2.hand.includes('spiritKing') && isCardVisible('p2', 'spiritKing', $player1.hasVision, gameState.playersRevealed)
     : gameState.playingAs === 'p2'

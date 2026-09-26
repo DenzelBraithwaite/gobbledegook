@@ -14,7 +14,7 @@ export const leaderMusicTracks: Record<string, MusicTrack> = {
   elfKing: { title: 'Gifted', src: '/music/gifted.mp3' },
   dreamDestroyer: { title: 'Prowl', src: '/music/prowl.mp3' },
   nightTerror: { title: 'Prowl', src: '/music/prowl.mp3' },
-  spiritKing: { title: 'Serenade', src: '/music/serenade.mp3' },
+  spiritKing: { title: 'Serenity', src: '/music/serenity.mp3' },
   ai: { title: 'Warning', src: '/music/warning.mp3' },
   sporax: { title: 'Spaceship', src: '/music/spaceship.mp3' }
 };
@@ -39,7 +39,7 @@ export function getUnlockedMusicTracks(hand: readonly string[], visibleOpponentS
   }
 
   if (bardCount >= 5) unlocked.push(concertMusicTrack);
-  // ai generated: An opponent's visible Spirit King shares Serenade without revealing a masked hand.
+  // ai generated: An opponent's visible Spirit King shares Serenity without revealing a masked hand.
   if (visibleOpponentSpiritKing && !seen.has(leaderMusicTracks.spiritKing.src)) unlocked.push(leaderMusicTracks.spiritKing);
   return unlocked;
 }
