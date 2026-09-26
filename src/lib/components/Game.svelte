@@ -31,6 +31,15 @@
   const aiBotCardBonus = 4;
   let socket = io('http://192.168.2.14:6912', { autoConnect: false });
   let gameMode: 'singleplayer' | 'multiplayer' = 'singleplayer';
+  // ai generated: Add each finished race theme here; only real files appear in the music panel.
+  const musicTracks = [{ title: 'Goblin Theme', src: '/music/goblin_theme.mp3' }];
+  let selectedMusicTrack = musicTracks[0].src;
+  let musicAudio: HTMLAudioElement | null = null;
+  let musicPlaying = false;
+  let musicPanelVisible = false;
+  let musicVolume = 0.2;
+  let musicLoopEnabled = true;
+  let musicPlayRequest = 0;
 
   // ai generated: These are server-owned multiplayer records; singleplayer never loads or saves them.
   type MultiplayerRecord = { name: string; wins: number; losses: number; draws: number; elo: number };
@@ -151,6 +160,13 @@
   const p2VisualHand = createVisualHandStore(player2, 'p2');
 
   onMount(() => {
+    // ai generated: Music is local to this browser and waits for the panel's Play button before playing.
+    musicAudio = new Audio(selectedMusicTrack);
+    musicAudio.loop = musicLoopEnabled;
+    musicAudio.volume = musicVolume;
+    musicAudio.preload = 'none';
+    musicAudio.onended = () => musicPlaying = false;
+
     // Respons to connection 
     socket.on('check-connected-users-response', () => {
       // If we get a reply, cancel the "disconnect" timeout and mark connected
@@ -331,6 +347,9 @@
 
     // ai generated: Clearing timers and the optional socket prevents rematches or navigation from leaving ghost CPU turns behind.
     return () => {
+      musicAudio?.pause();
+      if (musicAudio) musicAudio.onended = null;
+      musicAudio = null;
       stopHeartbeat();
       if (cpuTurnTimeout) clearTimeout(cpuTurnTimeout);
       socket.disconnect();
@@ -2718,6 +2737,62 @@
     gameState.discardsVisible = !gameState.discardsVisible;
   }
 
+  // ai generated: Opening the speaker panel never starts music; only its Play button asks the browser to play.
+  function toggleMusicPanel(): void {
+    musicPanelVisible = !musicPanelVisible;
+  }
+
+  // ai generated: A rejected browser play request restores the paused state without affecting either player's game.
+  function toggleMusicPlayback(): void {
+    if (!musicAudio) return;
+    if (musicPlaying) {
+      musicPlayRequest++;
+      musicAudio.pause();
+      musicPlaying = false;
+      return;
+    }
+
+    const request = ++musicPlayRequest;
+    musicPlaying = true;
+    void musicAudio.play().catch(error => {
+      if (request === musicPlayRequest) musicPlaying = false;
+      if (error?.name !== 'AbortError') console.warn('Music could not start:', error);
+    });
+  }
+
+  // ai generated: Switching tracks keeps playback going if it was already on, but never plays a paused track automatically.
+  function selectMusicTrack(src: string): void {
+    if (selectedMusicTrack === src) return;
+    const wasPlaying = musicPlaying;
+    musicPlayRequest++;
+    musicAudio?.pause();
+    selectedMusicTrack = src;
+    musicPlaying = false;
+    if (!musicAudio) return;
+    musicAudio.src = src;
+    musicAudio.load();
+    if (wasPlaying) toggleMusicPlayback();
+  }
+
+  // ai generated: A finished non-looping track restores the Play button; Loop can be changed during playback.
+  function toggleMusicLoop(): void {
+    musicLoopEnabled = !musicLoopEnabled;
+    if (musicAudio) musicAudio.loop = musicLoopEnabled;
+  }
+
+  // ai generated: Restart begins the loop from the start, including when it was previously paused.
+  function restartMusic(): void {
+    if (!musicAudio) return;
+    musicAudio.currentTime = 0;
+    if (!musicPlaying) toggleMusicPlayback();
+  }
+
+  // ai generated: Volume is local to this browser and changes the current audio element immediately.
+  function setMusicVolume(event: Event): void {
+    musicVolume = Number((event.currentTarget as HTMLInputElement).value);
+    if (musicAudio) musicAudio.volume = musicVolume;
+  }
+
   // Show visual feedback for certain events
   async function showEvent(trigger: 'neutralize' | 'switcharoo' | 'shuffle' | 'xenoBloom' | 'xenoBlossom' | 'ticktock' | 'tocktick' | 'exposed' | 'revealed' |'vision' | 'echo' | 'eradicate' | 'gaze' | 'turn-change') {
     while (gameState.showEventMessage) await wait(100);
@@ -2999,6 +3074,40 @@
     </svg>
     {#if gameState.libraryVisible}
       <Library />
+    {/if}
+
+    <!-- ai generated: The themed speaker opens local controls without starting or stopping the music itself. -->
+    <button class="music-toggle-btn" class:music-toggle-btn--playing={musicPlaying} type="button" on:click={toggleMusicPanel} aria-label="Music controls" aria-expanded={musicPanelVisible} aria-controls="music-controls" title="Music controls">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linejoin="round" d="M11 5 6 9H3v6h3l5 4V5Z" />
+        {#if musicPlaying}
+          <path fill="none" stroke-linecap="round" d="M15 9a4 4 0 0 1 0 6M18 6a8 8 0 0 1 0 12" />
+        {:else}
+          <path fill="none" stroke-linecap="round" d="m16 9 5 6m0-6-5 6" />
+        {/if}
+      </svg>
+    </button>
+    {#if musicPanelVisible}
+      <!-- ai generated: Small orange controls stay independent of both player hands and the multiplayer server. -->
+      <div id="music-controls" class="music-controls-panel" role="group" aria-label="Music controls">
+        <div class="music-controls-header">
+          <span>Music</span>
+          <button class="music-close-btn" type="button" on:click={() => musicPanelVisible = false} aria-label="Close music controls">×</button>
+        </div>
+        <!-- ai generated: This list has one real race theme today and expands as new race tracks are added. -->
+        <div class="music-track-list" aria-label="Music tracks">
+          {#each musicTracks as track}
+            <button class="music-track-btn" class:music-track-btn--selected={selectedMusicTrack === track.src} type="button" on:click={() => selectMusicTrack(track.src)} aria-pressed={selectedMusicTrack === track.src}>{track.title}</button>
+          {/each}
+        </div>
+        <div class="music-action-buttons">
+          <button class="music-play-btn" type="button" on:click={toggleMusicPlayback}>{musicPlaying ? 'Pause' : 'Play'}</button>
+          <button class="music-restart-btn" type="button" on:click={restartMusic}>Restart</button>
+          <button class="music-loop-btn" class:music-loop-btn--enabled={musicLoopEnabled} type="button" on:click={toggleMusicLoop} aria-pressed={musicLoopEnabled}>Loop {musicLoopEnabled ? 'On' : 'Off'}</button>
+        </div>
+        <label class="music-volume-label" for="music-volume">Volume <span>{Math.round(musicVolume * 100)}%</span></label>
+        <input id="music-volume" class="music-volume-slider" type="range" min="0" max="1" step="0.01" value={musicVolume} on:input={setMusicVolume} />
+      </div>
     {/if}
 
     <!-- ai generated: Either player's badge opens the same ordered guide; closing it does not affect the game. -->
@@ -3588,7 +3697,7 @@
     }
   }
 
-  .card-library-btn, .card-discards-btn {
+  .card-library-btn, .card-discards-btn, .music-toggle-btn {
     border-radius: 0.5rem;
     z-index: 7; // 1 higher than library to make sure it's never hidden behind.
     stroke: #d44215;
@@ -3624,6 +3733,145 @@
       fill: #9abd9d74;
       border: 1px solid #9abd9d;
     }
+  }
+
+  // ai generated: The speaker follows the same 40px side-icon layout; brown and green mark inactive/active music.
+  .music-toggle-btn {
+    top: 120px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    stroke: #745f58;
+    fill: #745f588a;
+    border-color: #745f58;
+
+    svg {
+      width: 28px;
+      height: 28px;
+    }
+
+    &.music-toggle-btn--playing {
+      stroke: #9abd9d;
+      fill: #9abd9d74;
+      border-color: #9abd9d;
+    }
+  }
+
+  .music-controls-panel {
+    position: absolute;
+    z-index: 8;
+    top: 120px;
+    right: 56px;
+    width: 260px;
+    max-width: calc(100vw - 64px);
+    padding: 0.75rem;
+    border: 1px solid #d44215;
+    border-radius: 0.5rem;
+    background: #0c0c0cf2;
+    color: #f6a06c;
+    box-shadow: 0 4px 12px #d4421570;
+  }
+
+  .music-controls-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-weight: bold;
+    margin-bottom: 0.75rem;
+  }
+
+  .music-close-btn {
+    border: 0;
+    background: transparent;
+    color: #f6a06c;
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .music-track-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .music-track-btn {
+    width: 100%;
+    padding: 0.4rem 0.5rem;
+    border: 1px solid #745f58;
+    border-radius: 0.3rem;
+    background: #745f5833;
+    color: #e4cdc0;
+    text-align: left;
+    cursor: pointer;
+
+    &.music-track-btn--selected {
+      border-color: #d44215;
+      background: #d442154d;
+      color: #ffd0ac;
+    }
+  }
+
+  .music-action-buttons {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+
+    button {
+      flex: 1;
+      padding: 0.35rem;
+      border: 1px solid;
+      border-radius: 0.3rem;
+      cursor: pointer;
+    }
+
+    .music-play-btn {
+      border-color: #327738;
+      background: #3277384d;
+      color: #b8dfb8;
+
+      &:hover {
+        background: #3277388a;
+      }
+    }
+
+    .music-restart-btn {
+      border-color: #745f58;
+      background: #745f584d;
+      color: #e4cdc0;
+
+      &:hover {
+        background: #745f588a;
+      }
+    }
+
+    .music-loop-btn {
+      border-color: #745f58;
+      background: #745f584d;
+      color: #e4cdc0;
+
+      &.music-loop-btn--enabled {
+        border-color: #327738;
+        background: #3277384d;
+        color: #b8dfb8;
+      }
+    }
+  }
+
+  .music-volume-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .music-volume-slider {
+    display: block;
+    width: 100%;
+    margin: 0;
+    accent-color: #d44215;
+    cursor: pointer;
   }
 
   /* Game End */
@@ -4139,7 +4387,7 @@
   }
 
   @media only screen and (max-width: 800px) {
-    .card-library-btn, .card-discards-btn {
+    .card-library-btn, .card-discards-btn, .music-toggle-btn {
       // remove scale on mobile hover, since no hover.
       &:hover {
         scale: 1;

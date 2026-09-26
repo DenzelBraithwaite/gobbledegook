@@ -34,6 +34,10 @@ Singleplayer does not open a Socket.IO connection and does not require `server.j
 
 Singleplayer does not retain wins, losses, draws, or ELO.
 
+## Music
+
+The speaker button beneath Library and Discards opens a small music panel with a track list, Play/Pause, Restart, Loop, and Volume controls. Music starts off; Loop starts on; playback affects only your browser in either game mode. The first track, **Goblin Theme**, is `server/serve/music/goblin_theme.mp3`, copied to `public/music/` for local Vite use and by the normal build for the served game. Add future race themes to the `musicTracks` list in `Game.svelte` once their files exist.
+
 ## Multiplayer records
 
 Completed multiplayer games save one row per player name in `data/player-records.csv` on the server computer. The file is created after the first completed game and can be committed and pushed to GitHub for use on another computer; the game does not push it automatically. Names are matched case-insensitively, so changing a name loads that name's existing record. Each name begins at 1000 ELO; a win adds 10, a loss subtracts 10, and a draw changes nothing. If both players use the same name, both outcomes are recorded against that name and the ELO changes cancel. During a multiplayer round, your rating and badge appear beneath your name; the opponent's appear inline as `Name | 1000` followed by their badge. Both saved records appear on the results screen.
