@@ -23,6 +23,7 @@
   import { refreshRaceScores, resolveCurrentPlayer } from '../game/scoreRefresh';
   import { selectNonBeastDraw } from '../game/vultureDraw';
   import { chooseMusicAfterHandChange, concertMusicTrack, getUnlockedMusicTracks, leaderMusicTracks, mainMusicTracks, nextMainMusicTrack, type MusicTrack } from '../game/music';
+  import { gameSoundEffects, getDrawSoundEffect, getEventSoundEffect } from '../game/soundEffects';
 
   // Websocket
   import { io } from 'socket.io-client';
@@ -42,6 +43,9 @@
   let musicPanelVisible = false;
   let musicVolume = 0.2;
   let musicPlayRequest = 0;
+  // ai generated: Effects have their own local volume; zero mutes them without pausing the soundtrack.
+  let soundEffectsVolume = 0.35;
+  const activeSoundEffects = new Set<HTMLAudioElement>();
 
   // ai generated: These are server-owned multiplayer records; singleplayer never loads or saves them.
   type MultiplayerRecord = { name: string; wins: number; losses: number; draws: number; elo: number };
@@ -281,6 +285,8 @@
       // Recalculate points otherwise client gets stale points from other client (seems to fix weird point glitch)
       const player = gameState.playingAs === 'p1' ? $player1 : $player2;
       calculateCurrentPlayerPoints(player);
+      // ai generated: Shuffle uses draw-card only to sync its new hand, not to represent a normal draw.
+      if (data.playDrawSound !== false) playSoundEffect(gameSoundEffects.draw);
     });
 
     // Handles cards that make players swap hands, updates xenos too (client sending broadcast already updated)
@@ -301,6 +307,8 @@
 
     // Handles displaying events
     socket.on('event-displayed', card => showEvent(card));
+    // ai generated: Darqnos masks Exposed's event, but both browsers still hear cards flip.
+    socket.on('masked-exposed-flipped', () => playSoundEffect(gameSoundEffects.flip));
 
     // ai generated: The server identifies the sending side; remote emotes never change game state.
     socket.on('player-emoted', (data: { side: 'p1' | 'p2'; emote: EmoteId }) => {
@@ -313,6 +321,7 @@
       player2.set(data.player2);
       // ai generated: A remote discard may change either player's synergies or blockers before the next draw.
       calculateCurrentPlayerPoints(gameState.playingAs === 'p1' ? $player1 : $player2);
+      playSoundEffect(gameSoundEffects.discard);
     });
 
     // Handles gobbledegook declaration for all users
@@ -410,6 +419,8 @@
       musicAudio?.pause();
       if (musicAudio) musicAudio.onended = null;
       musicAudio = null;
+      for (const effect of activeSoundEffects) effect.pause();
+      activeSoundEffects.clear();
       clearPlayerEmotes();
       stopHeartbeat();
       if (cpuTurnTimeout) clearTimeout(cpuTurnTimeout);
@@ -500,6 +511,9 @@
         break;
       case 'display-event':
         void showEvent(data);
+        break;
+      case 'masked-exposed-flipped':
+        playSoundEffect(gameSoundEffects.flip);
         break;
       case 'swap-hands':
         Object.entries(data.copyOfXenoPoints).forEach(([card, points]) => remoteCardDetails[card].points = points);
@@ -1001,6 +1015,13 @@
     // ai generated: A reveal can synchronize and replace the player again before the turn check.
     player = resolveCurrentPlayer(player, $player1, $player2);
     calculateCurrentPlayerPoints(player, isNewTurn(player));
+    // ai generated: A completed draw sounds once; blocked redraws return earlier and hidden CPU cards stay private.
+    playSoundEffect(gameSoundEffects.draw);
+    const localPlayer = gameState.playingAs === 'p1' ? $player1 : $player2;
+    if (player.id === localPlayer.id) {
+      const entranceSound = getDrawSoundEffect(cardDrawn);
+      if (entranceSound) playSoundEffect(entranceSound);
+    }
     
     // Emits to server that a card was drawn
     emitGameEvent('draw-card', {player1: $player1, player2: $player2, deckTypes: deckTypes, fullDeck: fullDeck});
@@ -1052,6 +1073,7 @@
 
     // ai generated: A temporary blocker leaving the hand immediately restores earned points without adding another turn of growth.
     calculateCurrentPlayerPoints(player);
+    playSoundEffect(gameSoundEffects.discard);
 
     // ai generated: Chester sends one completed hand update after awarding its replacement, not an intermediate five-card hand.
     const chesterWillAwardLegendary = cardTitle === 'chester' && remainingLegendaries.length > 0;
@@ -1155,7 +1177,7 @@
     if (discardedHand.includes('spiritKing') && !$player1.hand.includes('spiritKing') && !$player2.hand.includes('spiritKing')) await concealPlayers();
     refreshCpuOpponentMemory();
     calculateCurrentPlayerPoints(player.id === $player1.id ? $player1 : $player2);
-    emitGameEvent('draw-card', {player1: $player1, player2: $player2, deckTypes, fullDeck});
+    emitGameEvent('draw-card', {player1: $player1, player2: $player2, deckTypes, fullDeck, playDrawSound: false});
     // ai generated: Shuffle is private feedback for the player whose discard actually replaced their hand.
     const localPlayer = gameState.playingAs === 'p1' ? $player1 : $player2;
     if (player.id === localPlayer.id) void showEvent('shuffle');
@@ -2593,6 +2615,7 @@
       while (gameState.showSpinner) await wait(500);
       // ai generated: A Darqnos-protected hand does not show the normal Exposed event or owner-side exposure styling.
       if (!player.hand.includes('darkSpirit')) emitGameEvent('display-event', 'exposed');
+      else emitGameEvent('masked-exposed-flipped');
     }
   }
 
@@ -2898,8 +2921,32 @@
     if (musicAudio) musicAudio.volume = musicVolume;
   }
 
+  // ai generated: One-shot effects use separate audio elements so they never replace or restart a leader theme.
+  function playSoundEffect(src: string): void {
+    if (soundEffectsVolume <= 0) return;
+    const effect = new Audio(src);
+    effect.volume = soundEffectsVolume;
+    activeSoundEffects.add(effect);
+    const cleanup = () => activeSoundEffects.delete(effect);
+    effect.addEventListener('ended', cleanup, { once: true });
+    effect.addEventListener('error', cleanup, { once: true });
+    void effect.play().catch(error => {
+      cleanup();
+      if (error?.name !== 'NotAllowedError' && error?.name !== 'AbortError') console.warn('Sound effect could not start:', error);
+    });
+  }
+
+  // ai generated: The same slider changes sounds already playing; zero is the effects mute toggle.
+  function setSoundEffectsVolume(event: Event): void {
+    soundEffectsVolume = Number((event.currentTarget as HTMLInputElement).value);
+    for (const effect of activeSoundEffects) effect.volume = soundEffectsVolume;
+  }
+
   // Show visual feedback for certain events
   async function showEvent(trigger: 'neutralize' | 'switcharoo' | 'shuffle' | 'xenoBloom' | 'xenoBlossom' | 'ticktock' | 'tocktick' | 'exposed' | 'revealed' |'vision' | 'echo' | 'eradicate' | 'gaze' | 'turn-change') {
+    // ai generated: Play on the real event, before any older message delays its on-screen banner.
+    const eventSound = getEventSoundEffect(trigger);
+    if (eventSound) playSoundEffect(eventSound);
     while (gameState.showEventMessage) await wait(100);
     let timer = 1500;
     gameState.showEventMessage = true;
@@ -3208,8 +3255,11 @@
           <button class="music-play-btn" type="button" on:click={toggleMusicPlayback}>{musicPlaying ? 'Pause' : 'Play'}</button>
           <button class="music-restart-btn" type="button" on:click={restartMusic}>Restart</button>
         </div>
-        <label class="music-volume-label" for="music-volume">Volume <span>{Math.round(musicVolume * 100)}%</span></label>
+        <label class="music-volume-label" for="music-volume">Music volume <span>{Math.round(musicVolume * 100)}%</span></label>
         <input id="music-volume" class="music-volume-slider" type="range" min="0" max="1" step="0.01" value={musicVolume} on:input={setMusicVolume} />
+        <!-- ai generated: Effects are independent of music playback; 0% mutes them without extra buttons. -->
+        <label class="music-volume-label sound-effects-volume-label" for="sound-effects-volume">Sound effects <span>{Math.round(soundEffectsVolume * 100)}%</span></label>
+        <input id="sound-effects-volume" class="music-volume-slider" type="range" min="0" max="1" step="0.01" value={soundEffectsVolume} on:input={setSoundEffectsVolume} />
       </div>
     {/if}
 
@@ -4067,6 +4117,10 @@
     justify-content: space-between;
     font-size: 0.85rem;
     margin-bottom: 0.35rem;
+  }
+
+  .sound-effects-volume-label {
+    margin-top: 0.75rem;
   }
 
   .music-volume-slider {

@@ -153,6 +153,12 @@ io.on('connection', socket => {
   // Display event message like switcharoo
   socket.on('display-event', data => io.emit('event-displayed', data));
 
+  // ai generated: Exposed cards masked by Darqnos still flip for both players, without showing the Exposed banner.
+  socket.on('masked-exposed-flipped', () => {
+    if (!roundActive || !['p1', 'p2'].includes(username)) return;
+    io.emit('masked-exposed-flipped');
+  });
+
   // ai generated: Only a seated player in an active round may send one of the six harmless emote IDs.
   socket.on('player-emote', emote => {
     if (!roundActive || !['p1', 'p2'].includes(username)) return;
