@@ -18,12 +18,12 @@ test('Dream Destroyer and Night Terror offer one Prowl choice', () => {
   assert.equal(chooseMusicAfterHandChange(prowl, getUnlockedMusicTracks(['dreamDestroyer', 'nightTerror']), prowl[0].src), null);
 });
 
-test('visible opposing Spirit King unlocks Serenade without duplicating a locally held King', () => {
-  assert.deepEqual(getUnlockedMusicTracks([], true).map(track => track.title), ['Serenade']);
-  assert.deepEqual(getUnlockedMusicTracks(['spiritKing'], true).map(track => track.title), ['Serenade']);
+test('visible opposing Spirit King unlocks Serenity without duplicating a locally held King', () => {
+  assert.deepEqual(getUnlockedMusicTracks([], true).map(track => track.title), ['Serenity']);
+  assert.deepEqual(getUnlockedMusicTracks(['spiritKing'], true).map(track => track.title), ['Serenity']);
   assert.deepEqual(getUnlockedMusicTracks([], false), []);
-  assert.equal(chooseMusicAfterHandChange([], getUnlockedMusicTracks([], true), mainMusicTracks[0].src), '/music/serenade.mp3');
-  assert.equal(chooseMusicAfterHandChange(getUnlockedMusicTracks([], true), [], '/music/serenade.mp3'), mainMusicTracks[0].src);
+  assert.equal(chooseMusicAfterHandChange([], getUnlockedMusicTracks([], true), mainMusicTracks[0].src), '/music/serenity.mp3');
+  assert.equal(chooseMusicAfterHandChange(getUnlockedMusicTracks([], true), [], '/music/serenity.mp3'), mainMusicTracks[0].src);
 });
 
 test('five Bards including Leon unlock Concert but four do not', () => {
