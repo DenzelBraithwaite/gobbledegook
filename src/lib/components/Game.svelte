@@ -20,6 +20,7 @@
   import { ageOpponentHandMemory, chooseCpuDiscard, createCpuMemory, decideCpuDeclaration, getCpuEchoAction, getForcedCpuRacePath, isCpuDeclarationDisabledByName, isCpuDeclarationForcedByName, rememberCpuDecision, rememberOpponentHand, type CpuObservation, type CpuOpponentInsightSource } from '../game/cpuStrategy';
   import { findDiscardIndex, reconcileVisualHand, type VisualCard } from '../game/visualHand';
   import { advanceOngoingEffects } from '../game/ongoingEffects';
+  import { refreshRaceScores, resolveCurrentPlayer } from '../game/scoreRefresh';
   import { selectNonBeastDraw } from '../game/vultureDraw';
   import { chooseMusicAfterHandChange, concertMusicTrack, getUnlockedMusicTracks, leaderMusicTracks, mainMusicTracks, nextMainMusicTrack, type MusicTrack } from '../game/music';
 
@@ -30,7 +31,7 @@
   type Race = 'human' | 'goblin' | 'elf' | 'dwarf' | 'beast' | 'bot' | 'xeno' | 'spirit' | 'boost' | 'trap' | 'neutral' | '';
   const bardCards = ['bardLute', 'bardFlute', 'bardHorn', 'bardDrum', 'bardSinger'];
   const aiBotCardBonus = 4;
-  let socket = io('http://192.168.2.10:6912', { autoConnect: false });
+  let socket = io('http://192.168.2.14:6912', { autoConnect: false });
   let gameMode: 'singleplayer' | 'multiplayer' = 'singleplayer';
   // ai generated: Main songs alternate automatically; only themes unlocked by the local hand can be skipped between.
   const musicTracks: MusicTrack[] = [...mainMusicTracks, ...Object.values(leaderMusicTracks), concertMusicTrack];
@@ -291,6 +292,8 @@
       $cardDetails['sporax'].points = data.copyOfXenoPoints.sporax;
       player1.set(data.player1);
       player2.set(data.player2);
+      // ai generated: The receiving browser refreshes its own new hand after its Xeno values arrive.
+      calculateCurrentPlayerPoints(gameState.playingAs === 'p1' ? $player1 : $player2);
     });
 
     // Handles neutralize card
@@ -308,6 +311,8 @@
     socket.on('card-discarded', data => {
       player1.set(data.player1);
       player2.set(data.player2);
+      // ai generated: A remote discard may change either player's synergies or blockers before the next draw.
+      calculateCurrentPlayerPoints(gameState.playingAs === 'p1' ? $player1 : $player2);
     });
 
     // Handles gobbledegook declaration for all users
@@ -959,6 +964,9 @@
       if (getRaces(cardDrawn).includes('neutral')) await addneutralCard(player, cardDrawn);
     }
 
+    // ai generated: Egg, Vision, and Exposed effects may replace the store object; continue with its current player state.
+    player = resolveCurrentPlayer(player, $player1, $player2);
+
     // ai generated: Only a completed draw uses Scraps; Echo's extra draw counts, while blocked redraws above do not.
     player.vultureNextDraw = cardDrawn === 'vulture';
 
@@ -990,6 +998,8 @@
     if (cardDrawn === 'spiritKing') await revealPlayers();
     refreshCpuOpponentMemory();
 
+    // ai generated: A reveal can synchronize and replace the player again before the turn check.
+    player = resolveCurrentPlayer(player, $player1, $player2);
     calculateCurrentPlayerPoints(player, isNewTurn(player));
     
     // Emits to server that a card was drawn
@@ -1195,6 +1205,8 @@
     });
 
     emitGameEvent('swap-hands', {player1: $player1, player2: $player2, copyOfXenoPoints});
+    // ai generated: Refresh the swapped hand now, before the following turn change can hide a stale total.
+    calculateCurrentPlayerPoints(gameState.playingAs === 'p1' ? $player1 : $player2);
     emitGameEvent('display-event', 'switcharoo');
   }
 
@@ -1296,16 +1308,22 @@
 
   // Calculates all player race points, used to determine the winner.
   function calculateCurrentPlayerPoints(player: Player, isNewTurn = false) {
+    // ai generated: An awaited card effect or store replacement must not leave scoring on an older player object.
+    player = resolveCurrentPlayer(player, $player1, $player2);
     const otherPlayer = player.id === $player1.id ? $player2 : $player1;
-
-    // ai generated: Advance persistent effects once per full turn; blockers pause them and Neutralize is the only reset.
-    if (isNewTurn) {
-      calculateAccumulatingBonusCards($player1);
-      calculateAccumulatingBonusCards($player2);
-    };
-
-
-    calculatePlayerPointsAgainst(player, otherPlayer);
+    // ai generated: In solo, score both sides; in multiplayer, preserve opponent-owned Xeno scores from their browser.
+    refreshRaceScores({
+      first: player,
+      second: otherPlayer,
+      score: calculatePlayerPointsAgainst,
+      refreshSecond: gameMode === 'singleplayer',
+      publish: () => {
+        // ai generated: Notify only scores calculated here; multiplayer keeps the remote player's score authoritative.
+        if (gameMode === 'singleplayer' || player.id === $player1.id) player1.set($player1);
+        if (gameMode === 'singleplayer' || player.id === $player2.id) player2.set($player2);
+      },
+      advance: isNewTurn ? calculateAccumulatingBonusCards : undefined
+    });
   }
 
   // ai generated: This uses the same blocking rules as scoring, including held-only Rhino and Xeno Guard.
@@ -2281,7 +2299,6 @@
     const numOfProtectrons = player.hand.filter(card => card === 'protectron').length;
     const numOfViruses = player.hand.filter(card => card === 'virus').length;
     // ai generated: Leon triggers each Protectron's +1 like a Virus, but only real Viruses receive the +8 cleanup.
-    // TODO (ai generated): Audit Leon's trigger-only interactions across every race; he should not inherit card-specific self-bonuses by default.
     const numOfVirusTriggers = player.hand.filter(card => card === 'virus' || card === 'leon').length;
     if (numOfProtectrons > 0) player.points.bots += numOfViruses * 8;
     player.points.bots += numOfProtectrons * numOfVirusTriggers;
