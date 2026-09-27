@@ -454,6 +454,39 @@ test('a 17-point CPU does not declare on a fragile 94% hidden-hand estimate', ()
   assert.equal(decision.declare, false);
 });
 
+// ai generated: Fixed match outcomes isolate the declaration guideline from hidden-hand sampling randomness.
+function declarationAtKnownWinRate(cpuPoints, turnCount, winPercent) {
+  let sample = 0;
+  const cpuScore = () => ({
+    highestPoints: cpuPoints,
+    points: { humans: cpuPoints, goblins: 0, elves: 0, dwarves: 0, beasts: 0, bots: 0, xenos: 0, spirits: 0 }
+  });
+  return decideCpuDeclaration(observation({ turnCount, unseenCards: ['knight', 'knight', 'knight', 'knight'] }),
+    cpuScore, score, () => 0.5, 100,
+    () => ({ cpuScore: cpuPoints, opponentScore: sample++ < winPercent ? cpuPoints - 1 : cpuPoints + 1 }));
+}
+
+test('turn-15 declarations respect the new score bands', () => {
+  assert.equal(declarationAtKnownWinRate(15, 15, 97).declare, false);
+  assert.equal(declarationAtKnownWinRate(15, 15, 98).declare, true);
+  assert.equal(declarationAtKnownWinRate(30, 15, 89).declare, false);
+  assert.equal(declarationAtKnownWinRate(30, 15, 91).declare, true);
+  assert.equal(declarationAtKnownWinRate(45, 15, 82).declare, false);
+  assert.equal(declarationAtKnownWinRate(45, 15, 85).declare, true);
+  assert.equal(declarationAtKnownWinRate(60, 15, 70).declare, false);
+  assert.equal(declarationAtKnownWinRate(60, 15, 74).declare, true);
+  assert.equal(declarationAtKnownWinRate(100, 15, 66).declare, true);
+});
+
+test('a late game requires greater confidence from weak and middling hands', () => {
+  assert.equal(declarationAtKnownWinRate(15, 40, 98).declare, false);
+  assert.equal(declarationAtKnownWinRate(30, 40, 94).declare, false);
+  assert.equal(declarationAtKnownWinRate(30, 40, 96).declare, true);
+  assert.equal(declarationAtKnownWinRate(45, 40, 90).declare, false);
+  assert.equal(declarationAtKnownWinRate(50, 40, 87).declare, true);
+  assert.equal(declarationAtKnownWinRate(60, 40, 74).declare, true);
+});
+
 test('hidden-hand samples sometimes preserve an available matching-race legendary', () => {
   const cpuFifty = () => ({ highestPoints: 50, points: { humans: 50, goblins: 0, elves: 0, dwarves: 0, beasts: 0, bots: 0, xenos: 0, spirits: 0 } });
   const uncertain = observation({ unseenCards: ['knight', 'emperor', ...Array(12).fill('knight')] });

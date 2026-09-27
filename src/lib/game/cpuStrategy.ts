@@ -472,18 +472,20 @@ export function decideCpuDeclaration(
   }
 
   const estimatedWinChance = simulations === 0 ? 0 : (wins + ties * 0.25) / simulations;
-  const earlyTurnCaution = Math.max(0, Math.min(0.08, (23 - observation.turnCount) * 0.01));
-  const activeDeckPressure = observation.turnCount >= 25 && observation.unseenCards.length < 25 ? -0.04 : 0;
-  let declarationThreshold = 0.72 + earlyTurnCaution + activeDeckPressure;
-  // ai generated: A 20-point lead is fragile, 35–70 is ordinary, and 100+ is exceptional; these are confidence guidelines, not substitute scores.
-  if (cpuScore <= 20) declarationThreshold = observation.knownOpponentCards.length === 5 ? 0.94 : 0.995;
-  else if (cpuScore < 35) declarationThreshold = Math.max(declarationThreshold, 0.86 + earlyTurnCaution);
-  else if (cpuScore < 70) declarationThreshold += 0.04;
-  else if (cpuScore >= 100) declarationThreshold = Math.min(declarationThreshold, 0.70);
+  const lateGameCaution = Math.max(0, Math.min(1, (observation.turnCount - 25) / 15));
+  // ai generated: Score bands guide confidence, while sampled opponent hands still decide whether the CPU is likely ahead.
+  let declarationThreshold: number;
+  if (cpuScore <= 15) declarationThreshold = 0.98 + lateGameCaution * 0.015;
+  else if (cpuScore < 30) declarationThreshold = 0.95 + lateGameCaution * 0.04;
+  else if (cpuScore < 45) declarationThreshold = 0.90 + lateGameCaution * 0.05;
+  else if (cpuScore < 50) declarationThreshold = 0.84 + lateGameCaution * 0.07;
+  else if (cpuScore < 60) declarationThreshold = 0.84 + lateGameCaution * 0.02;
+  else if (cpuScore < 100) declarationThreshold = 0.72;
+  else declarationThreshold = 0.65;
 
   // ai generated: Active Infect makes a reasonable score decay, while unblocked Charge gives a Human/Bot route a little more time to grow.
   const activeInfects = observation.trapsBlocked ? 0 : observation.numOfInfects;
-  if (cpuScore > 20 && activeInfects > 0) declarationThreshold -= Math.min(0.05, activeInfects * 0.025);
+  if (cpuScore >= 30 && activeInfects > 0) declarationThreshold -= Math.min(0.05, activeInfects * 0.025);
   const chargePathActive = cpuEvaluation.points.humans === cpuScore || cpuEvaluation.points.bots === cpuScore;
   if (cpuScore < 100 && chargePathActive && observation.numOfCharges > 0 && !observation.boostsBlocked) {
     declarationThreshold += Math.min(0.03, observation.numOfCharges * 0.015);
