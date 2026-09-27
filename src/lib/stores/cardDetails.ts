@@ -1175,6 +1175,7 @@ const cardDetails = writable({
     otherRaces: [],
     image: '/boosts/rainbow_boost.png'
   },
+  // TODO: sound should only trigger on discard not on draw*
   eradicate: {
     title: 'eradicate',
     displayTitle: 'Eradicate',
@@ -1253,6 +1254,7 @@ const cardDetails = writable({
     otherRaces: [],
     image: '/boosts/charge.png'
   },
+  // TODO: sound is weird, pick another sound to replace with.
   growth: {
     title: 'growth',
     displayTitle: 'Growth',
@@ -1543,6 +1545,7 @@ const cardDetails = writable({
     otherRaces: [],
     image: '/neutrals/xeno_bloom.png'
   },
+  // TODO: This should play for both people (cpu got it but I did not hear it, perhaps my music was too loud but confirm this and tock tick sound play for both players)
   ticktock: {
     title: 'ticktock',
     displayTitle: 'Ticktock',

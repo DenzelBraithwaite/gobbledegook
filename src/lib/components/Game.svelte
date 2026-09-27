@@ -32,7 +32,7 @@
   type Race = 'human' | 'goblin' | 'elf' | 'dwarf' | 'beast' | 'bot' | 'xeno' | 'spirit' | 'boost' | 'trap' | 'neutral' | '';
   const bardCards = ['bardLute', 'bardFlute', 'bardHorn', 'bardDrum', 'bardSinger'];
   const aiBotCardBonus = 4;
-  let socket = io('http://192.168.2.14:6912', { autoConnect: false });
+  let socket = io('http://192.168.2.10:6912', { autoConnect: false });
   let gameMode: 'singleplayer' | 'multiplayer' = 'singleplayer';
   // ai generated: Main songs alternate automatically; only themes unlocked by the local hand can be skipped between.
   const musicTracks: MusicTrack[] = [...mainMusicTracks, ...Object.values(leaderMusicTracks), concertMusicTrack];
