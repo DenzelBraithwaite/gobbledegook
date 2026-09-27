@@ -42,6 +42,10 @@ Holding a race leader switches to its theme while music is playing, or selects t
 
 Music files live in `server/serve/music/`; the production build copies them to `public/music/`. For Vite development, keep matching copies in `public/music/`. `intruder_sound.mp3` is not used yet.
 
+## Emotes
+
+During a round, the speech-bubble button beneath the other side icons opens six painted emotes: Angry, Laughing, Scared, Taunt, Cry, and Goat. Choosing one briefly shows it beside your name. In multiplayer, the other player sees it too; in singleplayer, it stays local. Emotes do not affect cards or scoring. Their artwork is in `server/serve/emotes/`, with matching copies in `public/emotes/` for Vite development.
+
 ## Multiplayer records
 
 Completed multiplayer games save one row per player name in `data/player-records.csv` on the server computer. The file is created after the first completed game and can be committed and pushed to GitHub for use on another computer; the game does not push it automatically. Names are matched case-insensitively, so changing a name loads that name's existing record. Each name begins at 1000 ELO; a win adds 10, a loss subtracts 10, and a draw changes nothing. If both players use the same name, both outcomes are recorded against that name and the ELO changes cancel. During a multiplayer round, your rating and badge appear beneath your name; the opponent's appear inline as `Name | 1000` followed by their badge. Both saved records appear on the results screen.

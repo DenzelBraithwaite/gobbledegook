@@ -69,6 +69,20 @@
   $: p2EloBadge = getEloBadge(multiplayerRecords.p2.elo);
   let rankingsVisible = false;
 
+  // ai generated: Painted emotes are brief local overlays; multiplayer sends only the chosen ID.
+  const emotes = [
+    { id: 'angry', label: 'Angry' },
+    { id: 'laugh', label: 'Laughing' },
+    { id: 'scared', label: 'Scared' },
+    { id: 'taunt', label: 'Taunt' },
+    { id: 'cry', label: 'Cry' },
+    { id: 'goat', label: 'Goat' }
+  ] as const;
+  type EmoteId = typeof emotes[number]['id'];
+  let emoteMenuVisible = false;
+  let activeEmotes: { p1: EmoteId | null; p2: EmoteId | null } = { p1: null, p2: null };
+  const emoteTimeouts: { p1?: ReturnType<typeof setTimeout>; p2?: ReturnType<typeof setTimeout> } = {};
+
   // ai generated: The rankings list takes focus visually without leaving another card-info modal underneath it.
   function openRankings(): void {
     gameState.libraryVisible = false;
@@ -80,6 +94,32 @@
   // ai generated: Before a build copies badge art into public, keep its space without a broken-image icon.
   function setBadgeImageVisibility(event: Event, visible: boolean): void {
     (event.currentTarget as HTMLImageElement).style.visibility = visible ? 'visible' : 'hidden';
+  }
+
+  // ai generated: Reusing one timer per side prevents a quick second emote from disappearing too early.
+  function showPlayerEmote(side: 'p1' | 'p2', emote: EmoteId): void {
+    if (gameState.gameOver || !emotes.some(option => option.id === emote)) return;
+    if (emoteTimeouts[side]) clearTimeout(emoteTimeouts[side]);
+    activeEmotes = { ...activeEmotes, [side]: emote };
+    emoteTimeouts[side] = setTimeout(() => {
+      activeEmotes = { ...activeEmotes, [side]: null };
+      emoteTimeouts[side] = undefined;
+    }, 2500);
+  }
+
+  // ai generated: The local player sees their own emote immediately; the server sends it to the other browser.
+  function sendPlayerEmote(emote: EmoteId): void {
+    if (gameState.gameOver || !['p1', 'p2'].includes(gameState.playingAs)) return;
+    showPlayerEmote(gameState.playingAs, emote);
+    emoteMenuVisible = false;
+    if (gameMode === 'multiplayer') socket.emit('player-emote', emote);
+  }
+
+  function clearPlayerEmotes(): void {
+    if (emoteTimeouts.p1) clearTimeout(emoteTimeouts.p1);
+    if (emoteTimeouts.p2) clearTimeout(emoteTimeouts.p2);
+    activeEmotes = { p1: null, p2: null };
+    emoteMenuVisible = false;
   }
 
   // ai generated: Toggle this value while testing to show or hide detailed CPU path explanations in the browser console.
@@ -259,6 +299,11 @@
     // Handles displaying events
     socket.on('event-displayed', card => showEvent(card));
 
+    // ai generated: The server identifies the sending side; remote emotes never change game state.
+    socket.on('player-emoted', (data: { side: 'p1' | 'p2'; emote: EmoteId }) => {
+      if (data && ['p1', 'p2'].includes(data.side)) showPlayerEmote(data.side, data.emote);
+    });
+
     // Handles card discard for all users
     socket.on('card-discarded', data => {
       player1.set(data.player1);
@@ -360,6 +405,7 @@
       musicAudio?.pause();
       if (musicAudio) musicAudio.onended = null;
       musicAudio = null;
+      clearPlayerEmotes();
       stopHeartbeat();
       if (cpuTurnTimeout) clearTimeout(cpuTurnTimeout);
       socket.disconnect();
@@ -581,6 +627,7 @@
   // Ends current round
   function endGame() {
     if (cpuTurnTimeout) clearTimeout(cpuTurnTimeout);
+    clearPlayerEmotes();
     // ai generated: A remote end-of-round event should not leave the rankings guide over the result screen.
     rankingsVisible = false;
     gameState.gameOver = true;
@@ -609,6 +656,7 @@
   // Resets values to restart the game.
   function resetGame() {
     if (cpuTurnTimeout) clearTimeout(cpuTurnTimeout);
+    clearPlayerEmotes();
     // Reset p1
     player1.set({...$player1Reset, title: $player1.title});
     // Reset p2
@@ -3148,6 +3196,24 @@
       </div>
     {/if}
 
+    <!-- ai generated: Keep the emote icon visible between rounds; only active players can open and use it. -->
+    <button class="emote-toggle-btn" type="button" on:click={() => emoteMenuVisible = !emoteMenuVisible} aria-label="Emotes" aria-expanded={emoteMenuVisible} aria-controls="emote-menu" title="Emotes" disabled={gameState.gameOver}>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 5h16v11H9l-5 4V5Z"/>
+        <circle cx="8" cy="10.5" r="1"/><circle cx="12" cy="10.5" r="1"/><circle cx="16" cy="10.5" r="1"/>
+      </svg>
+    </button>
+    {#if emoteMenuVisible && !gameState.gameOver}
+      <div id="emote-menu" class="emote-menu" role="group" aria-label="Choose an emote" transition:fade={{ duration: 120 }}>
+        {#each emotes as emote}
+          <button type="button" class="emote-choice" on:click={() => sendPlayerEmote(emote.id)} aria-label="Send {emote.label} emote" title={emote.label}>
+            <img src="/emotes/{emote.id}.png" alt=""/>
+            <span>{emote.label}</span>
+          </button>
+        {/each}
+      </div>
+    {/if}
+
     <!-- ai generated: Either player's badge opens the same ordered guide; closing it does not affect the game. -->
     {#if rankingsVisible}
       <RankingsModal ranks={eloRanks} on:close={() => rankingsVisible = false}/>
@@ -3526,6 +3592,12 @@
                   {/if}
                 </span>
               {/if}
+              {#if activeEmotes.p1}
+                <!-- ai generated: The lower player's emote floats above their name without moving the score row. -->
+                <span class="player-emote player-emote--bottom" role="status" aria-label="{$player1.title}: {activeEmotes.p1} emote" transition:fade={{ duration: 160 }}>
+                  <img src="/emotes/{activeEmotes.p1}.png" alt=""/>
+                </span>
+              {/if}
             </div>
           </div>
 
@@ -3605,6 +3677,12 @@
                       <img class="elo-badge" src="/badges/{p2EloBadge}_badge.png" alt="" on:load={event => setBadgeImageVisibility(event, true)} on:error={event => setBadgeImageVisibility(event, false)}/>
                     </button>
                   {/if}
+                </span>
+              {/if}
+              {#if activeEmotes.p2}
+                <!-- ai generated: The upper player's emote floats below their name, toward the board's open center. -->
+                <span class="player-emote player-emote--top" role="status" aria-label="{$player2.title}: {activeEmotes.p2} emote" transition:fade={{ duration: 160 }}>
+                  <img src="/emotes/{activeEmotes.p2}.png" alt=""/>
                 </span>
               {/if}
             </div>
@@ -3735,7 +3813,7 @@
     }
   }
 
-  .card-library-btn, .card-discards-btn, .music-toggle-btn {
+  .card-library-btn, .card-discards-btn, .music-toggle-btn, .emote-toggle-btn {
     border-radius: 0.5rem;
     z-index: 7; // 1 higher than library to make sure it's never hidden behind.
     stroke: #d44215;
@@ -3792,6 +3870,75 @@
       stroke: #9abd9d;
       fill: #9abd9d74;
       border-color: #9abd9d;
+    }
+  }
+
+  // ai generated: A speech-bubble icon fits the existing side-button stack without covering the card area.
+  .emote-toggle-btn {
+    top: 176px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    stroke: #d1a86b;
+    fill: #745f588a;
+    border-color: #745f58;
+
+    svg {
+      width: 27px;
+      height: 27px;
+      stroke-width: 1.5;
+    }
+
+    circle {
+      fill: #f6a06c;
+      stroke: none;
+    }
+
+    &:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+  }
+
+  .emote-menu {
+    position: absolute;
+    z-index: 8;
+    top: 176px;
+    right: 56px;
+    width: 340px;
+    max-width: calc(100vw - 64px);
+    padding: 0.5rem;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.35rem;
+    border: 1px solid #d44215;
+    border-radius: 0.5rem;
+    background: #0c0c0cf2;
+    box-shadow: 0 4px 12px #d4421570;
+  }
+
+  .emote-choice {
+    min-width: 0;
+    padding: 0.2rem;
+    border: 1px solid #745f58;
+    border-radius: 0.35rem;
+    color: #ffd0ac;
+    background: #745f5833;
+    cursor: pointer;
+    display: grid;
+    justify-items: center;
+    gap: 0.1rem;
+    font-size: 0.65rem;
+
+    &:hover, &:focus-visible {
+      border-color: #327738;
+      background: #3277384d;
+    }
+
+    img {
+      width: min(5.25rem, 100%);
+      height: 5.25rem;
+      object-fit: contain;
     }
   }
 
@@ -4209,6 +4356,7 @@
 
   // ai generated: Keep the local rating beneath its name, but keep the other player's rating on one line.
   .player-nameplate {
+    position: relative;
     display: flex;
     align-items: baseline;
     gap: 0.35rem;
@@ -4236,6 +4384,44 @@
     height: 1.35rem;
     object-fit: contain;
     flex: none;
+  }
+
+  // ai generated: Spacious desktop boards can show rank art at twice its former in-game size.
+  @media only screen and (min-width: 1101px) {
+    .elo-badge {
+      width: 2.7rem;
+      height: 2.7rem;
+    }
+  }
+
+  // ai generated: Emotes overlay vertically by the sender's name instead of shifting names or ratings.
+  .player-emote {
+    position: absolute;
+    z-index: 9;
+    right: 0;
+    width: 4.5rem;
+    height: 4.5rem;
+    display: grid;
+    place-items: center;
+    pointer-events: none;
+    border: 1px solid #d44215;
+    border-radius: 50%;
+    background: #0c0c0ce8;
+    box-shadow: 0 0 0.5rem #d4421580;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+  }
+
+  .player-emote--bottom {
+    bottom: calc(100% + 0.25rem);
+  }
+
+  .player-emote--top {
+    top: calc(100% + 0.25rem);
   }
 
   // ai generated: Leave the badge's small rank art unframed while making it keyboard- and mouse-clickable.
@@ -4426,7 +4612,7 @@
   }
 
   @media only screen and (max-width: 800px) {
-    .card-library-btn, .card-discards-btn, .music-toggle-btn {
+    .card-library-btn, .card-discards-btn, .music-toggle-btn, .emote-toggle-btn {
       // remove scale on mobile hover, since no hover.
       &:hover {
         scale: 1;

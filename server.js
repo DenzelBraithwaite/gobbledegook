@@ -153,6 +153,13 @@ io.on('connection', socket => {
   // Display event message like switcharoo
   socket.on('display-event', data => io.emit('event-displayed', data));
 
+  // ai generated: Only a seated player in an active round may send one of the six harmless emote IDs.
+  socket.on('player-emote', emote => {
+    if (!roundActive || !['p1', 'p2'].includes(username)) return;
+    if (!['angry', 'laugh', 'scared', 'taunt', 'cry', 'goat'].includes(emote)) return;
+    socket.broadcast.emit('player-emoted', { side: username, emote });
+  });
+
   // Neutralize deck
   socket.on('neutralize-deck', () => io.emit('deck-neutralized'));
 
