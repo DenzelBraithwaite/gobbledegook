@@ -1631,7 +1631,8 @@
     const triggerTwinEffect = player.hand.some(c => ['nelladan', 'leon'].includes(c)) && player.hand.includes('nadallen');
     if ((player.hand.some(card => ['dreamDestroyer', 'nightTerror'].includes(card)) || ['dog', 'wolf', 'lion', 'bear'].includes(cardTitle)) && getRaces(cardTitle).includes('beast')) highestPoints = Math.max(highestPoints, displayBeastPoints(player, cardTitle));
     if ((player.hand.includes('ai') || player.hand.includes('protectron')) && getRaces(cardTitle).includes('bot')) highestPoints = Math.max(highestPoints, displayBotPoints(player, cardTitle));
-    if (triggerTwinEffect || player.hand.some(card => bardCards.includes(card)) || (player.hand.includes('elfKing') && getRaces(cardTitle).includes('elf'))) highestPoints = Math.max(highestPoints, displayElfPoints(player, cardTitle));
+    // ai generated: Bard and Twin triggers may exist in the hand, but Elf King must never double a non-Elf card's display value.
+    if (getRaces(cardTitle).includes('elf') && (triggerTwinEffect || player.hand.some(card => bardCards.includes(card)) || player.hand.includes('elfKing'))) highestPoints = Math.max(highestPoints, displayElfPoints(player, cardTitle));
     if ((player.hand.includes('emperor') || player.hand.includes('commander')) && getRaces(cardTitle).includes('human')) highestPoints = Math.max(highestPoints, displayHumanPoints(player, cardTitle));
     if (player.hand.every(card => ['redSpirit', 'leon'].includes(card) || ['blueSpirit', 'leon'].includes(card))) highestPoints = Math.max(highestPoints, displaySpiritPoints(player, cardTitle));
     if (cardTitle === 'longbeardLeader') highestPoints = Math.max(highestPoints, displayDwarfPoints(player));
