@@ -12,7 +12,7 @@
 <div class="reveal-overlay" role="dialog" aria-modal="true" aria-label="Gobbledegook unlock turn">
   <section class="reveal-panel">
     <p class="reveal-eyebrow">THE GOBLIN'S WHEEL</p>
-    <h2>When can you call Gobbledegook?</h2>
+    <h2>When can you Gobbledegook?</h2>
 
     <div class="wheel-frame">
       <span class="wheel-pointer" aria-hidden="true">▼</span>

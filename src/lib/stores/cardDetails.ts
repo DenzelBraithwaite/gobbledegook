@@ -1,7 +1,5 @@
 import { writable } from 'svelte/store';
 
-// TODO: gaqme option to decide fast/med/long/random game length e.g. 10 turn/15/20 wtv till gdg available
-// TODO: card called cookie crumbs gives +3 to all races (many in deck). Maybe rotten crumbs counter?
 /*
  * Legendary = leader
  * Epic = Great ability, usually 2nd in command
@@ -9,6 +7,9 @@ import { writable } from 'svelte/store';
  * Great = No trait but high stat (6 or more)
  * Poor = No trait and points 5 or less.
  */
+
+// TODO: spinner should pause for a total of 3 seconds after it lands on the turn number so users have time to see the result.
+// TODO: spinner should make spinner noises while spinning (clicking sound like wheel of fortune)
 const cardDetails = writable({
   // Humans
   emperor: {
@@ -249,8 +250,7 @@ const cardDetails = writable({
     otherRaces: [],
     image: '/elves/elf_king.png'
   },
-  // TODO: second ability triggers if elf king not in draw pile when u draw him.
-  // Second ability: player only draws elves until elf deck is empty, all elves worth *2.
+  // TODO: Implement 2nd trait ability for elfChampion listed in the trait property value text (condition that doubles elves if no elf king in hand/deck).
   elfChampion: {
     title: 'elfChampion',
     displayTitle: 'Elf Champion',
@@ -258,7 +258,7 @@ const cardDetails = writable({
     amount: 1,
     rarity: 'amazing',
     traitTitle: 'Stand Guard',
-    trait: 'The elf champion is always the first elf drawn.',
+    trait: 'The elf champion trait is unique, it ensures he is always the first elf drawn. However, if the elf king is not in the deck when he is drawn, his ability changes. The player will only draw elves (until exhausted) and all elves are doubled while the elf champion is in hand.',
     description: 'Destined to be the next elf king, this elf champion lost an arm in battle and came back even more fierce.',
     race: 'elf',
     otherRaces: [],
@@ -1176,6 +1176,7 @@ const cardDetails = writable({
     image: '/boosts/rainbow_boost.png'
   },
   // TODO: sound should only trigger on discard not on draw*
+  // FIXME: should be blocked by boost blockers, meaning discard simply discards if user has chastity or something like the xenoGuard blocking boosts.
   eradicate: {
     title: 'eradicate',
     displayTitle: 'Eradicate',
@@ -1254,7 +1255,7 @@ const cardDetails = writable({
     otherRaces: [],
     image: '/boosts/charge.png'
   },
-  // TODO: sound is weird, pick another sound to replace with.
+  // TODO: (codex ignore this for now, i might change this) Sound is weird, pick another sound to replace with.
   growth: {
     title: 'growth',
     displayTitle: 'Growth',
@@ -1545,7 +1546,7 @@ const cardDetails = writable({
     otherRaces: [],
     image: '/neutrals/xeno_bloom.png'
   },
-  // TODO: This should play for both people (cpu got it but I did not hear it, perhaps my music was too loud but confirm this and tock tick sound play for both players)
+  // FIXME: The sound should play for both people (cpu got it but I did not hear it, perhaps my music was too loud but confirm this and confirm tock tick sound also plays for both players)
   ticktock: {
     title: 'ticktock',
     displayTitle: 'Ticktock',
