@@ -1016,6 +1016,7 @@ const cardDetails = writable({
     image: '/xenos/xeno_egg.png'
   },
 
+  // FIXME: I don't hear the spirit king sound when he is drawn, I hear the music, not the sound. But the reference to spiritKing and the sound look correct, what's the issue?
   // Spirits
   spiritKing: {
     title: 'spiritKing',
@@ -1177,6 +1178,7 @@ const cardDetails = writable({
   },
   // TODO: sound should only trigger on discard not on draw*
   // FIXME: should be blocked by boost blockers, meaning discard simply discards if user has chastity or something like the xenoGuard blocking boosts.
+  // FIXME: cpu drew card and i saw the event but did not hear it. This should be public knowledge (both players) when eradicate is drawn (if not blocked)
   eradicate: {
     title: 'eradicate',
     displayTitle: 'Eradicate',
@@ -1255,7 +1257,6 @@ const cardDetails = writable({
     otherRaces: [],
     image: '/boosts/charge.png'
   },
-  // TODO: (codex ignore this for now, i might change this) Sound is weird, pick another sound to replace with.
   growth: {
     title: 'growth',
     displayTitle: 'Growth',
