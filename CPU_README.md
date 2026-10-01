@@ -65,7 +65,7 @@ Rename the CPU to the exact plural name of a scoring race to force that strategy
 
 Rename the CPU to exactly `test`, case-insensitively, to prevent it from declaring Gobbledegook. This is intended for manually testing longer games; every other CPU behavior remains active.
 
-Rename the CPU to exactly `gdg` or `gobbledegook`, case-insensitively, to make it declare at its first legal start-of-turn opportunity (turn 15 or later, with five cards and no declaration already active). This bypasses its usual win-odds calculation and is only a testing cheat. On the human's final turn, they can press GDG immediately to keep their five-card hand or draw and discard as usual.
+Rename the CPU to exactly `gdg` or `gobbledegook`, case-insensitively, to make it declare at its first legal start-of-turn opportunity (the round's rolled unlock turn or later, with five cards and no declaration already active). This bypasses its usual win-odds calculation and is only a testing cheat. On the human's final turn, they can press GDG immediately to keep their five-card hand or draw and discard as usual.
 
 ## A.I. card risk
 
@@ -87,9 +87,9 @@ Human Echo behavior remains unchanged. Humans may choose whether to discard Echo
 
 ## Declaring Gobbledegook
 
-The CPU does not use a fixed rule such as “45 points is always enough.” Once declaration is unlocked at turn 15, it samples possible hidden human hands using current reveals, public cards such as Brite, aging Spirit King/Vision/Exposed/Gaze memory, and a modest human-synergy assumption. Some plausible hands include a matching legendary when one remains unseen. Each sampled human gets a final draw and is allowed to keep its best five, approximating the human's final turn after the CPU declares. That final draw now follows the real game's normal deck-first, card-second selection, so adding many duplicate leaders to one testing deck does not artificially make that race dominate every draw. If the hand was only seen earlier, its log is memory rather than exact current knowledge.
+The CPU does not use a fixed rule such as “45 points is always enough.” Once declaration is unlocked at the round's rolled turn (10–25), it samples possible hidden human hands using current reveals, public cards such as Brite, aging Spirit King/Vision/Exposed/Gaze memory, and a modest human-synergy assumption. Some plausible hands include a matching legendary when one remains unseen. Each sampled human gets a final draw and is allowed to keep its best five, approximating the human's final turn after the CPU declares. That final draw now follows the real game's normal deck-first, card-second selection, so adding many duplicate leaders to one testing deck does not artificially make that race dominate every draw. If the hand was only seen earlier, its log is memory rather than exact current knowledge.
 
-At turn 15, the baseline confidence needed to declare depends on the CPU's actual score: 0–15 points needs at least 98%; 16–29 needs 95%; 30–44 needs 90%; 45–59 needs 84%; 60–99 needs 72%; and 100+ needs 65%. Thus 30 is still a risky hand, 45 is good enough to consider, 60+ is a strong signal even without a revealed human hand, and 100+ remains exceptionally strong. These are confidence thresholds, not automatic declarations: the CPU still estimates whether the human could win after their final draw.
+At the first legal turn, the baseline confidence needed to declare depends on the CPU's actual score: 0–15 points needs at least 98%; 16–29 needs 95%; 30–44 needs 90%; 45–59 needs 84%; 60–99 needs 72%; and 100+ needs 65%. Thus 30 is still a risky hand, 45 is good enough to consider, 60+ is a strong signal even without a revealed human hand, and 100+ remains exceptionally strong. These are confidence thresholds, not automatic declarations: the CPU still estimates whether the human could win after their final draw.
 
 From turn 25 to turn 40, weaker hands require progressively higher confidence. By turn 40, 0–15 points needs almost certainty, 30–44 needs 95%, 45–49 needs 91%, and 50–59 needs 86%; 60+ retains its stronger-hand threshold. This reflects that a long game often needs roughly 50–125 points to win without good evidence that the opponent is weaker. Active, unblocked Infect can slightly lower the threshold for a hand of at least 30 points because its score will decay; unblocked Charge can slightly raise it for a growing Human/Bot route below 100. A Jar with three Cookie-compatible cards also modestly raises the threshold while a fourth remains drawable. These adjustments never replace the real scorer. A 500,000-point special hand still declares immediately. The default 240 samples are intentionally small enough to calculate during the normal thinking delay.
 
@@ -130,7 +130,7 @@ The tests use Node's built-in test runner. No test framework or server is requir
 - Penalizes a Bot path when the opposing A.I. is known.
 - Understands blocked boosts and possible Neutralize recovery.
 - Declares when simulations are safely dominant.
-- Never declares before turn 15.
+- Never declares before the round's rolled unlock turn (10–25).
 - Applies opposing A.I. theft to the CPU's score inside declaration samples.
 - Waits until seven cards before forcing the CPU's active Echo discard.
 - Preserves legitimately observed opponent-hand memory through later decisions.

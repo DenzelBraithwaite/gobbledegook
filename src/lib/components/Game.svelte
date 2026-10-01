@@ -24,6 +24,8 @@
   import { selectNonBeastDraw } from '../game/vultureDraw';
   import { chooseMusicAfterHandChange, concertMusicTrack, getUnlockedMusicTracks, leaderMusicTracks, mainMusicTracks, nextMainMusicTrack, type MusicTrack } from '../game/music';
   import { gameSoundEffects, getDrawSoundEffect, getEventSoundEffect } from '../game/soundEffects';
+  import { isGdgUnlocked, rollGdgUnlockTurn } from '../game/gdgTurn.js';
+  import GdgTurnReveal from './GdgTurnReveal.svelte';
 
   // Websocket
   import { io } from 'socket.io-client';
@@ -47,6 +49,11 @@
   let soundEffectsVolume = 0.35;
   const activeSoundEffects = new Set<HTMLAudioElement>();
 
+  // ai generated: The pre-round wheel blocks play until its shared unlock turn has landed.
+  let gdgRevealVisible = false;
+  let gdgRevealLanded = false;
+  let gdgRevealRun = 0;
+
   // ai generated: These are server-owned multiplayer records; singleplayer never loads or saves them.
   type MultiplayerRecord = { name: string; wins: number; losses: number; draws: number; elo: number };
   let multiplayerRecords: { p1: MultiplayerRecord; p2: MultiplayerRecord } = {
@@ -66,10 +73,6 @@
     { badge: 'loser', label: 'Loser', threshold: '699 or less', minElo: Number.NEGATIVE_INFINITY }
   ];
 
-  function getEloBadge(elo: number): EloBadge {
-    return eloRanks.find(rank => elo >= rank.minElo)?.badge ?? 'loser';
-  }
-
   $: p1EloBadge = getEloBadge(multiplayerRecords.p1.elo);
   $: p2EloBadge = getEloBadge(multiplayerRecords.p2.elo);
   let rankingsVisible = false;
@@ -88,45 +91,6 @@
   let activeEmotes: { p1: EmoteId | null; p2: EmoteId | null } = { p1: null, p2: null };
   const emoteTimeouts: { p1?: ReturnType<typeof setTimeout>; p2?: ReturnType<typeof setTimeout> } = {};
 
-  // ai generated: The rankings list takes focus visually without leaving another card-info modal underneath it.
-  function openRankings(): void {
-    gameState.libraryVisible = false;
-    gameState.discardsVisible = false;
-    gameState.remainingCardsVisible = false;
-    rankingsVisible = true;
-  }
-
-  // ai generated: Before a build copies badge art into public, keep its space without a broken-image icon.
-  function setBadgeImageVisibility(event: Event, visible: boolean): void {
-    (event.currentTarget as HTMLImageElement).style.visibility = visible ? 'visible' : 'hidden';
-  }
-
-  // ai generated: Reusing one timer per side prevents a quick second emote from disappearing too early.
-  function showPlayerEmote(side: 'p1' | 'p2', emote: EmoteId): void {
-    if (gameState.gameOver || !emotes.some(option => option.id === emote)) return;
-    if (emoteTimeouts[side]) clearTimeout(emoteTimeouts[side]);
-    activeEmotes = { ...activeEmotes, [side]: emote };
-    emoteTimeouts[side] = setTimeout(() => {
-      activeEmotes = { ...activeEmotes, [side]: null };
-      emoteTimeouts[side] = undefined;
-    }, 2500);
-  }
-
-  // ai generated: The local player sees their own emote immediately; the server sends it to the other browser.
-  function sendPlayerEmote(emote: EmoteId): void {
-    if (gameState.gameOver || !['p1', 'p2'].includes(gameState.playingAs)) return;
-    showPlayerEmote(gameState.playingAs, emote);
-    emoteMenuVisible = false;
-    if (gameMode === 'multiplayer') socket.emit('player-emote', emote);
-  }
-
-  function clearPlayerEmotes(): void {
-    if (emoteTimeouts.p1) clearTimeout(emoteTimeouts.p1);
-    if (emoteTimeouts.p2) clearTimeout(emoteTimeouts.p2);
-    activeEmotes = { p1: null, p2: null };
-    emoteMenuVisible = false;
-  }
-
   // ai generated: Toggle this value while testing to show or hide detailed CPU path explanations in the browser console.
   let cpuStrategyDebugEnabled = true;
   const cpuNames = ['Gruntilda', 'KazBot', 'TinkBot', 'CPU', 'AI', 'Guest#445', 'LawjokerBot', 'DefinitelyNotABot', 'Player 2', 'Challenger', 'Mr Quack', 'Mrs Quack', 'A Duck', 'Bot', 'Benny'];
@@ -140,6 +104,7 @@
     winMessage: '',
     loseMessage: '',
     turnCount: 0,
+    gdgUnlockTurn: 0,
     showSpinner: false,
     eventMessage: '',
     libraryVisible: false,
@@ -190,18 +155,6 @@
   let nextVisualCardKey = 0;
   let clickedVisualDiscard: { side: 'p1' | 'p2'; key: number } | null = null;
 
-  // ai generated: Preserve each rendered copy across draws and hand swaps, and remove the clicked copy when duplicate names shrink.
-  function createVisualHandStore(playerStore: typeof player1, side: 'p1' | 'p2') {
-    let previous: VisualCard[] = [];
-    return derived(playerStore, player => {
-      const clickedKey = clickedVisualDiscard?.side === side ? clickedVisualDiscard.key : null;
-      const result = reconcileVisualHand(previous, player.hand, clickedKey, nextVisualCardKey);
-      nextVisualCardKey = result.lastKey;
-      previous = result.cards;
-      return result.cards;
-    });
-  }
-
   const p1VisualHand = createVisualHandStore(player1, 'p1');
   const p2VisualHand = createVisualHandStore(player2, 'p2');
 
@@ -214,6 +167,61 @@
       ? $player1.hand.includes('spiritKing') && isCardVisible('p1', 'spiritKing', $player2.hasVision, gameState.playersRevealed)
       : false;
   $: syncMusicForHand(localMusicHand, visibleOpponentSpiritKing);
+
+  function getEloBadge(elo: number): EloBadge {
+    return eloRanks.find(rank => elo >= rank.minElo)?.badge ?? 'loser';
+  }
+
+  // ai generated: The rankings list takes focus visually without leaving another card-info modal underneath it.
+  function openRankings(): void {
+    gameState.libraryVisible = false;
+    gameState.discardsVisible = false;
+    gameState.remainingCardsVisible = false;
+    rankingsVisible = true;
+  }
+
+  // ai generated: Before a build copies badge art into public, keep its space without a broken-image icon.
+  function setBadgeImageVisibility(event: Event, visible: boolean): void {
+    (event.currentTarget as HTMLImageElement).style.visibility = visible ? 'visible' : 'hidden';
+  }
+
+  // ai generated: Reusing one timer per side prevents a quick second emote from disappearing too early.
+  function showPlayerEmote(side: 'p1' | 'p2', emote: EmoteId): void {
+    if (gameState.gameOver || !emotes.some(option => option.id === emote)) return;
+    if (emoteTimeouts[side]) clearTimeout(emoteTimeouts[side]);
+    activeEmotes = { ...activeEmotes, [side]: emote };
+    emoteTimeouts[side] = setTimeout(() => {
+      activeEmotes = { ...activeEmotes, [side]: null };
+      emoteTimeouts[side] = undefined;
+    }, 2500);
+  }
+
+  // ai generated: The local player sees their own emote immediately; the server sends it to the other browser.
+  function sendPlayerEmote(emote: EmoteId): void {
+    if (gameState.gameOver || !['p1', 'p2'].includes(gameState.playingAs)) return;
+    showPlayerEmote(gameState.playingAs, emote);
+    emoteMenuVisible = false;
+    if (gameMode === 'multiplayer') socket.emit('player-emote', emote);
+  }
+
+  function clearPlayerEmotes(): void {
+    if (emoteTimeouts.p1) clearTimeout(emoteTimeouts.p1);
+    if (emoteTimeouts.p2) clearTimeout(emoteTimeouts.p2);
+    activeEmotes = { p1: null, p2: null };
+    emoteMenuVisible = false;
+  }
+
+  // ai generated: Preserve each rendered copy across draws and hand swaps, and remove the clicked copy when duplicate names shrink.
+  function createVisualHandStore(playerStore: typeof player1, side: 'p1' | 'p2') {
+    let previous: VisualCard[] = [];
+    return derived(playerStore, player => {
+      const clickedKey = clickedVisualDiscard?.side === side ? clickedVisualDiscard.key : null;
+      const result = reconcileVisualHand(previous, player.hand, clickedKey, nextVisualCardKey);
+      nextVisualCardKey = result.lastKey;
+      previous = result.cards;
+      return result.cards;
+    });
+  }
 
   onMount(() => {
     // ai generated: All audio remains local and starts only after the player's Play click.
@@ -249,16 +257,23 @@
 
     // Resets game and updates player hands
     socket.on('game-started', data => {
-      resetGame();
 
-      // Update player hands
-      player1.set(data.player1);
-      player2.set(data.player2);
-      fullDeck = {...data.fullDeck};
+      // ai generated: Only the accepted starter keeps its deal; a simultaneous losing starter adopts the server's round.
+      if (data.startedBy !== socket.id) {
+        resetGame();
+        player1.set(data.player1);
+        player2.set(data.player2);
+        fullDeck = { ...data.fullDeck };
+        deckTypes = Object.keys(fullDeck).filter(deck => {
+          return fullDeck[deck]?.length > 0;
+        });
 
-      // Calculate points
-      const player = gameState.playingAs === 'p1' ? $player1 : $player2;
-      calculateCurrentPlayerPoints(player);
+        const player = gameState.playingAs === 'p1' ? $player1 : $player2;
+        calculateCurrentPlayerPoints(player);
+      }
+
+      gameState.gdgUnlockTurn = data.gdgUnlockTurn;
+      void showGdgTurnReveal();
     });
 
     // Counts turns, broacast not io emit.
@@ -416,6 +431,7 @@
 
     // ai generated: Clearing timers and the optional socket prevents rematches or navigation from leaving ghost CPU turns behind.
     return () => {
+      gdgRevealRun++;
       musicAudio?.pause();
       if (musicAudio) musicAudio.onended = null;
       musicAudio = null;
@@ -563,7 +579,7 @@
     calculateCurrentPlayerPoints(activePlayer);
     const localPlayer = gameState.playingAs === 'p1' ? $player1 : $player2;
     // ai generated: The final player may press GDG immediately to score their current five cards instead of risking a draw.
-    const gdgButtonAvailable = !gameState.gameOver && (gameState.gobbledegookDeclared || gameState.turnCount >= 15);
+    const gdgButtonAvailable = !gameState.gameOver && isGdgUnlocked(gameState.turnCount, gameState.gdgUnlockTurn, gameState.gobbledegookDeclared);
     if (gdgButtonAvailable && isPlayerTurn(localPlayer) && localPlayer.hand.length === 5) gameState.gobbledegookDisabled = false;
     if (isPlayerTurn(localPlayer)) void showEvent('turn-change');
     if (gameMode === 'singleplayer' && $player2.turn) scheduleCpuTurn();
@@ -624,9 +640,32 @@
     const player = gameState.playingAs === 'p1' ? $player1 : $player2;
     calculateCurrentPlayerPoints(player);
 
-    // Send data to websocket server
-    emitGameEvent('start-game', {player1: $player1, player2: $player2, fullDeck});
-    if (gameMode === 'singleplayer' && $player2.turn) scheduleCpuTurn();
+    if (gameMode === 'singleplayer') {
+      gameState.gdgUnlockTurn = rollGdgUnlockTurn();
+      const revealCompleted = await showGdgTurnReveal();
+      if (revealCompleted && $player2.turn) scheduleCpuTurn();
+      return;
+    }
+
+    // ai generated: Multiplayer waits for the server's one shared roll before either client sees the wheel.
+    emitGameEvent('start-game', { player1: $player1, player2: $player2, fullDeck });
+  }
+
+  // ai generated: The wheel spins for 2.6 seconds, holds its result for one second, then releases play.
+  async function showGdgTurnReveal(): Promise<boolean> {
+    const currentRun = ++gdgRevealRun;
+    gdgRevealLanded = false;
+    gdgRevealVisible = true;
+
+    await wait(2600);
+    if (currentRun !== gdgRevealRun) return false;
+
+    gdgRevealLanded = true;
+    await wait(1000);
+    if (currentRun !== gdgRevealRun) return false;
+
+    gdgRevealVisible = false;
+    return true;
   }
 
   // When both players are ready the game starts/restarts
@@ -674,6 +713,10 @@
 
   // Resets values to restart the game.
   function resetGame() {
+    gdgRevealRun++;
+    gdgRevealVisible = false;
+    gdgRevealLanded = false;
+
     if (cpuTurnTimeout) clearTimeout(cpuTurnTimeout);
     clearPlayerEmotes();
     // Reset p1
@@ -702,6 +745,7 @@
     // General resets
     gameState = {...gameState,
       turnCount: 0,
+      gdgUnlockTurn: 0,
       gameOver: false,
       startBtnDisabled: true,
       gobbledegookDeclared: false,
@@ -1407,6 +1451,7 @@
     return {
       hand: [...$player2.hand],
       turnCount: gameState.turnCount,
+      gdgUnlockTurn: gameState.gdgUnlockTurn,
       activeDecks: [...deckTypes],
       unseenCards,
       knownOpponentCards,
@@ -1510,14 +1555,14 @@
     const declarationDisabledForTesting = isCpuDeclarationDisabledByName($player2.title);
 
     // ai generated: The visible GDG button belongs to the human, so the name cheat checks the CPU's own legal start-of-turn state.
-    const cpuCanDeclare = !gameState.gobbledegookDeclared && gameState.turnCount >= 15 && $player2.hand.length === 5;
+    const cpuCanDeclare = !gameState.gobbledegookDeclared && isGdgUnlocked(gameState.turnCount, gameState.gdgUnlockTurn) && $player2.hand.length === 5;
     if (cpuCanDeclare && isCpuDeclarationForcedByName($player2.title)) {
       if (cpuStrategyDebugEnabled) console.info(`[Gobbledegook CPU] ${$player2.title} declares GDG because its name forces the first legal opportunity.`);
       await clickOnGobbledegook($player2);
       return;
     }
 
-    if (!gameState.gobbledegookDeclared && gameState.turnCount >= 15 && !declarationDisabledForTesting) {
+    if (!gameState.gobbledegookDeclared && isGdgUnlocked(gameState.turnCount, gameState.gdgUnlockTurn) && !declarationDisabledForTesting) {
       const declaration = decideCpuDeclaration(observation, scoreCpuHand, scoreHumanHand, Math.random, 240, scoreMatchAgainstHumanHand);
       if (cpuStrategyDebugEnabled) {
         console.groupCollapsed(`[Gobbledegook CPU] Declaration check for ${$player2.title}`);
@@ -1529,7 +1574,7 @@
         await clickOnGobbledegook($player2);
         return;
       }
-    } else if (!gameState.gobbledegookDeclared && gameState.turnCount >= 15 && declarationDisabledForTesting && cpuStrategyDebugEnabled) {
+    } else if (!gameState.gobbledegookDeclared && isGdgUnlocked(gameState.turnCount, gameState.gdgUnlockTurn) && declarationDisabledForTesting && cpuStrategyDebugEnabled) {
       console.info(`[Gobbledegook CPU] ${$player2.title} will not declare while its name is "test".`);
     }
 
@@ -3107,11 +3152,16 @@
     if (player.hand.length === 5 && cardTitle === 'gaze' && currentPlayer.hand.includes('gaze') && !areBoostsBlocked(player)) toggleRemainingCardsModal();
   }
  
-  // Handles player click on gobbledegook button
+  // ai generated: The button handler ignores the click event and lets the existing player-aware action use the local side.
+  async function handleGdgButtonClick(): Promise<void> {
+    await clickOnGobbledegook();
+  }
+
   async function clickOnGobbledegook(player: Player = gameState.playingAs === 'p1' ? $player1 : $player2) {
     // Check if it's player's turn
     if (!isPlayerTurn(player)) return;
     if (gameState.gameOver) return;
+    if (gdgRevealVisible || !isGdgUnlocked(gameState.turnCount, gameState.gdgUnlockTurn, gameState.gobbledegookDeclared)) return;
 
     if (gameState.gobbledegookDeclared) {
       // Puts spinner while game while updating xenos, every .5s checks if done before continuing.
@@ -3176,6 +3226,10 @@
 <!-- svelte-ignore a11y-click-events-have-key-events -->
  {#if ['p1', 'p2'].includes(gameState.playingAs)}
   <main class="main-content">
+
+  {#if gdgRevealVisible}
+    <GdgTurnReveal turn={gameState.gdgUnlockTurn} landed={gdgRevealLanded} />
+  {/if}
   
   {#if gameState.gameOver}
     <div class="connected-users">
@@ -3794,10 +3848,16 @@
                 0/2
               {/if}
             </Button>
-          {:else if gameState.gobbledegookDisabled || (!gameState.gobbledegookDeclared && gameState.turnCount < 15)}
-            <Button round={true} customClasses="btn__orange_disabled">GDG</Button>
+          {:else if gameState.gobbledegookDisabled || !isGdgUnlocked(gameState.turnCount, gameState.gdgUnlockTurn, gameState.gobbledegookDeclared)}
+            <Button round={true} customClasses="btn__orange_disabled">
+              GDG
+              <small class="gdg-unlock-label">Turn {gameState.gdgUnlockTurn}</small>
+            </Button>
           {:else}
-            <Button on:click={async () => clickOnGobbledegook()} round={true} customClasses="btn__orange">GDG</Button>
+            <Button on:click={handleGdgButtonClick} round={true} customClasses="btn__orange">
+              GDG
+              <small class="gdg-unlock-label">Turn {gameState.gdgUnlockTurn}</small>
+            </Button>
           {/if}
         </div>
       </div>
@@ -4529,6 +4589,13 @@
     gap: 2rem;
     justify-content: center;
     align-items: center;
+  }
+
+  .gdg-unlock-label {
+    display: block;
+    margin-top: 0.15rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
   }
 
   .play-again-btn {

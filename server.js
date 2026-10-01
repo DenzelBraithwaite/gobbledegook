@@ -4,6 +4,7 @@ import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { createRecordStore, normalizeName } from './playerRecords.js';
+import { rollGdgUnlockTurn } from './src/lib/game/gdgTurn.js';
 
 const users = {};
 const readyPlayers = { p1: false, p2: false };
@@ -112,7 +113,9 @@ io.on('connection', socket => {
     resultReporterId = '';
     readyPlayers.p1 = false;
     readyPlayers.p2 = false;
-    socket.broadcast.emit('game-started', data);
+
+    // ai generated: The server rolls once and tells both clients which turn unlocks GDG for this round.
+    io.emit('game-started', { ...data, startedBy: socket.id, gdgUnlockTurn: rollGdgUnlockTurn() });
   });
 
   // Ready up the player

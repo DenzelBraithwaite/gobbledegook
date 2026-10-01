@@ -13,6 +13,7 @@ export type CpuCardDetails = Record<string, {
 export type CpuObservation = {
   hand: string[];
   turnCount: number;
+  gdgUnlockTurn: number;
   activeDecks: string[];
   unseenCards: string[];
   knownOpponentCards: string[];
@@ -434,13 +435,14 @@ export function decideCpuDeclaration(
   const cpuScore = observation.forcedRacePath
     ? cpuEvaluation.points[scoreKeys[observation.forcedRacePath]] ?? 0
     : cpuEvaluation.highestPoints;
-  if (observation.turnCount < 15) {
+  // ai generated: Strategy uses the same rolled unlock turn as the visible GDG button and CPU name cheats.
+  if (observation.turnCount < observation.gdgUnlockTurn) {
     return {
       declare: false,
       estimatedWinChance: 0,
       cpuScore,
       sampledGames: 0,
-      explanation: 'Gobbledegook is locked until turn 15.'
+      explanation: `Gobbledegook is locked until turn ${observation.gdgUnlockTurn}.`
     };
   }
 

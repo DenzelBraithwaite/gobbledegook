@@ -57,6 +57,7 @@ function observation(overrides = {}) {
   return {
     hand: ['troll', 'shaman', 'hobgoblin', 'knight', 'emperor'],
     turnCount: 20,
+    gdgUnlockTurn: 15,
     activeDecks: ['humans', 'goblins', 'bots', 'neutrals'],
     unseenCards: ['goblinLord', 'troll', 'protectron', 'android', 'neutralize', 'knight'],
     knownOpponentCards: [],
@@ -202,6 +203,22 @@ test('never declares before the game threshold', () => {
   const decision = decideCpuDeclaration(observation({ turnCount: 14 }), score, score, () => 0.5, 20);
   assert.equal(decision.declare, false);
   assert.equal(decision.sampledGames, 0);
+});
+
+test('the CPU follows an early or late rolled GDG unlock turn', () => {
+  const unbeatableCpu = () => ({
+    highestPoints: 500_000,
+    points: { humans: 500_000, goblins: 0, elves: 0, dwarves: 0, beasts: 0, bots: 0, xenos: 0, spirits: 0 }
+  });
+  const beforeEarlyTurn = decideCpuDeclaration(observation({ turnCount: 9, gdgUnlockTurn: 10 }), unbeatableCpu, score);
+  const atEarlyTurn = decideCpuDeclaration(observation({ turnCount: 10, gdgUnlockTurn: 10 }), unbeatableCpu, score);
+  const beforeLateTurn = decideCpuDeclaration(observation({ turnCount: 24, gdgUnlockTurn: 25 }), unbeatableCpu, score);
+  const atLateTurn = decideCpuDeclaration(observation({ turnCount: 25, gdgUnlockTurn: 25 }), unbeatableCpu, score);
+
+  assert.equal(beforeEarlyTurn.declare, false);
+  assert.equal(atEarlyTurn.declare, true);
+  assert.equal(beforeLateTurn.declare, false);
+  assert.equal(atLateTurn.declare, true);
 });
 
 test('declaration samples apply opposing A.I. theft to the CPU score', () => {

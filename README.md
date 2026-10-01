@@ -15,12 +15,13 @@ This is a personal project intended for private play over a local network. It is
 ## How a round works
 
 1. Choose singleplayer or multiplayer, then select **Ready**. Multiplayer waits for both players.
-2. Each player receives a five-card starting hand.
-3. On a turn, the active player draws a card and discards back down to five.
-4. Card effects can alter scores, reveal or exchange hands, affect future draws, or remain active after a card is discarded.
-5. Once the **GDG** button becomes available, a player can declare Gobbledegook instead of drawing.
-6. The opponent receives one final turn before the round ends. They can press GDG immediately to keep their current hand or draw and discard once.
-7. Each faction is scored independently. A player's final score is their highest faction total after all card effects are resolved.
+2. A goblin wheel rolls a new GDG unlock turn from 10 to 25. Both multiplayer clients see the same result; the GDG button shows the chosen turn throughout the round.
+3. Each player receives a five-card starting hand.
+4. On a turn, the active player draws a card and discards back down to five.
+5. Card effects can alter scores, reveal or exchange hands, affect future draws, or remain active after a card is discarded.
+6. Once the **GDG** button becomes available, a player can declare Gobbledegook instead of drawing.
+7. The opponent receives one final turn before the round ends. They can press GDG immediately to keep their current hand or draw and discard once.
+8. Each faction is scored independently. A player's final score is their highest faction total after all card effects are resolved.
 
 A round also ends if the draw pile is exhausted.
 
