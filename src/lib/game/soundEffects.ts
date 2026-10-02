@@ -22,7 +22,6 @@ export const drawSoundEffects: Readonly<Record<string, string>> = {
   corruption: '/sounds/corruption_sound.mp3',
   dwarvenCall: '/sounds/dwarven_call_sound.mp3',
   echo: '/sounds/echo_sound.mp3',
-  eradicate: '/sounds/eradicate_sound.mp3',
   exposed: '/sounds/exposed_sound.mp3',
   feast: '/sounds/feast_sound.mp3',
   gaze: '/sounds/gaze_sound.mp3',
@@ -32,8 +31,6 @@ export const drawSoundEffects: Readonly<Record<string, string>> = {
   neutralize: '/sounds/neutralize_sound.mp3',
   rejuvenate: '/sounds/rejuvenate_sound.mp3',
   sap: '/sounds/sap_sound.mp3',
-  ticktock: '/sounds/tick_tock_sound.mp3',
-  tocktick: '/sounds/tock_tick_sound.mp3',
   vision: '/sounds/vision_sound.mp3',
   xenoBloom: '/sounds/xeno_bloom_sound.mp3',
   xenoBlossom: '/sounds/xeno_blossom_sound.mp3',
@@ -47,7 +44,10 @@ export const gameSoundEffects = {
   discard: '/sounds/discard_sound.mp3',
   flip: '/sounds/card_flip_sound.mp3',
   switcharoo: '/sounds/switcharoo_sound.mp3',
-  shuffle: '/sounds/shuffle_sound.mp3'
+  shuffle: '/sounds/shuffle_sound.mp3',
+  eradicate: '/sounds/eradicate_sound.mp3',
+  ticktock: '/sounds/tick_tock_sound.mp3',
+  tocktick: '/sounds/tock_tick_sound.mp3'
 } as const;
 
 export function getDrawSoundEffect(card: string): string | null {
@@ -57,6 +57,6 @@ export function getDrawSoundEffect(card: string): string | null {
 // ai generated: Sound follows the gameplay event, not a hand change, so sync/rematches never replay it.
 export function getEventSoundEffect(event: string): string | null {
   if (event === 'revealed' || event === 'vision' || event === 'exposed') return gameSoundEffects.flip;
-  if (event === 'switcharoo' || event === 'shuffle') return gameSoundEffects[event];
+  if (event === 'switcharoo' || event === 'shuffle' || event === 'eradicate' || event === 'ticktock' || event === 'tocktick') return gameSoundEffects[event];
   return null;
 }

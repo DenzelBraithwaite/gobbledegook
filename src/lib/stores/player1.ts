@@ -28,6 +28,7 @@ export const player1 = writable<Player>({
   blueSpiritNextTurn: false,
   drewWarchief: false,
   goblinLordMarked: false,
+  elfChampionAscended: false,
   hand: [],
   startingHand: [],
   cardsDrawn: [],
@@ -77,6 +78,7 @@ export const player1Reset = writable<Player>({
   blueSpiritNextTurn: false,
   drewWarchief: false,
   goblinLordMarked: false,
+  elfChampionAscended: false,
   hand: [],
   startingHand: [],
   cardsDrawn: [],
@@ -126,6 +128,7 @@ export type Player = {
   blueSpiritNextTurn: boolean; // Determines if player's next card will be a blue djinn.
   drewWarchief: boolean; // Player next card will be goblin mark if available.
   goblinLordMarked: boolean; // Player next card will be goblin lord if available.
+  elfChampionAscended: boolean; // ai generated: Champion was drawn after Elf King had already left the deck.
   hand: string[]; // Current cards in player's hand.
   startingHand: string[]; // For end game results, shows starting hand.
   cardsDrawn: string[]; // For end game results, shows log of all cards drawn.

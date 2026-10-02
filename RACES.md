@@ -49,7 +49,7 @@ Elves have the strongest conventional leader multiplier and several internal com
 ### Elf cards
 
 - **Elf King — 15 points.** Doubles Elf points in a mixed hand, triples them in an all-Elf hand, and counters the pure-Goblin jackpot.
-- **Elf Champion — 12 points.** The first Elf drawn from the Elf deck.
+- **Elf Champion — 12 points.** The first Elf drawn from the Elf deck. If Elf King has already left the deck when Champion is drawn, Champion instead forces Elf draws until that deck is exhausted and doubles all Elves while held.
 - **High Elf — 10 points.**
 - **Dark Elf — 9 points.**
 - **Wood Elf — 6 points.**

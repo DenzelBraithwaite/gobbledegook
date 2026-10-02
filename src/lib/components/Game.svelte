@@ -25,6 +25,7 @@
   import { chooseMusicAfterHandChange, concertMusicTrack, getUnlockedMusicTracks, leaderMusicTracks, mainMusicTracks, nextMainMusicTrack, type MusicTrack } from '../game/music';
   import { gameSoundEffects, getDrawSoundEffect, getEventSoundEffect } from '../game/soundEffects';
   import { isGdgUnlocked, rollGdgUnlockTurn } from '../game/gdgTurn.js';
+  import { hasAscendedElfChampion, shouldAscendElfChampion, shouldForceElfDraw } from '../game/elfChampion';
   import GdgTurnReveal from './GdgTurnReveal.svelte';
 
   // Websocket
@@ -53,6 +54,7 @@
   let gdgRevealVisible = false;
   let gdgRevealLanded = false;
   let gdgRevealRun = 0;
+  let gdgWheelAudioContext: AudioContext | null = null;
 
   // ai generated: These are server-owned multiplayer records; singleplayer never loads or saves them.
   type MultiplayerRecord = { name: string; wins: number; losses: number; draws: number; elo: number };
@@ -432,6 +434,8 @@
     // ai generated: Clearing timers and the optional socket prevents rematches or navigation from leaving ghost CPU turns behind.
     return () => {
       gdgRevealRun++;
+      void gdgWheelAudioContext?.close();
+      gdgWheelAudioContext = null;
       musicAudio?.pause();
       if (musicAudio) musicAudio.onended = null;
       musicAudio = null;
@@ -651,25 +655,63 @@
     emitGameEvent('start-game', { player1: $player1, player2: $player2, fullDeck });
   }
 
-  // ai generated: The wheel spins for 2.6 seconds, holds its result for one second, then releases play.
+  // ai generated: The wheel spins for 2.6 seconds, holds its result for three seconds, then releases play.
   async function showGdgTurnReveal(): Promise<boolean> {
     const currentRun = ++gdgRevealRun;
     gdgRevealLanded = false;
     gdgRevealVisible = true;
+    void playGdgWheelTicks(currentRun);
 
     await wait(2600);
     if (currentRun !== gdgRevealRun) return false;
 
     gdgRevealLanded = true;
-    await wait(1000);
+    await wait(3000);
     if (currentRun !== gdgRevealRun) return false;
 
     gdgRevealVisible = false;
     return true;
   }
 
+  // ai generated: Preparing Web Audio from the Ready click lets later multiplayer server events use the wheel ticks.
+  function prepareGdgWheelAudio(): void {
+    if (typeof AudioContext === 'undefined') return;
+    if (!gdgWheelAudioContext) gdgWheelAudioContext = new AudioContext();
+    if (gdgWheelAudioContext.state === 'suspended') void gdgWheelAudioContext.resume();
+  }
+
+  // ai generated: Short wooden clicks gradually slow like a physical prize wheel and respect the effects-volume control.
+  async function playGdgWheelTicks(revealRun: number): Promise<void> {
+    const spinDuration = 2600;
+    const startedAt = performance.now();
+
+    while (revealRun === gdgRevealRun && performance.now() - startedAt < spinDuration) {
+      playGdgWheelTick();
+      const progress = Math.min(1, (performance.now() - startedAt) / spinDuration);
+      await wait(55 + Math.round(progress * 115));
+    }
+  }
+
+  function playGdgWheelTick(): void {
+    if (!gdgWheelAudioContext || soundEffectsVolume <= 0) return;
+
+    const now = gdgWheelAudioContext.currentTime;
+    const oscillator = gdgWheelAudioContext.createOscillator();
+    const gain = gdgWheelAudioContext.createGain();
+    oscillator.type = 'square';
+    oscillator.frequency.setValueAtTime(165, now);
+    gain.gain.setValueAtTime(Math.max(0.0001, soundEffectsVolume * 0.08), now);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.035);
+    oscillator.connect(gain);
+    gain.connect(gdgWheelAudioContext.destination);
+    oscillator.start(now);
+    oscillator.stop(now + 0.04);
+  }
+
   // When both players are ready the game starts/restarts
   async function readyUpPlayer(): Promise<void> {
+    prepareGdgWheelAudio();
+
     if (gameMode === 'singleplayer') {
       player1.set({...$player1, isReady: true});
       player2.set({...$player2, isReady: true});
@@ -861,6 +903,7 @@
     let currentDeck: DeckRace = '';
     let cardDrawn = '';
     let randomNum = 0;
+    let forceElfDraw = false;
 
     // Player can't declare gobbledegook if they drew that turn
     gameState.gobbledegookDisabled = true;
@@ -878,6 +921,11 @@
     // Checks if there's a xeno egg counter, if so return the appropriate xeno.
     } else if ([1, 2].includes(player.xenoEggCounter)) {
       currentDeck = 'xenoEgg';
+
+    // ai generated: An ascended held Champion temporarily takes priority over ordinary and card-forced race draws.
+    } else if (shouldForceElfDraw(player.elfChampionAscended, player.hand, fullDeck['elves'], currentDeck)) {
+      currentDeck = 'elves';
+      forceElfDraw = true;
     
     // Determines if the next card will be a dwarf or just a random deck.
     } else if (player.dwarfNextTurn) {
@@ -901,7 +949,7 @@
     };
 
     // If player has goblin lord's mark, next card is the goblin lord
-    if (player.goblinLordMarked) {
+    if (player.goblinLordMarked && !forceElfDraw) {
       player.goblinLordMarked = false;
       fullDeck['goblins'].length === 0 ? currentDeck = deckTypes[randomNum] as DeckRace : currentDeck = 'goblins'; // to appease ts gods
 
@@ -921,8 +969,28 @@
         }
       }
     } else {
+      // ai generated: After ascension, draw any remaining Elf instead of reapplying another forced-card effect.
+      if (forceElfDraw) {
+        // ai generated: Scraps and Champion can overlap, so prefer a card satisfying both restrictions before relaxing either one.
+        const eligibleElves = player.vultureNextDraw
+          ? fullDeck['elves'].filter(card => !getRaces(card).includes('beast'))
+          : fullDeck['elves'];
+        if (eligibleElves.length > 0) {
+          randomNum = Math.floor(Math.random() * eligibleElves.length);
+          cardDrawn = eligibleElves[randomNum];
+        } else {
+          const replacement = selectNonBeastDraw(deckTypes, fullDeck, card => getRaces(card).includes('beast'));
+          if (replacement) {
+            currentDeck = replacement.deck as DeckRace;
+            cardDrawn = replacement.card;
+          } else {
+            randomNum = Math.floor(Math.random() * fullDeck['elves'].length);
+            cardDrawn = fullDeck['elves'][randomNum];
+          }
+        }
+
       // Grab random card from that deck, if elf deck, look for elf champion.
-      if (currentDeck === 'elves' && fullDeck['elves'].includes('elfChampion')) {
+      } else if (currentDeck === 'elves' && fullDeck['elves'].includes('elfChampion')) {
         cardDrawn = fullDeck['elves'].find(card => card === 'elfChampion');
       } else if (currentDeck === 'giraffe') {
         cardDrawn = drawGiraffeCards(player);
@@ -994,6 +1062,9 @@
         return;
       };
 
+      // ai generated: Remember the exact draw-time condition; removing Elf King later must not activate an older Champion.
+      if (shouldAscendElfChampion(cardDrawn, fullDeck['elves'])) player.elfChampionAscended = true;
+
       // If it's the longbeard leader, dwarf commander or dwarvenCall, the next card will be dwarf
       if (cardDrawn === 'longbeardLeader' || cardDrawn === 'dwarfCommander' || cardDrawn === 'dwarvenCall') player.dwarfNextTurn = true;
 
@@ -1052,6 +1123,11 @@
       });
     }
 
+    // ai generated: Play the King's voice before its awaited reveal and music transition can cover the short cue.
+    const localPlayer = gameState.playingAs === 'p1' ? $player1 : $player2;
+    const drawnCardSound = player.id === localPlayer.id ? getDrawSoundEffect(cardDrawn) : null;
+    if (cardDrawn === 'spiritKing' && drawnCardSound) playSoundEffect(drawnCardSound);
+
     // ai generated: Reveal only after Spirit King is in the hand so both the card draw and face-up opponent hand render together.
     if (cardDrawn === 'spiritKing') await revealPlayers();
     refreshCpuOpponentMemory();
@@ -1061,11 +1137,7 @@
     calculateCurrentPlayerPoints(player, isNewTurn(player));
     // ai generated: A completed draw sounds once; blocked redraws return earlier and hidden CPU cards stay private.
     playSoundEffect(gameSoundEffects.draw);
-    const localPlayer = gameState.playingAs === 'p1' ? $player1 : $player2;
-    if (player.id === localPlayer.id) {
-      const entranceSound = getDrawSoundEffect(cardDrawn);
-      if (entranceSound) playSoundEffect(entranceSound);
-    }
+    if (cardDrawn !== 'spiritKing' && drawnCardSound) playSoundEffect(drawnCardSound);
     
     // Emits to server that a card was drawn
     emitGameEvent('draw-card', {player1: $player1, player2: $player2, deckTypes: deckTypes, fullDeck: fullDeck});
@@ -1115,6 +1187,9 @@
       });
    }
 
+    // ai generated: The alternate Champion trait ends with the physical card, including a normal clicked discard.
+    if (cardTitle === 'elfChampion') player.elfChampionAscended = false;
+
     // ai generated: A temporary blocker leaving the hand immediately restores earned points without adding another turn of growth.
     calculateCurrentPlayerPoints(player);
     playSoundEffect(gameSoundEffects.discard);
@@ -1125,8 +1200,8 @@
     // ai generated: If the hand is currently visible, remember its post-discard five-card state before Spirit King or another reveal ends.
     refreshCpuOpponentMemory();
 
-    // Remove all traps from deck
-    if (cardTitle === 'eradicate') await eradicateTraps();
+    // ai generated: Eradicate is a boost, so Corruption or Xeno Guard can suppress both its discard effect and public cue.
+    if (cardTitle === 'eradicate' && !areBoostsBlocked(player)) await eradicateTraps();
 
     // Check if card discarded is spirit king, if so, hide hands.
     if (cardTitle === 'spiritKing') await concealPlayers();
@@ -1214,7 +1289,8 @@
       hand: replacementHand,
       discards: [...current.discards, ...discardedHand],
       cardsDrawn: [...current.cardsDrawn, ...replacementHand],
-      playingTwice: false
+      playingTwice: false,
+      elfChampionAscended: false
     }));
 
     // ai generated: Clearing a held Spirit King ends its reveal even though Shuffle skips the King's ordinary discard handler.
@@ -1260,13 +1336,16 @@
     $cardDetails['xerandium'].points = remoteCardDetails['xerandium'].points;
     $cardDetails['sporax'].points = remoteCardDetails['sporax'].points;
 
-    let tempHand = [...$player2.hand];
+    const tempHand = [...$player2.hand];
+    const tempElfChampionAscended = $player2.elfChampionAscended;
     player2.update($player2 => {
       $player2.hand = [...$player1.hand];
+      $player2.elfChampionAscended = $player1.elfChampionAscended;
       return $player2;
     });
     player1.update($player1 => {
       $player1.hand = [...tempHand];
+      $player1.elfChampionAscended = tempElfChampionAscended;
       return $player1;
     });
 
@@ -1478,6 +1557,7 @@
     const cpuCopy = structuredClone($player2);
     const humanCopy = structuredClone($player1);
     cpuCopy.hand = [...hand];
+    cpuCopy.elfChampionAscended = hasAscendedElfChampion(cpuCopy.elfChampionAscended, hand);
     // ai generated: Only the cloned scorer sees a proposed discard; the live discard list changes after the real action.
     if (prospectiveDiscard) cpuCopy.discards = [...cpuCopy.discards, prospectiveDiscard];
     humanCopy.hand = getCpuOpponentInsightSource() ? [...$player1.hand] : [];
@@ -1491,6 +1571,8 @@
     const humanCopy = structuredClone($player1);
     cpuCopy.hand = [...receivedHand];
     humanCopy.hand = [...givenHand];
+    cpuCopy.elfChampionAscended = hasAscendedElfChampion($player1.elfChampionAscended, receivedHand);
+    humanCopy.elfChampionAscended = hasAscendedElfChampion($player2.elfChampionAscended, givenHand);
     calculatePlayerPointsAgainst(cpuCopy, humanCopy, true);
     // ai generated: Switcharoo also trades evolving Xeno values; the scorer still sees the pre-swap copies, so adjust only those card bases.
     const transferredXenos = ['voidRunner', 'warpstalker', 'drainite', 'xerandium', 'sporax'];
@@ -1522,6 +1604,7 @@
     const humanCopy = structuredClone($player1);
     const cpuCopy = structuredClone($player2);
     humanCopy.hand = [...hand];
+    humanCopy.elfChampionAscended = hasAscendedElfChampion(humanCopy.elfChampionAscended, hand);
     calculatePlayerPointsAgainst(humanCopy, cpuCopy, true);
     return { highestPoints: humanCopy.highestPoints, points: { ...humanCopy.points } };
   }
@@ -1531,6 +1614,7 @@
     const humanCopy = structuredClone($player1);
     const cpuCopy = structuredClone($player2);
     humanCopy.hand = [...hand];
+    humanCopy.elfChampionAscended = hasAscendedElfChampion(humanCopy.elfChampionAscended, hand);
     calculatePlayerPointsAgainst(cpuCopy, humanCopy, true);
     calculatePlayerPointsAgainst(humanCopy, cpuCopy, true);
     calculatePlayerHighestPoints(cpuCopy);
@@ -1677,7 +1761,7 @@
     if ((player.hand.some(card => ['dreamDestroyer', 'nightTerror'].includes(card)) || ['dog', 'wolf', 'lion', 'bear'].includes(cardTitle)) && getRaces(cardTitle).includes('beast')) highestPoints = Math.max(highestPoints, displayBeastPoints(player, cardTitle));
     if ((player.hand.includes('ai') || player.hand.includes('protectron')) && getRaces(cardTitle).includes('bot')) highestPoints = Math.max(highestPoints, displayBotPoints(player, cardTitle));
     // ai generated: Bard and Twin triggers may exist in the hand, but Elf King must never double a non-Elf card's display value.
-    if (getRaces(cardTitle).includes('elf') && (triggerTwinEffect || player.hand.some(card => bardCards.includes(card)) || player.hand.includes('elfKing'))) highestPoints = Math.max(highestPoints, displayElfPoints(player, cardTitle));
+    if (getRaces(cardTitle).includes('elf') && (triggerTwinEffect || player.hand.some(card => bardCards.includes(card)) || player.hand.includes('elfKing') || hasAscendedElfChampion(player.elfChampionAscended, player.hand))) highestPoints = Math.max(highestPoints, displayElfPoints(player, cardTitle));
     if ((player.hand.includes('emperor') || player.hand.includes('commander')) && getRaces(cardTitle).includes('human')) highestPoints = Math.max(highestPoints, displayHumanPoints(player, cardTitle));
     if (player.hand.every(card => ['redSpirit', 'leon'].includes(card) || ['blueSpirit', 'leon'].includes(card))) highestPoints = Math.max(highestPoints, displaySpiritPoints(player, cardTitle));
     if (cardTitle === 'longbeardLeader') highestPoints = Math.max(highestPoints, displayDwarfPoints(player));
@@ -1871,6 +1955,9 @@
 
     // Determines if otherPlayer has full goblin hand and if player has full elf hand, assigns points accordingly.
     if (player.hand.includes('elfKing')) calculateElfKing(player, otherPlayer, forEndGameCalculation);
+
+    // ai generated: The Champion's replacement trait doubles the completed Elf subtotal, but never stacks with Elf King.
+    else if (hasAscendedElfChampion(player.elfChampionAscended, player.hand)) player.points.elves *= 2;
     
     // Currently no neutrals that affect elf points
     calculateElfBoosts(player);
@@ -1967,6 +2054,8 @@
   // Only called if twins OR elf king + full elf hand (including faeBot)
   function displayElfPoints(player: Player, cardTitle: string): number {
     const hasElfKing = player.hand.includes('elfKing');
+    const hasAscendedChampion = hasAscendedElfChampion(player.elfChampionAscended, player.hand);
+    const hasDoubleMultiplier = hasElfKing || hasAscendedChampion;
     const numOfNelladans = player.hand.filter(card => card === 'nelladan' || card === 'leon').length;
     const numOfNadallens = player.hand.filter(card => card === 'nadallen').length;
     const triggerTwinEffect = numOfNelladans > 0 && numOfNadallens > 0;
@@ -1987,8 +2076,8 @@
       return $cardDetails[cardTitle].points * 3;
       
 
-      // Elf King + Twins
-    } else if (hasElfKing && triggerTwinEffect) {
+      // ai generated: Elf King or an ascended Champion doubles Twin-adjusted individual Elf values.
+    } else if (hasDoubleMultiplier && triggerTwinEffect) {
       if (cardTitle === 'nadallen') return (($cardDetails[cardTitle].points + (numOfNelladans * 5)) * 2);
       if (cardTitle === 'nelladan') return ($cardDetails[cardTitle].points + 5) * 2;
     
@@ -1998,13 +2087,13 @@
       if (cardTitle === 'nelladan') return ($cardDetails[cardTitle].points + 5);
     }
 
-    // Bards and elf king
-    else if (hasElfKing && numOfBards > 1) {
+    // ai generated: Elf King or an ascended Champion doubles Bard-adjusted individual Elf values.
+    else if (hasDoubleMultiplier && numOfBards > 1) {
       if (bardCards.includes(cardTitle)) return (($cardDetails[cardTitle].points + (numOfBards - 1)) * 2);
     }
     
-    // King
-    else if (hasElfKing) {
+    // ai generated: A remaining ordinary Elf is doubled by either eligible multiplier.
+    else if (hasDoubleMultiplier) {
       return $cardDetails[cardTitle].points * 2;
     }
 

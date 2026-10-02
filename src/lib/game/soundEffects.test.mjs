@@ -9,10 +9,9 @@ test('named cards play their sound only on a completed private draw', () => {
     'emperor', 'goblinLord', 'longbeardLeader', 'elfKing', 'ai', 'dreamDestroyer',
     'nightTerror', 'spiritKing', 'sporax', 'goblinLordsMark', 'charge', 'chastity',
     'chester', 'chjester', 'oreoCookie', 'chocoChipCookie', 'thumbprintCookie',
-    'oatmealCookie', 'corruption', 'dwarvenCall', 'echo', 'eradicate', 'exposed',
+    'oatmealCookie', 'corruption', 'dwarvenCall', 'echo', 'exposed',
     'feast', 'gaze', 'growth', 'infect', 'lost', 'neutralize', 'rejuvenate', 'sap',
-    'ticktock', 'tocktick', 'vision', 'xenoBloom', 'xenoBlossom', 'xenophobia',
-    'shuffle', 'switcharoo'
+    'vision', 'xenoBloom', 'xenoBlossom', 'xenophobia', 'shuffle', 'switcharoo'
   ];
   assert.deepEqual(Object.keys(drawSoundEffects).sort(), expectedCards.sort());
   assert.equal(getDrawSoundEffect('goblinLordsMark'), '/sounds/intruder_sound.mp3');
@@ -28,6 +27,9 @@ test('only actual public or local action events play action sounds', () => {
   for (const event of ['revealed', 'vision', 'exposed']) assert.equal(getEventSoundEffect(event), gameSoundEffects.flip);
   assert.equal(getEventSoundEffect('switcharoo'), gameSoundEffects.switcharoo);
   assert.equal(getEventSoundEffect('shuffle'), gameSoundEffects.shuffle);
+  assert.equal(getEventSoundEffect('eradicate'), gameSoundEffects.eradicate);
+  assert.equal(getEventSoundEffect('ticktock'), gameSoundEffects.ticktock);
+  assert.equal(getEventSoundEffect('tocktick'), gameSoundEffects.tocktick);
   assert.equal(getEventSoundEffect('gaze'), null);
 });
 

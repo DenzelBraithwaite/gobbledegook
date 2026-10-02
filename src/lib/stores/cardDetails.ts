@@ -8,8 +8,6 @@ import { writable } from 'svelte/store';
  * Poor = No trait and points 5 or less.
  */
 
-// TODO: spinner should pause for a total of 3 seconds after it lands on the turn number so users have time to see the result.
-// TODO: spinner should make spinner noises while spinning (clicking sound like wheel of fortune)
 const cardDetails = writable({
   // Humans
   emperor: {
@@ -250,7 +248,6 @@ const cardDetails = writable({
     otherRaces: [],
     image: '/elves/elf_king.png'
   },
-  // TODO: Implement 2nd trait ability for elfChampion listed in the trait property value text (condition that doubles elves if no elf king in hand/deck).
   elfChampion: {
     title: 'elfChampion',
     displayTitle: 'Elf Champion',
@@ -1016,7 +1013,6 @@ const cardDetails = writable({
     image: '/xenos/xeno_egg.png'
   },
 
-  // FIXME: I don't hear the spirit king sound when he is drawn, I hear the music, not the sound. But the reference to spiritKing and the sound look correct, what's the issue?
   // Spirits
   spiritKing: {
     title: 'spiritKing',
@@ -1176,9 +1172,6 @@ const cardDetails = writable({
     otherRaces: [],
     image: '/boosts/rainbow_boost.png'
   },
-  // TODO: sound should only trigger on discard not on draw*
-  // FIXME: should be blocked by boost blockers, meaning discard simply discards if user has chastity or something like the xenoGuard blocking boosts.
-  // FIXME: cpu drew card and i saw the event but did not hear it. This should be public knowledge (both players) when eradicate is drawn (if not blocked)
   eradicate: {
     title: 'eradicate',
     displayTitle: 'Eradicate',
@@ -1186,7 +1179,7 @@ const cardDetails = writable({
     amount: 1,
     rarity: 'epic',
     traitTitle: 'Eradication',
-    trait: 'Cannot be blocked, when discarded removes all remaining trap cards from the deck.',
+    trait: 'When discarded, removes all remaining trap cards from the deck. Corruption and Xeno Guard block this effect.',
     description: 'This sentient volatile sprite is usually docile but can become eradic if provoked.',
     race: 'boost',
     otherRaces: [],
@@ -1547,7 +1540,6 @@ const cardDetails = writable({
     otherRaces: [],
     image: '/neutrals/xeno_bloom.png'
   },
-  // FIXME: The sound should play for both people (cpu got it but I did not hear it, perhaps my music was too loud but confirm this and confirm tock tick sound also plays for both players)
   ticktock: {
     title: 'ticktock',
     displayTitle: 'Ticktock',
