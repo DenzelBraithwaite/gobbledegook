@@ -2,12 +2,33 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
-export const defaultRecord = name => ({ name, wins: 0, losses: 0, draws: 0, elo: 1000 });
-export const normalizeName = name => typeof name === 'string' ? name.trim().replace(/[\r\n]/g, ' ').slice(0, 20) : '';
-const recordKey = name => normalizeName(name).toLocaleLowerCase();
+export function defaultRecord(name) {
+  return { name, wins: 0, losses: 0, draws: 0, elo: 1000 };
+}
+
+export function normalizeName(name) {
+  return typeof name === 'string' ? name.trim().replace(/[\r\n]/g, ' ').slice(0, 20) : '';
+}
+
+function recordKey(name) {
+  return normalizeName(name).toLocaleLowerCase();
+}
+
+// ai generated: Rating movement is based on the player's tier before the completed match.
+export function getEloAdjustment(elo, outcome) {
+  if (outcome === 'draws') return 0;
+  if (elo <= 699) return outcome === 'wins' ? 30 : -20;
+  if (elo <= 899) return outcome === 'wins' ? 28 : -22;
+  if (elo <= 1099) return outcome === 'wins' ? 26 : -24;
+  if (elo <= 1299) return outcome === 'wins' ? 25 : -25;
+  return outcome === 'wins' ? 22 : -28;
+}
 
 // ai generated: Quotes and commas in player names are escaped instead of becoming extra CSV columns.
-const csvCell = value => `"${String(value).replaceAll('"', '""')}"`;
+function csvCell(value) {
+  return `"${String(value).replaceAll('"', '""')}"`;
+}
+
 function parseCsvLine(line) {
   const cells = [];
   let cell = '';
@@ -41,17 +62,18 @@ export function createRecordStore(filePath = join(process.cwd(), 'data', 'player
     return existing ? { ...existing } : defaultRecord(cleanName);
   }
 
-  // ai generated: Apply both sides before one write; equal names gain a win and loss but net zero ELO.
+  // ai generated: Apply both sides before one write; equal names retain the earlier rule that opposing results cancel ELO.
   function recordMatch(firstName, secondName, firstPoints, secondPoints) {
     const names = [normalizeName(firstName), normalizeName(secondName)];
     if (names.some(name => !name) || !Number.isFinite(firstPoints) || !Number.isFinite(secondPoints)) throw new Error('Invalid match result');
     const next = new Map(records);
     const outcomes = firstPoints === secondPoints ? ['draws', 'draws'] : firstPoints > secondPoints ? ['wins', 'losses'] : ['losses', 'wins'];
+    const samePlayerName = recordKey(names[0]) === recordKey(names[1]);
     names.forEach((name, index) => {
       const key = recordKey(name);
       const record = { ...(next.get(key) ?? defaultRecord(name)) };
       record[outcomes[index]]++;
-      record.elo += outcomes[index] === 'wins' ? 10 : outcomes[index] === 'losses' ? -10 : 0;
+      if (!samePlayerName) record.elo += getEloAdjustment(record.elo, outcomes[index]);
       next.set(key, record);
     });
     mkdirSync(dirname(filePath), { recursive: true });

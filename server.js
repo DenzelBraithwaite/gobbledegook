@@ -4,10 +4,12 @@ import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { createRecordStore, normalizeName } from './playerRecords.js';
+import { shouldEndGameByName } from './src/lib/game/endGameCheat.js';
 import { rollGdgUnlockTurn } from './src/lib/game/gdgTurn.js';
 
 const users = {};
 const readyPlayers = { p1: false, p2: false };
+const playersInLobby = { p1: true, p2: true };
 // ai generated: Only multiplayer connects here; the server owns names, records, and one result per round.
 const playerNames = { p1: 'Player 1', p2: 'Player 2' };
 const recordStore = createRecordStore(join(dirname(fileURLToPath(import.meta.url)), 'data', 'player-records.csv'));
@@ -86,6 +88,7 @@ io.on('connection', socket => {
     delete users[username];
     if (username === 'p1' || username === 'p2') {
       readyPlayers[username] = false;
+      playersInLobby[username] = true;
       // ai generated: A disconnected human invalidates any unfinished multiplayer round.
       if (!roundRecorded) roundActive = false;
       playerNames[username] = username === 'p1' ? 'Player 1' : 'Player 2';
@@ -106,16 +109,28 @@ io.on('connection', socket => {
   // Start game
   socket.on('start-game', data => {
     // ai generated: A second start event must not reset the one-result guard for an active round.
-    if (!['p1', 'p2'].includes(username) || roundActive) return;
+    if (!['p1', 'p2'].includes(username) || roundActive || playersInLobby.p1 !== playersInLobby.p2) return;
     roundActive = true;
     roundEnding = false;
     roundRecorded = false;
     resultReporterId = '';
     readyPlayers.p1 = false;
     readyPlayers.p2 = false;
+    playersInLobby.p1 = false;
+    playersInLobby.p2 = false;
+
+    // ai generated: Accept either the server-owned names or the synchronized start payload so input/network timing cannot miss the test shortcut.
+    const endImmediately = shouldEndGameByName(playerNames.p1, playerNames.p2)
+      || shouldEndGameByName(data?.player1?.title, data?.player2?.title);
 
     // ai generated: The server rolls once and tells both clients which turn unlocks GDG for this round.
-    io.emit('game-started', { ...data, startedBy: socket.id, gdgUnlockTurn: rollGdgUnlockTurn() });
+    io.emit('game-started', { ...data, startedBy: socket.id, gdgUnlockTurn: rollGdgUnlockTurn(), endImmediately });
+
+    if (endImmediately) {
+      roundEnding = true;
+      resultReporterId = socket.id;
+      io.emit('game-ended', { reporterId: resultReporterId });
+    }
   });
 
   // Ready up the player
@@ -124,6 +139,20 @@ io.on('connection', socket => {
     if (username === 'p2') readyPlayers.p2 = data.player2.isReady;
     // ai generated: Readiness is server-owned so late connections and mode switches see the same count.
     socket.broadcast.emit('player-readied-up', {
+      player1: { isReady: readyPlayers.p1 },
+      player2: { isReady: readyPlayers.p2 }
+    });
+  });
+
+  // ai generated: Leaving results is distinct from disconnecting; it only removes that side from rematch readiness.
+  socket.on('return-to-lobby', () => {
+    if (!['p1', 'p2'].includes(username)) return;
+    playersInLobby[username] = true;
+    // ai generated: Cancel both pending rematch votes so an earlier click cannot start while one player is still reading results.
+    readyPlayers.p1 = false;
+    readyPlayers.p2 = false;
+    io.emit('player-returned-to-lobby', {
+      side: username,
       player1: { isReady: readyPlayers.p1 },
       player2: { isReady: readyPlayers.p2 }
     });
@@ -139,6 +168,13 @@ io.on('connection', socket => {
     io.emit('player-names', playerNames);
     // ai generated: Reading a name does not create a save; the first completed multiplayer game does.
     io.emit('player-records', { p1: recordStore.get(playerNames.p1), p2: recordStore.get(playerNames.p2) });
+
+    // ai generated: Renaming the second active player to "end" should open results immediately, not wait for another Ready click.
+    if (roundActive && !roundEnding && shouldEndGameByName(playerNames.p1, playerNames.p2)) {
+      roundEnding = true;
+      resultReporterId = socket.id;
+      io.emit('game-ended', { reporterId: resultReporterId });
+    }
   });
 
   // Count turns

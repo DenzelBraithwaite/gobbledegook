@@ -4,17 +4,18 @@
 
   // For game
   export let round = false;
+  export let disabled = false;
 
   // For forms
   export let btnSubmit = false;
 </script>
 
 {#if btnSubmit}
-  <button on:click type="submit" class="{customClasses} {bgColor}"><slot /></button>
+  <button on:click type="submit" class="{customClasses} {bgColor}" {disabled}><slot /></button>
 {:else if round}
-  <button on:click class="round {customClasses}"><slot /></button>
+  <button on:click class="round {customClasses}" {disabled}><slot /></button>
 {:else}
-  <button on:click class="{customClasses} {bgColor}"><slot /></button>
+  <button on:click class="{customClasses} {bgColor}" {disabled}><slot /></button>
 {/if}
 
 <style lang="scss">
@@ -27,6 +28,11 @@
     cursor: pointer;
     margin: 0.5rem 0;
     transition: all 0.15s ease-out;
+  }
+
+  // ai generated: Native disabling prevents a grey rematch control from emitting a click.
+  button:disabled {
+    cursor: not-allowed;
   }
 
   .round {
@@ -89,6 +95,14 @@
   .btn__green_disabled:active {
     transform: translate(0, 1px);
     box-shadow: 0 7px 0 #345239;
+  }
+
+  // ai generated: This visibly distinguishes an unavailable multiplayer rematch from an ordinary green Ready button.
+  .btn__grey_disabled {
+    background-color: #686868;
+    color: #d2d2d2;
+    box-shadow: 0 8px 0 #3d3d3d;
+    border: 2px solid #3d3d3d;
   }
 
   .btn__grey:hover {

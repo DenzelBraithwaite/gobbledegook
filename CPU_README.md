@@ -6,7 +6,7 @@ This document is the source of truth for the balanced singleplayer CPU. â€œCPUâ€
 
 The mode selector is in the connected-users panel. Singleplayer is local: it does not connect to `server.js`. The human remains Player 1 and presses **Ready** when they want the round to begin. The CPU is Player 2 and receives a random name from the small `cpuNames` array in `Game.svelte`. The host can click either connected-user name to rename themselves or the CPU.
 
-Multiplayer continues to use the Socket.IO server. Switching modes is allowed only between rounds because the selector is shown while the game is over. The server remembers each connected player's ready state, so someone joining or returning from singleplayer sees the correct `0/2` or `1/2` count.
+Multiplayer continues to use the Socket.IO server. After a completed round, players may ready up directly for a rematch or return to the Lobby. Mode switching is disabled on the result screen and becomes available again after returning to the Lobby. The server remembers each connected player's ready state, so someone joining or returning from singleplayer sees the correct `0/2` or `1/2` count.
 
 ## Files
 
@@ -66,6 +66,8 @@ Rename the CPU to the exact plural name of a scoring race to force that strategy
 Rename the CPU to exactly `test`, case-insensitively, to prevent it from declaring Gobbledegook. This is intended for manually testing longer games; every other CPU behavior remains active.
 
 Rename the CPU to exactly `gdg` or `gobbledegook`, case-insensitively, to make it declare at its first legal start-of-turn opportunity (the round's rolled unlock turn or later, with five cards and no declaration already active). This bypasses its usual win-odds calculation and is only a testing cheat. On the human's final turn, they can press GDG immediately to keep their five-card hand or draw and discard as usual.
+
+Rename both players to exactly `end`, case-insensitively, to immediately open the result screen. This can be done before starting to deal and score opening hands, or during an active round to score the current hands. Unlike the CPU-only strategy cheats, this shortcut also works when both humans use the name in multiplayer.
 
 ## A.I. card risk
 

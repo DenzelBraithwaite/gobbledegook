@@ -49,9 +49,13 @@ During a round, the speech-bubble button beneath the other side icons opens six 
 
 ## Multiplayer records
 
-Completed multiplayer games save one row per player name in `data/player-records.csv` on the server computer. The file is created after the first completed game and can be committed and pushed to GitHub for use on another computer; the game does not push it automatically. Names are matched case-insensitively, so changing a name loads that name's existing record. Each name begins at 1000 ELO; a win adds 10, a loss subtracts 10, and a draw changes nothing. If both players use the same name, both outcomes are recorded against that name and the ELO changes cancel. During a multiplayer round, your rating and badge appear beneath your name; the opponent's appear inline as `Name | 1000` followed by their badge. Both saved records appear on the results screen.
+Completed multiplayer games save one row per player name in `data/player-records.csv` on the server computer. The file is created after the first completed game and can be committed and pushed to GitHub for use on another computer; the game does not push it automatically. Names are matched case-insensitively, so changing a name loads that name's existing record. Each name begins at 1000 ELO, draws change nothing, and wins/losses use the player's tier before the match: Loser +30/−20, Wood +28/−22, Silver +26/−24, Gold +25/−25, and Goblin +22/−28. If both players use the same name, both outcomes are recorded against that name and the ELO changes cancel. During a multiplayer round, your rating and badge appear beneath your name; the opponent's appear inline as `Name | 1000` followed by their badge. Both saved records appear on the results screen.
 
 The badge beside each in-game ELO uses art from `server/serve/badges/` (copied to `public/badges/` by the build): Loser for 699 or less, Wood for 700–899, Silver for 900–1099, Gold for 1100–1299, and Goblin for 1300 or more. Click either player's badge to see all five ranks and their thresholds in a larger view.
+
+After a round, **Rematch** keeps both players on the result screen while they ready up. **Lobby** returns only that player to the normal starting screen. If one multiplayer player returns to Lobby or disconnects, the other player's Rematch button is disabled so they may finish reading the results before returning to Lobby themselves. The Singleplayer/Multiplayer selector is disabled on the result screen and becomes available again in the Lobby.
+
+For quick result-screen testing, name both players exactly `end`, case-insensitively. This works in singleplayer and multiplayer either before starting or during an active round. A pre-round shortcut deals and scores the opening hands; changing the second name during play immediately scores the current hands and opens the result screen.
 
 ## Factions and card types
 

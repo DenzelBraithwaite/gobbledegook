@@ -26,6 +26,7 @@
   import { gameSoundEffects, getDrawSoundEffect, getEventSoundEffect } from '../game/soundEffects';
   import { isGdgUnlocked, rollGdgUnlockTurn } from '../game/gdgTurn.js';
   import { hasAscendedElfChampion, shouldAscendElfChampion, shouldForceElfDraw } from '../game/elfChampion';
+  import { shouldEndGameByName } from '../game/endGameCheat.js';
   import GdgTurnReveal from './GdgTurnReveal.svelte';
 
   // Websocket
@@ -35,7 +36,7 @@
   type Race = 'human' | 'goblin' | 'elf' | 'dwarf' | 'beast' | 'bot' | 'xeno' | 'spirit' | 'boost' | 'trap' | 'neutral' | '';
   const bardCards = ['bardLute', 'bardFlute', 'bardHorn', 'bardDrum', 'bardSinger'];
   const aiBotCardBonus = 4;
-  let socket = io('http://192.168.2.10:6912', { autoConnect: false });
+  let socket = io('http://192.168.2.14:6912', { autoConnect: false });
   let gameMode: 'singleplayer' | 'multiplayer' = 'singleplayer';
   // ai generated: Main songs alternate automatically; only themes unlocked by the local hand can be skipped between.
   const musicTracks: MusicTrack[] = [...mainMusicTracks, ...Object.values(leaderMusicTracks), concertMusicTrack];
@@ -130,6 +131,8 @@
   // For checking if user is connected
   let p1Connected = false;
   let p2Connected = false;
+  let opponentReturnedToLobby = false;
+  let rematchAvailable = true;
   let intervalId;
   let timeoutId;
   const heartBeatInterval = 500;
@@ -169,6 +172,7 @@
       ? $player1.hand.includes('spiritKing') && isCardVisible('p1', 'spiritKing', $player2.hasVision, gameState.playersRevealed)
       : false;
   $: syncMusicForHand(localMusicHand, visibleOpponentSpiritKing);
+  $: rematchAvailable = gameMode === 'singleplayer' || (p1Connected && p2Connected && !opponentReturnedToLobby);
 
   function getEloBadge(elo: number): EloBadge {
     return eloRanks.find(rank => elo >= rank.minElo)?.badge ?? 'loser';
@@ -257,8 +261,16 @@
       player2.set({...$player2, isReady: data.player2.isReady});
     });
 
+    // ai generated: A player may keep reading results after the opponent leaves, but that result screen cannot rematch alone.
+    socket.on('player-returned-to-lobby', data => {
+      player1.set({...$player1, isReady: data.player1.isReady});
+      player2.set({...$player2, isReady: data.player2.isReady});
+      if (data.side !== gameState.playingAs && gameState.winMessage) opponentReturnedToLobby = true;
+    });
+
     // Resets game and updates player hands
     socket.on('game-started', data => {
+      opponentReturnedToLobby = false;
 
       // ai generated: Only the accepted starter keeps its deal; a simultaneous losing starter adopts the server's round.
       if (data.startedBy !== socket.id) {
@@ -275,6 +287,8 @@
       }
 
       gameState.gdgUnlockTurn = data.gdgUnlockTurn;
+      // ai generated: The two-name test shortcut bypasses only the wheel; the normal server end event still calculates results.
+      if (data.endImmediately) return;
       void showGdgTurnReveal();
     });
 
@@ -479,7 +493,7 @@
 
   // ai generated: Mode changes are available between rounds and preserve the original server-backed multiplayer flow.
   function selectGameMode(mode: 'singleplayer' | 'multiplayer'): void {
-    if (gameMode === mode || !gameState.gameOver) return;
+    if (gameMode === mode || !gameState.gameOver || Boolean(gameState.winMessage)) return;
     if (cpuTurnTimeout) clearTimeout(cpuTurnTimeout);
     gameState.connectedNameChangeSide = '';
     gameState.p1NameChangeVisible = false;
@@ -629,13 +643,15 @@
 
   function markOtherClientAsDisconnected() {
     gameState.playingAs === 'p1' ? p2Connected = false : p1Connected = false;
+    // ai generated: Reconnecting does not revive a rematch after that opponent already left the result screen.
+    if (gameState.winMessage) opponentReturnedToLobby = true;
   }
 
   // ---------------------------------------------------------------- \\
   // --------------------- GAME STATE CONTROLS ---------------------- \\
   // ---------------------------------------------------------------- \\
   // Initiaties a new round
-  async function startGame() {
+  async function startGame(endSingleplayerImmediately = false) {
     resetGame();
     await dealCards($player1);
     await dealCards($player2);
@@ -645,6 +661,12 @@
     calculateCurrentPlayerPoints(player);
 
     if (gameMode === 'singleplayer') {
+      // ai generated: The Ready click captures the cheat before reset/dealing so a pending name edit cannot be lost during startup.
+      if (endSingleplayerImmediately || shouldEndGameByName($player1.title, $player2.title)) {
+        endGame();
+        return;
+      }
+
       gameState.gdgUnlockTurn = rollGdgUnlockTurn();
       const revealCompleted = await showGdgTurnReveal();
       if (revealCompleted && $player2.turn) scheduleCpuTurn();
@@ -711,11 +733,14 @@
   // When both players are ready the game starts/restarts
   async function readyUpPlayer(): Promise<void> {
     prepareGdgWheelAudio();
+    // ai generated: Ready must commit an open name field in either mode before any local or server cheat check runs.
+    commitPendingPlayerName();
 
     if (gameMode === 'singleplayer') {
+      const endSingleplayerImmediately = shouldEndGameByName($player1.title, $player2.title);
       player1.set({...$player1, isReady: true});
       player2.set({...$player2, isReady: true});
-      await startGame();
+      await startGame(endSingleplayerImmediately);
       return;
     }
     if (!socket.connected || ![$player1.id, $player2.id].includes(socket.id)) return;
@@ -730,6 +755,7 @@
     clearPlayerEmotes();
     // ai generated: A remote end-of-round event should not leave the rankings guide over the result screen.
     rankingsVisible = false;
+    opponentReturnedToLobby = false;
     gameState.gameOver = true;
     gameState.startBtnDisabled = false;
     gameState.gobbledegookDisabled = true;
@@ -751,6 +777,23 @@
     logDeck();
     logDeck(true);
     console.log($player1, $player2);
+  }
+
+  // ai generated: Lobby clears the completed round locally while preserving names, connections, records, and mode choice.
+  function returnToLobby(): void {
+    if (!gameState.winMessage) return;
+    opponentReturnedToLobby = false;
+    resetGame();
+    gameState = {
+      ...gameState,
+      gameOver: true,
+      startBtnDisabled: false,
+      showSpinner: false,
+      winMessage: '',
+      loseMessage: ''
+    };
+
+    if (gameMode === 'multiplayer') emitGameEvent('return-to-lobby');
   }
 
   // Resets values to restart the game.
@@ -2882,6 +2925,21 @@
     return gameState.playingAs === playerSide && player.id === socket.id;
   }
 
+  // ai generated: Both game modes have two editable name locations; this resolves whichever input is open before Ready continues.
+  function commitPendingPlayerName(): void {
+    if (gameState.connectedNameChangeSide) {
+      updateUsernameForOtherClient(gameState.connectedNameChangeSide);
+      return;
+    }
+
+    if (gameState.p1NameChangeVisible) {
+      updateUsernameForOtherClient('p1');
+      return;
+    }
+
+    if (gameState.p2NameChangeVisible) updateUsernameForOtherClient('p2');
+  }
+
   function toggleConnectedNameChange(playerSide: 'p1' | 'p2'): void {
     if (!canEditPlayerName(playerSide)) return;
     const player = playerSide === 'p1' ? $player1 : $player2;
@@ -2950,7 +3008,14 @@
 
     if (playerSide === 'p1') player1.update(player => ({ ...player, title: newTitle }));
     if (playerSide === 'p2') player2.update(player => ({ ...player, title: newTitle }));
-    if (gameMode === 'multiplayer') emitGameEvent('username-changed', newTitle);
+
+    if (gameMode === 'multiplayer') {
+      emitGameEvent('username-changed', newTitle);
+      return;
+    }
+
+    // ai generated: The singleplayer shortcut must also react when both names become "end" after the round has started.
+    if (!gameState.gameOver && shouldEndGameByName($player1.title, $player2.title)) endGame();
   }
 
   function updateUsernameForThisClient(newUsername: string): void {
@@ -3324,9 +3389,9 @@
     <div class="connected-users">
       <!-- ai generated: Mode can be changed between rounds; singleplayer still begins only when the human presses Ready. -->
       <div class="mode-select" aria-label="Game mode">
-        <button class:active={gameMode === 'singleplayer'} on:click={() => selectGameMode('singleplayer')}>Singleplayer</button>
+        <button class:active={gameMode === 'singleplayer'} on:click={() => selectGameMode('singleplayer')} disabled={Boolean(gameState.winMessage)}>Singleplayer</button>
         <span>|</span>
-        <button class:active={gameMode === 'multiplayer'} on:click={() => selectGameMode('multiplayer')}>Multiplayer</button>
+        <button class:active={gameMode === 'multiplayer'} on:click={() => selectGameMode('multiplayer')} disabled={Boolean(gameState.winMessage)}>Multiplayer</button>
       </div>
       {#if gameState.connectedNameChangeSide === 'p1'}
         <input class="connected-name-input" bind:value={gameState.newPlayerTitle} on:blur={() => updateUsernameForOtherClient('p1')} type="text" maxlength="20"/>
@@ -3433,10 +3498,17 @@
     <!-- Eng game view -->
     {#if gameState.winMessage}
       <div class="results-screen" transition:fade>
-        <!-- Play again btn -->
+        <!-- ai generated: Lobby and Rematch share one centered result action row; a departed opponent disables only Rematch. -->
         {#if !gameState.startBtnDisabled}
-          <span class="play-again-btn">
-            <Button on:click={async () => await readyUpPlayer()} round={true} customClasses="btn__green">
+          <div class="results-actions">
+            <Button on:click={returnToLobby} round={true} customClasses="btn__brown">
+              Lobby
+            </Button>
+            <Button
+              on:click={async () => await readyUpPlayer()}
+              round={true}
+              disabled={!rematchAvailable}
+              customClasses={rematchAvailable ? 'btn__green' : 'btn__grey_disabled'}>
               {#if gameMode === 'multiplayer' && (($player1.isReady && !$player2.isReady) || ($player2.isReady && !$player1.isReady))}
                 1/2
                 <br>
@@ -3446,7 +3518,7 @@
               {/if}
               Rematch
             </Button>
-          </span>
+          </div>
         {/if}
 
         <div class="results-messages-flex-wrapper">
@@ -4026,6 +4098,13 @@
         color: #9abd9d;
         text-decoration: underline;
         text-underline-offset: 3px;
+      }
+
+      // ai generated: A completed match must be left through Lobby rather than changing modes behind the result screen.
+      button:disabled {
+        color: #615c5a;
+        cursor: not-allowed;
+        text-decoration: none;
       }
     }
   }
@@ -4687,14 +4766,17 @@
     letter-spacing: 0.05em;
   }
 
-  .play-again-btn {
+  // ai generated: The paired result actions stay centered while Lobby sits to the left of Rematch.
+  .results-actions {
     font-size: 1.5rem;
     z-index: 3;
+    display: flex;
+    gap: 1rem;
 
     position: absolute;
     bottom: 30px;
-    right: 46%; // to center between discards
-    transform: translateY(42%);
+    left: 50%;
+    transform: translate(-50%, 42%);
   }
 
   /* Utility */
@@ -4833,9 +4915,8 @@
       gap: 1.5rem;
     }
 
-    .play-again-btn {
+    .results-actions {
       font-size: 1rem;
-      transform: translateY(42%);
     }
   }
 
@@ -4903,7 +4984,7 @@
       gap: 1rem;
     }
 
-    .play-again-btn {
+    .results-actions {
       font-size: 0.75rem;
     }
   }
