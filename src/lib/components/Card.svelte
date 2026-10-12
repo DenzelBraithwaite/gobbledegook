@@ -213,8 +213,7 @@
     background-color: #00000060;
     box-shadow: inset -2px -2px 8px #0000004d;
     width: 10%;
-    height: 48px;
-    height: 22%;
+    height: 25%;
     font-size: 0.75rem;
     padding: 0;
     writing-mode: vertical-lr;
